@@ -1,0 +1,1519 @@
+<Window x:Class="AndroidDevMonitor.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:AndroidDevMonitor.App.Controls" xmlns:conv="clr-namespace:AndroidDevMonitor.App.Converters" Width="1600" Height="900" MinWidth="1280" MinHeight="720" WindowStartupLocation="CenterScreen" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}" FontSize="{Binding UiFontSize}" UseLayoutRounding="True" SnapsToDevicePixels="True" xmlns:app="clr-namespace:AndroidDevMonitor.App" Title="{Binding WindowTitle}">
+  <FrameworkElement.Resources>
+    <ResourceDictionary>
+      <conv:EqualityToVisibilityConverter x:Key="PageVisible" />
+      <conv:NullToTextConverter x:Key="NullText" />
+      <conv:MediaThumbnailConverter x:Key="MediaThumbnail" />
+      <conv:PageSelectionBrushConverter x:Key="PageSelectionBrush" />
+      <conv:NavigationIconConverter x:Key="NavigationIcon" />
+      <Style x:Key="Panel" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Border.CornerRadius" Value="9" />
+        <Setter Property="Border.Padding" Value="14" />
+      </Style>
+      <Style x:Key="SectionTitle" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+      </Style>
+      <Style x:Key="{x:Type DataGrid}" TargetType="{x:Type DataGrid}">
+        <Setter Property="Background" Value="#00FFFFFF" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="DataGrid.GridLinesVisibility" Value="Horizontal" />
+        <Setter Property="DataGrid.HorizontalGridLinesBrush" Value="#202D35" />
+        <Setter Property="DataGrid.RowBackground" Value="#11191F" />
+        <Setter Property="DataGrid.AlternatingRowBackground" Value="#131C22" />
+        <Setter Property="DataGrid.HeadersVisibility" Value="Column" />
+        <Setter Property="DataGrid.AutoGenerateColumns" Value="False" />
+        <Setter Property="DataGrid.IsReadOnly" Value="True" />
+        <Setter Property="DataGrid.RowHeight" Value="{Binding UiRowHeight}" />
+        <Setter Property="DataGrid.EnableRowVirtualization" Value="True" />
+        <Setter Property="DataGrid.EnableColumnVirtualization" Value="True" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="DataGrid.RowDetailsVisibilityMode" Value="Collapsed" />
+      </Style>
+      <Style x:Key="{x:Type DataGridColumnHeader}" TargetType="{x:Type DataGridColumnHeader}">
+        <Setter Property="Background" Value="#121B21" />
+        <Setter Property="Foreground" Value="#C6D0D6" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+        <Setter Property="Padding" Value="10,8" />
+      </Style>
+      <Style x:Key="{x:Type DataGridCell}" TargetType="{x:Type DataGridCell}">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="Foreground" Value="#D7E0E5" />
+      </Style>
+      <DataTemplate x:Key="MetricCardTemplate">
+        <Border Margin="6" Style="{StaticResource Panel}">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="62" />
+            </Grid.RowDefinitions>
+            <DockPanel>
+              <Ellipse Width="7" Height="7" Margin="0,0,8,0" Fill="{StaticResource AccentBrush}" />
+              <TextBlock FontSize="14" Text="{Binding Title}" />
+            </DockPanel>
+            <TextBlock Grid.Row="1" FontSize="27" Margin="0,10,0,1" Text="{Binding DisplayValue}" />
+            <TextBlock Grid.Row="2" TextTrimming="CharacterEllipsis" Foreground="{StaticResource MutedBrush}" Text="{Binding SecondaryValue}" ToolTip="{Binding Source}" />
+            <controls:Sparkline Grid.Row="3" MinHeight="58" Margin="0,7,-2,-3" ClipToBounds="True" Values="{Binding Values}" Minimum="{Binding ChartMinimum}" Maximum="{Binding ChartMaximum}" />
+          </Grid>
+        </Border>
+      </DataTemplate>
+      <DataTemplate x:Key="LiveChartTemplate">
+        <Border Margin="5" Padding="12" Style="{StaticResource Panel}">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="135" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <DockPanel>
+              <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding Title}" />
+              <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}" Text="{Binding AvailabilityText}" />
+            </DockPanel>
+            <TextBlock Grid.Row="1" Margin="0,5,0,2" Foreground="{StaticResource AccentBrush}" Text="{Binding CurrentText}" />
+            <controls:TimeSeriesChart Grid.Row="2" Margin="0,4" PrimaryPoints="{Binding PrimaryPoints}" SecondaryPoints="{Binding SecondaryPoints}" Annotations="{Binding Annotations}" PrimaryLabel="{Binding PrimaryLabel}" SecondaryLabel="{Binding SecondaryLabel}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" FullRange="{Binding IsFullSession}" />
+            <DockPanel Grid.Row="3">
+              <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" Text="{Binding StatisticsText}" />
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Rectangle Width="14" Height="2" Fill="#19C3D4" Margin="8,0,4,0" />
+                <TextBlock FontSize="10" Foreground="{StaticResource MutedBrush}" Text="{Binding PrimaryLabel}" />
+                <Rectangle Width="14" Height="2" Fill="#598AFF" Margin="8,0,4,0" />
+                <TextBlock FontSize="10" Foreground="{StaticResource MutedBrush}" Text="{Binding SecondaryLabel}" />
+              </StackPanel>
+            </DockPanel>
+          </Grid>
+        </Border>
+      </DataTemplate>
+      <DataTemplate x:Key="LogPriorityTemplate">
+        <Border CornerRadius="9" Padding="7,2" HorizontalAlignment="Left">
+          <FrameworkElement.Style>
+            <Style TargetType="{x:Type Border}">
+              <Setter Property="Background" Value="#23323B" />
+              <Style.Triggers>
+                <DataTrigger Value="Error" Binding="{Binding Priority}">
+                  <Setter Property="Background" Value="#5A2229" />
+                </DataTrigger>
+                <DataTrigger Value="Warning" Binding="{Binding Priority}">
+                  <Setter Property="Background" Value="#55431F" />
+                </DataTrigger>
+                <DataTrigger Value="Debug" Binding="{Binding Priority}">
+                  <Setter Property="Background" Value="#203852" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </FrameworkElement.Style>
+          <TextBlock FontSize="11" Text="{Binding Priority}" />
+        </Border>
+      </DataTemplate>
+    </ResourceDictionary>
+  </FrameworkElement.Resources>
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="232" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="30" />
+    </Grid.RowDefinitions>
+    <Border Grid.RowSpan="2" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="76" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="52" />
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Margin="20,18">
+          <Border Width="36" Height="36" CornerRadius="10" Background="#16373A">
+            <TextBlock Text="⌁" Foreground="{StaticResource AccentBrush}" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <StackPanel Margin="11,0">
+            <TextBlock Text="Android Dev Monitor" FontWeight="SemiBold" FontSize="15" />
+            <TextBlock Text="v1.0.0" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+          </StackPanel>
+        </StackPanel>
+        <ItemsControl Grid.Row="1" Margin="8,6" ItemsSource="{Binding NavigationItems}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button HorizontalContentAlignment="Left" Width="210" Margin="0,2" Padding="13,10" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+                <Button.Background>
+                  <MultiBinding Converter="{StaticResource PageSelectionBrush}">
+                    <Binding />
+                    <Binding Path="DataContext.CurrentPage" RelativeSource="{RelativeSource AncestorType=Window}" />
+                  </MultiBinding>
+                </Button.Background>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Width="27" VerticalAlignment="Center" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" Foreground="{StaticResource AccentBrush}" Text="{Binding Converter={StaticResource NavigationIcon}}" />
+                  <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="16">
+          <StackPanel Orientation="Horizontal">
+            <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" Margin="0,0,8,0" />
+            <TextBlock Foreground="{StaticResource MutedBrush}" Text="{Binding ConnectionText}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+    <Grid Column="1">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="78" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+      <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Background="#0E1419" Padding="14,10">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="190" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <ComboBox Height="55" VerticalContentAlignment="Center" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Width="220">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="18" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding FriendlyName}" />
+                    <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="11" Text="{Binding VersionLine}" />
+                    <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="10" Text="{Binding Serial}" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ComboBox>
+          <ComboBox Grid.Column="1" Margin="8,0" Height="55" VerticalContentAlignment="Center" ToolTip="Tracked application" ItemsSource="{Binding TrackedPackages}" SelectedItem="{Binding SelectedPackage}" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Content="{Binding LiveLabel}" Command="{Binding ToggleLiveCommand}" />
+            <Border Background="#11272A" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="3">
+              <TextBlock Foreground="{StaticResource AccentBrush}">
+                <Run Text="{Binding CollectionState, Mode=OneWay}" /><Run Text=" · 1s" />
+              </TextBlock>
+            </Border>
+            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="3">
+              <TextBlock Text="{Binding SessionStatus}" />
+            </Border>
+            <Button Content="Mark Event" Command="{Binding MarkEventCommand}" />
+            <Button Content="Export Session" Command="{Binding ExportSessionCommand}" />
+          </StackPanel>
+          <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+            <Button Content="{Binding RecordingLabel}" Command="{Binding ToggleRecordingCommand}" />
+            <Button Content="Screenshot" Command="{Binding ScreenshotCommand}" />
+            <Button Content="•••" ToolTip="Collection diagnostics" Command="{Binding ShowMoreCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+      <Grid Row="1" Margin="14">
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Overview}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="190" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition />
+              <ColumnDefinition />
+              <ColumnDefinition />
+              <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <ContentControl ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding CpuCard}" />
+            <ContentControl Grid.Column="1" ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding MemoryCard}" />
+            <ContentControl Grid.Column="2" ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding GpuCard}" />
+            <ContentControl Grid.Column="3" ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding DiskCard}" />
+          </Grid>
+          <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="0">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="48" />
+                <RowDefinition Height="*" />
+              </Grid.RowDefinitions>
+              <Grid Margin="12,5">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition />
+                  <ColumnDefinition Width="260" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                  <Button Content="Processes" CommandParameter="Processes" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Performance" CommandParameter="Performance" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Network" CommandParameter="Network" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Storage" CommandParameter="Storage" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Thermal" CommandParameter="Thermal" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Logs" CommandParameter="Logs" Command="{Binding SelectOverviewTabCommand}" />
+                </StackPanel>
+                <TextBox Grid.Column="1" VerticalAlignment="Center" ToolTip="Search name, package, or PID" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+              </Grid>
+              <DataGrid Grid.Row="1" FrozenColumnCount="2" ItemsSource="{Binding ProcessRows}" SelectedItem="{Binding SelectedProcessRow}" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Processes}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Group" Width="92" Binding="{Binding GroupText}" />
+                  <DataGridTemplateColumn Header="Name" SortMemberPath="Name" Width="230">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="23" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
+                          <Button Width="20" Height="20" Padding="0" Margin="0" BorderThickness="0" Content="{Binding ExpanderGlyph}" Command="{Binding DataContext.ToggleProcessGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+                            <FrameworkElement.Style>
+                              <Style BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                  <DataTrigger Value="True" Binding="{Binding CanExpand}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                  </DataTrigger>
+                                </Style.Triggers>
+                              </Style>
+                            </FrameworkElement.Style>
+                          </Button>
+                          <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding DisplayName}">
+                            <FrameworkElement.Style>
+                              <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="FontWeight" Value="Normal" />
+                                <Style.Triggers>
+                                  <DataTrigger Value="True" Binding="{Binding CanExpand}">
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                  </DataTrigger>
+                                </Style.Triggers>
+                              </Style>
+                            </FrameworkElement.Style>
+                          </TextBlock>
+                        </Grid>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTextColumn Header="Package / command" Width="235" Binding="{Binding PackageOrCommand}" />
+                  <DataGridTextColumn Header="PID" Width="72" Binding="{Binding Pid, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="Status" Width="116" Binding="{Binding Status}" />
+                  <DataGridTextColumn Header="CPU %" Width="78" Binding="{Binding CpuPercent, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="RAM" Width="90" Binding="{Binding RssBytes, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="GPU %" Width="76" Binding="{Binding GpuPercent, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="Disk Read" Width="95" Binding="{Binding DiskReadBytesPerSecond, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="Disk Write" Width="95" Binding="{Binding DiskWriteBytesPerSecond, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="Network RX" Width="100" Binding="{Binding NetworkRxBytesPerSecond, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="Network TX" Width="100" Binding="{Binding NetworkTxBytesPerSecond, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="FPS" Width="65" Binding="{Binding Fps, Converter={StaticResource NullText}}" />
+                  <DataGridTextColumn Header="Battery impact" Width="105" Binding="{Binding BatteryImpact}" />
+                  <DataGridTextColumn Header="Thermal" Width="85" Binding="{Binding ThermalRelation}" />
+                </DataGrid.Columns>
+              </DataGrid>
+              <Grid Row="1" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Performance}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                  <ItemsControl ItemTemplate="{StaticResource LiveChartTemplate}" ItemsSource="{Binding PerformanceCharts}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <UniformGrid Columns="2" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Grid>
+              <Grid Row="1" Margin="12" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Network}">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <DockPanel>
+                  <StackPanel>
+                    <TextBlock Text="Network · Last 10 minutes" Style="{StaticResource SectionTitle}" />
+                    <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding NetworkContext}" />
+                    <TextBlock Foreground="{StaticResource MutedBrush}" Text="{Binding NetworkTotals}" />
+                    <TextBlock Text="Device totals and selected-app UID traffic stay separate; unsupported app counters remain N/A." Foreground="{StaticResource MutedBrush}" />
+                  </StackPanel>
+                  <TextBlock Text="No packet capture" Foreground="{StaticResource MutedBrush}" DockPanel.Dock="Right" />
+                </DockPanel>
+                <Grid Row="1">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                  </Grid.ColumnDefinitions>
+                  <ContentControl ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding NetworkChart}" />
+                  <ContentControl Grid.Column="1" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding AppNetworkChart}" />
+                </Grid>
+              </Grid>
+              <Grid Row="1" Margin="12" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Storage}">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel>
+                  <TextBlock Text="Storage and logical I/O · Last 10 minutes" Style="{StaticResource SectionTitle}" />
+                  <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding StorageSummary}" />
+                  <TextBlock Foreground="{StaticResource MutedBrush}" Text="{Binding AppStorageSummary}" />
+                  <TextBlock Text="Read/write are selected-process logical counters, never claimed as physical SSD writes." Foreground="{StaticResource MutedBrush}" />
+                </StackPanel>
+                <ContentControl Grid.Row="1" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding DiskChart}" />
+              </Grid>
+              <Grid Row="1" Margin="12" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Thermal}">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel>
+                  <TextBlock Text="Thermal and GPU · Last 10 minutes" Style="{StaticResource SectionTitle}" />
+                  <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding ThermalSummary}" />
+                  <TextBlock Text="Only values reported by Android or a genuine GPU provider are drawn." Foreground="{StaticResource MutedBrush}" />
+                </StackPanel>
+                <Grid Row="1">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                  </Grid.ColumnDefinitions>
+                  <ContentControl ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding ThermalChart}" />
+                  <ContentControl Grid.Column="1" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding GpuChart}" />
+                </Grid>
+              </Grid>
+              <Grid Row="1" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Logs}">
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="46" />
+                  <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Margin="10,5">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <ComboBox ItemsSource="{Binding LogPriorities}" SelectedItem="{Binding SelectedLogPriority}" />
+                  <TextBox Grid.Column="1" Margin="6,0" ToolTip="Search logs" Text="{Binding LogSearchText, UpdateSourceTrigger=PropertyChanged}" />
+                  <CheckBox Grid.Column="2" Content="Regex" VerticalAlignment="Center" Margin="4,0" IsChecked="{Binding LogRegexEnabled}" />
+                  <TextBlock Grid.Column="3" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0" Text="{Binding LogFilterStatus}" />
+                  <StackPanel Grid.Column="4" Orientation="Horizontal">
+                    <Button Content="Pause / Resume" Command="{Binding ToggleLogPauseCommand}" />
+                    <Button Content="Clear" Command="{Binding ClearLogViewCommand}" />
+                    <Button Content="Full Logs" Command="{Binding OpenFullLogsCommand}" />
+                  </StackPanel>
+                </Grid>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding LogView}" SelectedItem="{Binding SelectedLogEntry}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Time" Width="105" Binding="{Binding LocalTimestamp, StringFormat={}{0:HH:mm:ss.fff}}" />
+                    <DataGridTemplateColumn Header="Level" CellTemplate="{StaticResource LogPriorityTemplate}" Width="82" />
+                    <DataGridTextColumn Header="Source" Width="120" Binding="{Binding Source}" />
+                    <DataGridTextColumn Header="Message" Width="*" Binding="{Binding Message}" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Grid>
+          </Border>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Instances}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <TextBlock Text="Instances" Style="{StaticResource SectionTitle}" />
+            <Button Content="Discover now" DockPanel.Dock="Right" Command="{Binding RefreshCommand}" />
+          </DockPanel>
+          <DataGrid Grid.Row="1" ItemsSource="{Binding Devices}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Friendly name" Width="180" Binding="{Binding FriendlyName}" />
+              <DataGridTextColumn Header="Serial" Width="180" Binding="{Binding Serial}" />
+              <DataGridTextColumn Header="State" Width="105" Binding="{Binding State}" />
+              <DataGridTextColumn Header="Type" Width="90" Binding="{Binding Kind}" />
+              <DataGridTextColumn Header="Manufacturer" Width="110" Binding="{Binding Manufacturer}" />
+              <DataGridTextColumn Header="Model" Width="130" Binding="{Binding Model}" />
+              <DataGridTextColumn Header="Android" Width="150" Binding="{Binding VersionLine}" />
+              <DataGridTextColumn Header="Resolution" Width="100" Binding="{Binding Resolution}" />
+              <DataGridTextColumn Header="Density" Width="80" Binding="{Binding Density}" />
+              <DataGridTextColumn Header="ABI" Width="120" Binding="{Binding Abi}" />
+              <DataGridTextColumn Header="Cores" Width="70" Binding="{Binding CpuCores, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="RAM" Width="90" Binding="{Binding TotalMemoryBytes, Converter={StaticResource NullText}}" />
+              <DataGridTextColumn Header="Storage" Width="95" Binding="{Binding TotalStorageBytes, Converter={StaticResource NullText}}" />
+              <DataGridTextColumn Header="Last seen" Width="160" Binding="{Binding LastSeenUtc}" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Media}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="54" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="Media library" Style="{StaticResource SectionTitle}" />
+              <TextBlock Text="Screenshots and Android screen recordings · stored only on this PC" Foreground="{StaticResource MutedBrush}" />
+            </StackPanel>
+            <TextBlock Text="{Binding MediaFilterStatus}" Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" VerticalAlignment="Center" />
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,9">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="150" />
+              <ColumnDefinition Width="180" />
+              <ColumnDefinition Width="210" />
+              <ColumnDefinition Width="130" />
+              <ColumnDefinition Width="115" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Text="{Binding MediaSearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Search file name or note" />
+            <ComboBox Grid.Column="1" Margin="6,0,0,0" ItemsSource="{Binding MediaKinds}" SelectedItem="{Binding SelectedMediaKind}" />
+            <TextBox Grid.Column="2" Margin="6,0,0,0" Text="{Binding SelectedMediaDevice, UpdateSourceTrigger=PropertyChanged}" ToolTip="Device serial filter; use All for every device" />
+            <TextBox Grid.Column="3" Margin="6,0,0,0" Text="{Binding SelectedMediaPackage, UpdateSourceTrigger=PropertyChanged}" ToolTip="Package filter; use All for every package" />
+            <ComboBox Grid.Column="4" Margin="6,0,0,0" ItemsSource="{Binding MediaSortOptions}" SelectedItem="{Binding SelectedMediaSort}" />
+            <ComboBox Grid.Column="5" Margin="6,0,0,0" ItemsSource="{Binding MediaLayouts}" SelectedItem="{Binding MediaLayout}" />
+            <Button Grid.Column="6" Content="Refresh" Command="{Binding RefreshCommand}" />
+          </Grid>
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="1.6*" />
+              <ColumnDefinition Width="12" />
+              <ColumnDefinition Width="0.9*" />
+            </Grid.ColumnDefinitions>
+            <Grid>
+              <ListBox Background="Transparent" BorderThickness="0" ItemsSource="{Binding MediaView}" SelectedItem="{Binding SelectedMediaItem}" Visibility="{Binding MediaLayout, Converter={StaticResource PageVisible}, ConverterParameter=Gallery}" ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel />
+                  </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                  <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0,0,10,10" />
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Template">
+                      <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                          <Border x:Name="Tile" Width="220" Height="190" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="9">
+                            <ContentPresenter />
+                          </Border>
+                          <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                              <Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                              <Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                              <Setter TargetName="Tile" Property="Background" Value="#1B2B33" />
+                            </Trigger>
+                          </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                      </Setter.Value>
+                    </Setter>
+                  </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Grid>
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="128" />
+                        <RowDefinition Height="*" />
+                      </Grid.RowDefinitions>
+                      <Border Background="#0B1116" CornerRadius="8,8,0,0" ClipToBounds="True">
+                        <Grid>
+                          <Image Source="{Binding ThumbnailPath, Converter={StaticResource MediaThumbnail}, ConverterParameter=320}" Stretch="UniformToFill" />
+                          <Border Background="#18232B" Padding="12" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding Kind, Converter={StaticResource PageVisible}, ConverterParameter=Recording}">
+                            <TextBlock Text="VIDEO" Foreground="{StaticResource AccentBrush}" FontSize="18" FontWeight="Bold" />
+                          </Border>
+                          <Border Background="#CC10171D" CornerRadius="4" Padding="6,3" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="7">
+                            <TextBlock Text="{Binding Kind}" FontSize="11" />
+                          </Border>
+                        </Grid>
+                      </Border>
+                      <StackPanel Grid.Row="1" Margin="9,7">
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <DockPanel Margin="0,4,0,0">
+                          <TextBlock Text="{Binding CapturedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+                          <TextBlock Text="{Binding FileSize, Converter={StaticResource NullText}}" Foreground="{StaticResource AccentBrush}" FontSize="11" DockPanel.Dock="Right" />
+                        </DockPanel>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <DataGrid ItemsSource="{Binding MediaView}" SelectedItem="{Binding SelectedMediaItem}" Visibility="{Binding MediaLayout, Converter={StaticResource PageVisible}, ConverterParameter=List}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Type" Width="95" Binding="{Binding Kind}" />
+                  <DataGridTextColumn Header="File" Width="*" Binding="{Binding FileName}" />
+                  <DataGridTextColumn Header="Device" Width="150" Binding="{Binding FriendlyDeviceName}" />
+                  <DataGridTextColumn Header="Package" Width="190" Binding="{Binding PackageName, TargetNullValue=N/A}" />
+                  <DataGridTextColumn Header="Captured" Width="145" Binding="{Binding CapturedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                  <DataGridTextColumn Header="Duration" Width="90" Binding="{Binding Duration, TargetNullValue=—}" />
+                  <DataGridTextColumn Header="Size" Width="90" Binding="{Binding FileSize, Converter={StaticResource NullText}}" />
+                </DataGrid.Columns>
+              </DataGrid>
+            </Grid>
+            <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="0">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="250" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="*" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Border Background="#090E12" CornerRadius="9,9,0,0" ClipToBounds="True">
+                  <Grid>
+                    <Image Source="{Binding SelectedMediaItem.ThumbnailPath, Converter={StaticResource MediaThumbnail}, ConverterParameter=720}" Stretch="Uniform" Visibility="{Binding SelectedMediaItem.Kind, Converter={StaticResource PageVisible}, ConverterParameter=Screenshot}" />
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding SelectedMediaItem.Kind, Converter={StaticResource PageVisible}, ConverterParameter=Recording}">
+                      <TextBlock Text="SCREEN RECORDING" Foreground="{StaticResource AccentBrush}" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" />
+                      <TextBlock Text="{Binding SelectedMediaItem.Duration, StringFormat=Duration: {0:g}}" Foreground="{StaticResource MutedBrush}" Margin="0,8" />
+                      <Button Content="Play in Windows player" Command="{Binding OpenSelectedMediaCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="Select a media item" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                          <Setter Property="Visibility" Value="Collapsed" />
+                          <Style.Triggers>
+                            <DataTrigger Binding="{Binding SelectedMediaItem}" Value="{x:Null}">
+                              <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                          </Style.Triggers>
+                        </Style>
+                      </TextBlock.Style>
+                    </TextBlock>
+                  </Grid>
+                </Border>
+                <StackPanel Grid.Row="1" Margin="14,12,14,5">
+                  <TextBlock Text="{Binding SelectedMediaItem.FileName, TargetNullValue=No selection}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Text="{Binding SelectedMediaItem.LocalPath}" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedMediaItem.LocalPath}" Margin="0,4" />
+                  <TextBlock Text="{Binding SelectedMediaItem.DeviceSerial, StringFormat=Device serial: {0}}" Foreground="{StaticResource AccentBrush}" />
+                  <TextBlock Text="{Binding SelectedMediaItem.PackageName, StringFormat=Package: {0}, TargetNullValue=Package: N/A}" />
+                  <TextBlock Text="{Binding SelectedMediaItem.Resolution, StringFormat=Resolution: {0}, TargetNullValue=Resolution: N/A}" />
+                  <TextBlock Text="{Binding SelectedMediaItem.SessionId, StringFormat=Session: {0}, TargetNullValue=Session: N/A}" />
+                </StackPanel>
+                <WrapPanel Grid.Row="2" Margin="10,4">
+                  <Button Content="Open / Play" Command="{Binding OpenSelectedMediaCommand}" />
+                  <Button Content="Show in folder" Command="{Binding OpenMediaFolderCommand}" />
+                  <Button Content="Copy path" Command="{Binding CopyMediaPathCommand}" />
+                  <Button Content="Delete" Foreground="#FF8B87" Command="{Binding DeleteMediaCommand}" />
+                </WrapPanel>
+                <StackPanel Grid.Row="3" Margin="14,6">
+                  <TextBlock Text="Rename" FontWeight="SemiBold" />
+                  <DockPanel Margin="0,5,0,10">
+                    <Button Content="Rename" Command="{Binding RenameMediaCommand}" DockPanel.Dock="Right" />
+                    <TextBox Text="{Binding MediaRenameText, UpdateSourceTrigger=PropertyChanged}" />
+                  </DockPanel>
+                  <TextBlock Text="Note" FontWeight="SemiBold" />
+                  <TextBox Text="{Binding MediaNote, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="64" TextWrapping="Wrap" Margin="0,5,0,10" />
+                  <TextBlock Text="Associate with marker" FontWeight="SemiBold" />
+                  <ComboBox ItemsSource="{Binding Markers}" SelectedItem="{Binding SelectedMediaMarker}" DisplayMemberPath="Name" Margin="0,5,0,0" />
+                </StackPanel>
+                <Button Grid.Row="4" Content="Save note and marker" Command="{Binding SaveMediaMetadataCommand}" Margin="14,6,14,14" />
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Performance}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="230" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="Performance sessions" Style="{StaticResource SectionTitle}" />
+              <TextBlock Text="Full locally stored sessions · live Overview charts remain fixed to the last 10 minutes" Foreground="{StaticResource MutedBrush}" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+              <Button Content="Export JSON" Command="{Binding ExportStoredSessionCommand}" CommandParameter="JSON" />
+              <Button Content="Export CSV" Command="{Binding ExportStoredSessionCommand}" CommandParameter="CSV" />
+              <Button Content="Export ZIP" Command="{Binding ExportStoredSessionCommand}" CommandParameter="ZIP" />
+              <Button Content="Open exports" Command="{Binding OpenSessionExportFolderCommand}" />
+              <Button Content="Delete session" Foreground="#FF8B87" Command="{Binding DeleteStoredSessionCommand}" />
+            </StackPanel>
+          </DockPanel>
+          <DataGrid Grid.Row="1" Margin="0,12,0,10" ItemsSource="{Binding StoredSessions}" SelectedItem="{Binding SelectedStoredSession}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Started" Width="145" Binding="{Binding StartedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+              <DataGridTextColumn Header="Duration" Width="95" Binding="{Binding Duration}" />
+              <DataGridTextColumn Header="Device" Width="155" Binding="{Binding Device.FriendlyName}" />
+              <DataGridTextColumn Header="Android" Width="135" Binding="{Binding Device.VersionLine}" />
+              <DataGridTextColumn Header="Package" Width="190" Binding="{Binding CurrentPackage, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Alerts" Width="60" Binding="{Binding AlertCount}" />
+              <DataGridTextColumn Header="Markers" Width="65" Binding="{Binding MarkerCount}" />
+              <DataGridTextColumn Header="Avg FPS" Width="70" Binding="{Binding AverageFps, StringFormat={}{0:N1}, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="P95 frame" Width="80" Binding="{Binding FrameTimeP95Ms, StringFormat={}{0:N1} ms, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Peak memory" Width="95" Binding="{Binding PeakMemoryBytes, Converter={StaticResource NullText}}" />
+              <DataGridTextColumn Header="Peak CPU" Width="75" Binding="{Binding PeakCpuPercent, StringFormat={}{0:N1}%, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Export" Width="*" Binding="{Binding ExportStatus}" />
+            </DataGrid.Columns>
+          </DataGrid>
+          <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                <DockPanel>
+                  <TextBlock Text="{Binding StoredSessionDetails}" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding StoredSessionStatus}" Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Margin="20,0,0,0" />
+                </DockPanel>
+              </Border>
+              <ItemsControl ItemTemplate="{StaticResource LiveChartTemplate}" ItemsSource="{Binding StoredSessionCharts}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Columns="2" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+              </ItemsControl>
+              <Grid Height="220" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition />
+                  <ColumnDefinition Width="10" />
+                  <ColumnDefinition />
+                  <ColumnDefinition Width="10" />
+                  <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Panel}" Padding="0">
+                  <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="38" /><RowDefinition /></Grid.RowDefinitions>
+                    <TextBlock Text="Markers" FontWeight="SemiBold" Margin="10" />
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding StoredSessionMarkers}">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Width="120" Binding="{Binding LocalTimestamp, StringFormat={}{0:HH:mm:ss}}" />
+                        <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                        <DataGridTextColumn Header="Note" Width="*" Binding="{Binding Note, TargetNullValue=—}" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </Grid>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="0">
+                  <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="38" /><RowDefinition /></Grid.RowDefinitions>
+                    <TextBlock Text="Alerts" FontWeight="SemiBold" Margin="10" />
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding StoredSessionAlerts}">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Severity" Width="75" Binding="{Binding Severity}" />
+                        <DataGridTextColumn Header="Type" Width="120" Binding="{Binding Type}" />
+                        <DataGridTextColumn Header="Message" Width="*" Binding="{Binding Message}" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </Grid>
+                </Border>
+                <Border Grid.Column="4" Style="{StaticResource Panel}" Padding="0">
+                  <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="38" /><RowDefinition /></Grid.RowDefinitions>
+                    <TextBlock Text="Session events" FontWeight="SemiBold" Margin="10" />
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding StoredSessionEvents}">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Width="75" Binding="{Binding TimestampUtc, StringFormat={}{0:HH:mm:ss}}" />
+                        <DataGridTextColumn Header="Type" Width="115" Binding="{Binding Type}" />
+                        <DataGridTextColumn Header="Message" Width="*" Binding="{Binding Message}" />
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </Grid>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Logs}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="50" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="110" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="Logs" Style="{StaticResource SectionTitle}" />
+              <TextBlock Text="Live Android logcat · external Appium files · crashes/ANRs · session events" Foreground="{StaticResource MutedBrush}" />
+            </StackPanel>
+            <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Text="{Binding DeviceContext}" />
+          </DockPanel>
+          <Grid Row="1" Margin="0,8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="150" />
+              <ColumnDefinition Width="125" />
+              <ColumnDefinition Width="280" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox ToolTip="Source" ItemsSource="{Binding LogSources}" SelectedItem="{Binding SelectedLogSource}" />
+            <ComboBox Grid.Column="1" Margin="6,0" ToolTip="Priority" ItemsSource="{Binding LogPriorities}" SelectedItem="{Binding SelectedLogPriority}" />
+            <TextBox Grid.Column="2" ToolTip="Search visible logs" Text="{Binding LogSearchText, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="8,0">
+              <CheckBox Content="Regex" VerticalAlignment="Center" IsChecked="{Binding LogRegexEnabled}" />
+              <CheckBox Content="Auto-scroll" VerticalAlignment="Center" Margin="10,0" IsChecked="{Binding IsLogAutoScroll}" />
+            </StackPanel>
+            <TextBlock Grid.Column="4" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="10,0" Text="{Binding LogFilterStatus}" />
+            <StackPanel Grid.Column="5" Orientation="Horizontal">
+              <Button Content="Pause / Resume" Command="{Binding ToggleLogPauseCommand}" />
+              <Button Content="Import Appium" Command="{Binding ImportAppiumLogCommand}" />
+              <Button Content="Save" Command="{Binding SaveLogsCommand}" />
+              <Button Content="Clear" Command="{Binding ClearLogViewCommand}" />
+            </StackPanel>
+          </Grid>
+          <DataGrid Grid.Row="2" Margin="0,6,0,0" ItemsSource="{Binding LogView}" SelectedItem="{Binding SelectedLogEntry}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Local time" Width="110" Binding="{Binding LocalTimestamp, StringFormat={}{0:HH:mm:ss.fff}}" />
+              <DataGridTemplateColumn Header="Level" CellTemplate="{StaticResource LogPriorityTemplate}" Width="84" />
+              <DataGridTextColumn Header="Source" Width="135" Binding="{Binding Source}" />
+              <DataGridTextColumn Header="PID" Width="70" Binding="{Binding Pid, Converter={StaticResource NullText}}" />
+              <DataGridTextColumn Header="Package" Width="205" Binding="{Binding PackageName, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Message" Width="*" Binding="{Binding Message}" />
+            </DataGrid.Columns>
+          </DataGrid>
+          <Border Grid.Row="3" Style="{StaticResource Panel}" Margin="0,8,0,0" Padding="10">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+              </Grid.RowDefinitions>
+              <DockPanel>
+                <TextBlock Text="Selected log detail" FontWeight="SemiBold" />
+                <Button Content="Copy" DockPanel.Dock="Right" Padding="9,3" Command="{Binding CopySelectedLogCommand}" />
+              </DockPanel>
+              <TextBox Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="#00FFFFFF" Text="{Binding SelectedLogEntry.Message, TargetNullValue=Select a log row to inspect its complete message.}" />
+            </Grid>
+          </Border>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=File Explorer}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="42" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="File Explorer" Style="{StaticResource SectionTitle}" />
+              <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding DeviceContext}" />
+            </StackPanel>
+            <TextBlock Text="Non-root browsing · inaccessible paths show an error, never a fake empty folder" Foreground="{StaticResource MutedBrush}" DockPanel.Dock="Right" />
+          </DockPanel>
+          <Grid Row="1" Margin="0,8">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="300" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Content="Refresh both" Command="{Binding RefreshFileExplorerCommand}" />
+            <TextBox Grid.Column="1" Margin="6,0" ToolTip="Search both current directories" Text="{Binding FileSearchText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Grid.Column="2" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0" Text="{Binding TransferStatus}" />
+            <Button Grid.Column="3" Content="Cancel transfer" Command="{Binding CancelTransferCommand}" />
+          </Grid>
+          <Grid Row="2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition />
+              <ColumnDefinition Width="10" />
+              <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Panel}">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="42" />
+                  <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <DockPanel>
+                  <TextBlock Text="Windows" FontSize="16" FontWeight="SemiBold" />
+                  <TextBlock Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" DockPanel.Dock="Right" Text="{Binding LocalPath}" />
+                </DockPanel>
+                <WrapPanel Grid.Row="1" Margin="0,5">
+                  <Button Content="←" Command="{Binding LocalBackCommand}" />
+                  <Button Content="→" Command="{Binding LocalForwardCommand}" />
+                  <Button Content="↑" Command="{Binding LocalUpCommand}" />
+                  <Button Content="Open folder" Command="{Binding OpenSelectedLocalCommand}" />
+                  <Button Content="Choose…" Command="{Binding BrowseLocalCommand}" />
+                  <Button Content="Explorer" Command="{Binding OpenLocalFolderCommand}" />
+                </WrapPanel>
+                <DataGrid Grid.Row="2" Margin="0,5,0,0" ItemsSource="{Binding LocalFileView}" SelectedItem="{Binding SelectedLocalFile}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                    <DataGridCheckBoxColumn Header="Folder" Width="60" Binding="{Binding IsDirectory}" />
+                    <DataGridTextColumn Header="Size" Width="90" Binding="{Binding Size, Converter={StaticResource NullText}}" />
+                    <DataGridTextColumn Header="Modified" Width="130" Binding="{Binding ModifiedUtc, StringFormat={}{0:g}}" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Panel}">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="42" />
+                  <RowDefinition Height="42" />
+                  <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <DockPanel>
+                  <TextBlock Text="Android device" FontSize="16" FontWeight="SemiBold" />
+                  <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Text="{Binding RemotePath}" />
+                </DockPanel>
+                <Grid Row="1" Margin="0,5">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel Orientation="Horizontal">
+                    <Button Content="←" Command="{Binding RemoteBackCommand}" />
+                    <Button Content="→" Command="{Binding RemoteForwardCommand}" />
+                    <Button Content="↑" Command="{Binding RemoteUpCommand}" />
+                    <Button Content="Open folder" Command="{Binding OpenSelectedRemoteCommand}" />
+                  </StackPanel>
+                  <ComboBox Grid.Column="1" Margin="6,0" ItemsSource="{Binding RemoteQuickLocations}" SelectedItem="{Binding SelectedRemoteQuickLocation}" />
+                  <Button Grid.Column="2" Content="Go" Command="{Binding GoRemoteQuickLocationCommand}" />
+                </Grid>
+                <Grid Row="2" Margin="0,5">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBox ToolTip="New folder name" Text="{Binding NewRemoteFolderName}" />
+                  <Button Grid.Column="1" Content="Create folder" Command="{Binding CreateRemoteFolderCommand}" />
+                  <TextBox Grid.Column="2" Margin="8,0,0,0" ToolTip="New name for selected item" Text="{Binding RemoteRenameText}" />
+                  <Button Grid.Column="3" Content="Rename" Command="{Binding RenameRemoteCommand}" />
+                  <Button Grid.Column="4" Content="Delete" Command="{Binding DeleteRemoteCommand}" />
+                </Grid>
+                <DataGrid Grid.Row="3" Margin="0,5,0,0" ItemsSource="{Binding RemoteFileView}" SelectedItem="{Binding SelectedRemoteFile}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}" />
+                    <DataGridCheckBoxColumn Header="Folder" Width="60" Binding="{Binding IsDirectory}" />
+                    <DataGridTextColumn Header="Size" Width="90" Binding="{Binding Size, Converter={StaticResource NullText}}" />
+                    <DataGridTextColumn Header="Modified" Width="130" Binding="{Binding ModifiedUtc, StringFormat={}{0:g}}" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+          </Grid>
+          <Border Grid.Row="3" Background="#10171D" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0" Padding="6">
+            <DockPanel>
+              <TextBlock Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Text="{Binding TransferStatus}" />
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Push selected →" Command="{Binding PushFileCommand}" />
+                <Button Content="← Pull selected" Command="{Binding PullFileCommand}" />
+                <Button Content="Cancel" Command="{Binding CancelTransferCommand}" />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Network}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="250" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="Network Diagnostics" Style="{StaticResource SectionTitle}" />
+              <TextBlock Text="Device-total and supported selected-package traffic are kept separate." Foreground="{StaticResource MutedBrush}" />
+              <TextBlock Text="{Binding NetworkFailureSummary}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <TextBlock Text="{Binding NetworkDiagnosticsStatus}" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="560" />
+              <Button Content="Refresh network" Command="{Binding RefreshNetworkDiagnosticsCommand}" />
+            </StackPanel>
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,12,0,10">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition />
+              <ColumnDefinition Width="8" />
+              <ColumnDefinition />
+              <ColumnDefinition Width="8" />
+              <ColumnDefinition />
+              <ColumnDefinition Width="8" />
+              <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Panel}">
+              <StackPanel>
+                <TextBlock Text="Connection" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding NetworkConnectionState}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Panel}">
+              <StackPanel>
+                <TextBlock Text="Gateway" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding NetworkGateway}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="4" Style="{StaticResource Panel}">
+              <StackPanel>
+                <TextBlock Text="DNS servers" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding NetworkDnsServers}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="6" Style="{StaticResource Panel}">
+              <StackPanel>
+                <TextBlock Text="Session totals" Foreground="{StaticResource MutedBrush}" />
+                <TextBlock Text="{Binding NetworkTotals}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </Grid>
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition />
+              <ColumnDefinition Width="10" />
+              <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <ContentControl ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding NetworkChart}" />
+            <ContentControl Grid.Column="2" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding AppNetworkChart}" />
+          </Grid>
+          <Grid Grid.Row="3" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="0.85*" />
+              <ColumnDefinition Width="10" />
+              <ColumnDefinition Width="1.4*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Panel}" Padding="0">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="42" /><RowDefinition /></Grid.RowDefinitions>
+                <DockPanel Margin="11,9">
+                  <TextBlock Text="Android interfaces" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding NetworkInterfaces.Count, StringFormat={}{0} found}" Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" />
+                </DockPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding NetworkInterfaces}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Interface" Width="95" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="State" Width="65" Binding="{Binding State}" />
+                    <DataGridTextColumn Header="Local addresses" Width="*" Binding="{Binding Addresses}" />
+                    <DataGridTextColumn Header="RX total" Width="90" Binding="{Binding ReceivedBytes, Converter={StaticResource NullText}}" />
+                    <DataGridTextColumn Header="TX total" Width="90" Binding="{Binding SentBytes, Converter={StaticResource NullText}}" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="0">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="42" /><RowDefinition /></Grid.RowDefinitions>
+                <DockPanel Margin="11,6">
+                  <TextBlock Text="TCP / UDP sockets" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <ComboBox DockPanel.Dock="Right" Width="205" ItemsSource="{Binding NetworkFilters}" SelectedItem="{Binding SelectedNetworkFilter}" />
+                </DockPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredNetworkSockets}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Protocol" Width="65" Binding="{Binding Protocol}" />
+                    <DataGridTextColumn Header="State" Width="90" Binding="{Binding State}" />
+                    <DataGridTextColumn Header="Local address" Width="*" Binding="{Binding LocalAddress}" />
+                    <DataGridTextColumn Header="Port" Width="55" Binding="{Binding LocalPort}" />
+                    <DataGridTextColumn Header="Remote address" Width="*" Binding="{Binding RemoteAddress}" />
+                    <DataGridTextColumn Header="Port" Width="55" Binding="{Binding RemotePort}" />
+                    <DataGridTextColumn Header="UID" Width="65" Binding="{Binding Uid}" />
+                    <DataGridTextColumn Header="Package" Width="165" Binding="{Binding PackageName}" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=ADB Shell}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="44" />
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="ADB Shell" Style="{StaticResource SectionTitle}" />
+              <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding DeviceContext}" />
+              <TextBlock Text="Shell commands can change device state. Nothing runs until Run is clicked." Foreground="#E7B85B" Margin="0,6" />
+            </StackPanel>
+            <Border Background="#11272A" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,6" DockPanel.Dock="Right" VerticalAlignment="Top">
+              <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding ShellStatus}" />
+            </Border>
+          </DockPanel>
+          <Grid Row="1" Margin="0,6">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="250" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox ItemsSource="{Binding ShellPresets}" SelectedItem="{Binding SelectedShellPreset}" />
+            <Button Grid.Column="1" Content="Use preset" Command="{Binding ApplyShellPresetCommand}" />
+            <TextBlock Grid.Column="2" Text="Safe presets only fill the input; they do not execute." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0" />
+            <StackPanel Grid.Column="3" Orientation="Horizontal">
+              <Button Content="↑ History" Command="{Binding PreviousShellCommandCommand}" />
+              <Button Content="↓ History" Command="{Binding NextShellCommandCommand}" />
+              <Button Content="Clear output" Command="{Binding ClearShellOutputCommand}" />
+              <Button Content="Save output" Command="{Binding SaveShellOutputCommand}" />
+            </StackPanel>
+          </Grid>
+          <Grid Row="2" Margin="0,6">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition />
+              <ColumnDefinition Width="90" />
+              <ColumnDefinition Width="90" />
+            </Grid.ColumnDefinitions>
+            <TextBox FontFamily="Consolas" Text="{Binding ShellCommand, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Grid.Column="1" Content="Run" Command="{Binding RunShellCommand}" />
+            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelShellCommand}" />
+          </Grid>
+          <Border Grid.Row="3" Style="{StaticResource Panel}" Padding="0" Margin="0,6,0,0">
+            <TextBox IsReadOnly="True" AcceptsReturn="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" BorderThickness="0" Background="#00FFFFFF" Text="{Binding ShellOutput}" />
+          </Border>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Automation}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="Automation" Style="{StaticResource SectionTitle}" />
+              <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding DeviceContext}" />
+              <TextBlock Foreground="{StaticResource MutedBrush}" Text="{Binding SelectedPackage, StringFormat=Selected package: {0}}" />
+            </StackPanel>
+            <Border Background="#11272A" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="7" Padding="10,6" DockPanel.Dock="Right" VerticalAlignment="Top">
+              <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding AutomationState}" />
+            </Border>
+          </DockPanel>
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+            <StackPanel>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,8">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel>
+                    <TextBlock Text="Application deployment" FontSize="16" FontWeight="SemiBold" />
+                    <TextBlock Text="Selecting a file never installs it." Foreground="{StaticResource MutedBrush}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="14,0" Text="{Binding SelectedApkInfo}" />
+                  <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="Select APK" Command="{Binding SelectApkCommand}" />
+                    <Button Content="Install / reinstall" CommandParameter="Install APK" Command="{Binding RunAutomationCommand}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,8">
+                <StackPanel>
+                  <TextBlock Text="Application controls" FontSize="16" FontWeight="SemiBold" />
+                  <WrapPanel Margin="0,7,0,0">
+                    <Button Content="Launch" CommandParameter="Launch" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Restart" CommandParameter="Restart" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Force Stop" CommandParameter="Force Stop" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Clear Data" CommandParameter="Clear Data" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Uninstall" CommandParameter="Uninstall" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="App Info" CommandParameter="App Info" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Grant permission" CommandParameter="Grant Permission" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Revoke permission" CommandParameter="Revoke Permission" Command="{Binding RunAutomationCommand}" />
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,8">
+                <Grid>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
+                  <TextBlock Text="Device input controls" FontSize="16" FontWeight="SemiBold" />
+                  <Grid Row="1" Margin="0,8">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="150" />
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="240" />
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="90" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Coordinates" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" Margin="7,0" Text="{Binding AutomationCoordinates}" />
+                    <TextBlock Grid.Column="2" Text="Text / permission" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="3" Margin="7,0" Text="{Binding AutomationText}" />
+                    <TextBlock Grid.Column="4" Text="Swipe ms" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="5" Margin="7,0" Text="{Binding SwipeDurationMs}" />
+                  </Grid>
+                  <WrapPanel Grid.Row="2">
+                    <Button Content="Back" CommandParameter="Back" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Home" CommandParameter="Home" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Recents" CommandParameter="Recents" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Power" CommandParameter="Power" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Vol +" CommandParameter="Volume Up" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Vol −" CommandParameter="Volume Down" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Enter" CommandParameter="Enter" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Escape" CommandParameter="Escape" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Tap center" CommandParameter="Tap Center" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Tap x,y" CommandParameter="Tap Coordinates" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Long press" CommandParameter="Long Press" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Double tap" CommandParameter="Double Tap" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Swipe ↑" CommandParameter="Swipe Up" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Swipe ↓" CommandParameter="Swipe Down" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Swipe ←" CommandParameter="Swipe Left" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Swipe →" CommandParameter="Swipe Right" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Send text" CommandParameter="Send Text" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Portrait" CommandParameter="Portrait" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Landscape L" CommandParameter="Landscape Left" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Landscape R" CommandParameter="Landscape Right" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Auto rotate" CommandParameter="Auto Rotation" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Screenshot" CommandParameter="Screenshot" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Start recording" CommandParameter="Start Recording" Command="{Binding RunAutomationCommand}" />
+                    <Button Content="Stop recording" CommandParameter="Stop Recording" Command="{Binding RunAutomationCommand}" />
+                  </WrapPanel>
+                </Grid>
+              </Border>
+              <Grid Height="390">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="1.25*" />
+                  <ColumnDefinition Width="10" />
+                  <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Panel}">
+                  <Grid>
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                      <TextBlock Text="Linear test sequence" FontSize="17" FontWeight="SemiBold" />
+                      <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Text="{Binding AutomationState}" />
+                    </DockPanel>
+                    <Grid Row="1" Margin="0,8">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="175" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="90" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <ComboBox ItemsSource="{Binding AutomationStepKinds}" SelectedItem="{Binding SelectedStepKind}" />
+                      <TextBox Grid.Column="1" Margin="6,0" ToolTip="Step argument: text, coordinates, package, or log text" Text="{Binding NewStepArgument}" />
+                      <TextBox Grid.Column="2" Margin="0,0,6,0" ToolTip="Wait/timeout ms" Text="{Binding NewStepDurationMs}" />
+                      <Button Grid.Column="3" Content="Add step" Command="{Binding AddSequenceStepCommand}" />
+                    </Grid>
+                    <Grid Row="2">
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                      </Grid.RowDefinitions>
+                      <WrapPanel>
+                        <Button Content="↑" Command="{Binding MoveSequenceStepUpCommand}" CommandParameter="{Binding SelectedSequenceStep}" />
+                        <Button Content="↓" Command="{Binding MoveSequenceStepDownCommand}" CommandParameter="{Binding SelectedSequenceStep}" />
+                        <Button Content="Remove" Command="{Binding RemoveSequenceStepCommand}" CommandParameter="{Binding SelectedSequenceStep}" />
+                        <TextBlock Text="Repeat" VerticalAlignment="Center" Margin="12,0,4,0" />
+                        <TextBox Width="48" Text="{Binding AutomationRepeatCount}" />
+                        <CheckBox Content="Stop on failure" VerticalAlignment="Center" Margin="10,0" IsChecked="{Binding AutomationStopOnFailure}" />
+                        <Button Content="Run" Command="{Binding RunSequenceCommand}" />
+                        <Button Content="Pause" Command="{Binding PauseSequenceCommand}" />
+                        <Button Content="Resume" Command="{Binding ResumeSequenceCommand}" />
+                        <Button Content="Stop" Command="{Binding StopSequenceCommand}" />
+                      </WrapPanel>
+                      <DataGrid Grid.Row="1" Margin="0,6" ItemsSource="{Binding SequenceSteps}" SelectedItem="{Binding SelectedSequenceStep}">
+                        <DataGrid.Columns>
+                          <DataGridTextColumn Header="Step" Width="*" Binding="{Binding Name}" />
+                          <DataGridTextColumn Header="Argument" Width="170" Binding="{Binding Argument, TargetNullValue=—}" />
+                          <DataGridTextColumn Header="Duration" Width="105" Binding="{Binding Duration, TargetNullValue=—}" />
+                          <DataGridCheckBoxColumn Header="Destructive" Width="85" Binding="{Binding IsDestructive}" />
+                        </DataGrid.Columns>
+                      </DataGrid>
+                    </Grid>
+                  </Grid>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Panel}">
+                  <Grid>
+                    <Grid.RowDefinitions>
+                      <RowDefinition Height="Auto" />
+                      <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Automation output" FontSize="17" FontWeight="SemiBold" />
+                    <TextBox Grid.Row="1" IsReadOnly="True" AcceptsReturn="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" TextWrapping="NoWrap" Margin="0,8,0,0" Text="{Binding AutomationLog}" />
+                  </Grid>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Alerts}">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="210" />
+            <RowDefinition Height="*" />
+          </Grid.RowDefinitions>
+          <DockPanel>
+            <StackPanel>
+              <TextBlock Text="Alerts" Style="{StaticResource SectionTitle}" />
+              <TextBlock Text="Active problems, persistent history and editable first-build thresholds" Foreground="{StaticResource MutedBrush}" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button Content="Acknowledge selected" Command="{Binding AcknowledgeAlertCommand}" />
+              <Button Content="Clear resolved" Command="{Binding ClearResolvedAlertsCommand}" />
+              <Button Content="Export history" Command="{Binding ExportAlertsCommand}" />
+            </StackPanel>
+          </DockPanel>
+          <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="0" Margin="0,12,0,10">
+            <Grid>
+              <Grid.RowDefinitions><RowDefinition Height="38" /><RowDefinition /></Grid.RowDefinitions>
+              <DockPanel Margin="11,9">
+                <TextBlock Text="Active alerts" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ActiveAlerts.Count, StringFormat={}{0} active}" Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" />
+              </DockPanel>
+              <DataGrid Grid.Row="1" ItemsSource="{Binding ActiveAlerts}" SelectedItem="{Binding SelectedActiveAlert}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Time" Width="145" Binding="{Binding TimestampUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+                  <DataGridTextColumn Header="Severity" Width="85" Binding="{Binding Severity}" />
+                  <DataGridTextColumn Header="Type" Width="165" Binding="{Binding Type}" />
+                  <DataGridTextColumn Header="Message" Width="*" Binding="{Binding Message}" />
+                </DataGrid.Columns>
+              </DataGrid>
+            </Grid>
+          </Border>
+          <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="1.15*" />
+              <ColumnDefinition Width="10" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Panel}" Padding="0">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="42" /><RowDefinition /></Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="11,9">
+                  <TextBlock Text="Alert rules" FontWeight="SemiBold" />
+                  <TextBlock Text="  ·  Changes apply immediately" Foreground="{StaticResource MutedBrush}" />
+                </StackPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding AlertRules}" IsReadOnly="False">
+                  <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="On" Width="42" Binding="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <DataGridTextColumn Header="Rule" Width="135" Binding="{Binding Type}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Metric" Width="145" Binding="{Binding Metric}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Threshold" Width="80" Binding="{Binding Threshold, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue=—}" />
+                    <DataGridTextColumn Header="Unit" Width="55" Binding="{Binding Unit}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="For (s)" Width="65" Binding="{Binding DurationSeconds, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                    <DataGridTextColumn Header="Severity" Width="75" Binding="{Binding Severity, Mode=TwoWay}" />
+                    <DataGridCheckBoxColumn Header="System" Width="62" Binding="{Binding SystemCritical, Mode=OneWay}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Description" Width="*" Binding="{Binding Description}" IsReadOnly="True" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="0">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="42" /><RowDefinition /></Grid.RowDefinitions>
+                <DockPanel Margin="11,9">
+                  <TextBlock Text="Alert history" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding Alerts.Count, StringFormat={}{0} entries}" Foreground="{StaticResource MutedBrush}" DockPanel.Dock="Right" />
+                </DockPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding Alerts}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Time" Width="135" Binding="{Binding TimestampUtc, StringFormat={}{0:MM-dd HH:mm:ss}}" />
+                    <DataGridTextColumn Header="Severity" Width="75" Binding="{Binding Severity}" />
+                    <DataGridTextColumn Header="Type" Width="125" Binding="{Binding Type}" />
+                    <DataGridTextColumn Header="Message" Width="*" Binding="{Binding Message}" />
+                    <DataGridCheckBoxColumn Header="Resolved" Width="70" Binding="{Binding Resolved}" IsReadOnly="True" />
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Settings}">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <DockPanel Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="Settings" Style="{StaticResource SectionTitle}" />
+                  <TextBlock Text="Local configuration, ADB diagnostics, retention and safety" Foreground="{StaticResource MutedBrush}" />
+                </StackPanel>
+                <TextBlock Text="{Binding DemoBadge}" Foreground="#E7B85B" FontWeight="Bold" DockPanel.Dock="Right" VerticalAlignment="Center" />
+              </DockPanel>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition />
+                  <ColumnDefinition Width="12" />
+                  <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="General" FontWeight="SemiBold" FontSize="17" />
+                      <CheckBox Content="Launch on Windows startup" IsChecked="{Binding LaunchAtStartup}" Margin="0,10,0,4" />
+                      <CheckBox Content="Restore last selected page" IsChecked="{Binding RestoreLastPage}" Margin="0,4" />
+                      <CheckBox Content="Restore last selected device when available" IsChecked="{Binding RestoreLastDevice}" Margin="0,4" />
+                      <CheckBox Content="Automatically reconnect to the last device" IsChecked="{Binding AutoReconnectLastDevice}" Margin="0,4" />
+                      <CheckBox Content="Confirm before closing during recording" IsChecked="{Binding ConfirmRecordingClose}" Margin="0,4" />
+                      <CheckBox Content="Confirm before closing during Automation" IsChecked="{Binding ConfirmAutomationClose}" Margin="0,4" />
+                      <TextBlock Text="UI language: system language (future localization)" Foreground="{StaticResource MutedBrush}" Margin="0,10,0,0" />
+                      <TextBlock Text="Updates: local/offline distribution only; no cloud telemetry" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="ADB" FontWeight="SemiBold" FontSize="17" />
+                      <TextBlock Text="Configured adb.exe" Foreground="{StaticResource MutedBrush}" Margin="0,9,0,4" />
+                      <DockPanel>
+                        <Button Content="Browse" Command="{Binding SelectAdbExecutableCommand}" DockPanel.Dock="Right" />
+                        <Button Content="Apply" Command="{Binding ApplyAdbPathCommand}" DockPanel.Dock="Right" />
+                        <TextBox Text="{Binding SelectedAdbPath, UpdateSourceTrigger=PropertyChanged}" />
+                      </DockPanel>
+                      <WrapPanel Margin="0,7,0,4">
+                        <Button Content="Auto-detect" Command="{Binding AutoDetectAdbCommand}" />
+                        <Button Content="Test connection" Command="{Binding TestAdbConnectionCommand}" />
+                        <Button Content="Restart ADB server…" Foreground="#E7B85B" Command="{Binding RestartAdbServerCommand}" />
+                      </WrapPanel>
+                      <TextBlock Text="{Binding AdbVersion, StringFormat=Version: {0}}" />
+                      <TextBlock Text="{Binding AdbServerState, StringFormat=Server state: {0}}" />
+                      <TextBlock Text="Default command timeout: 15 seconds · adb root is never run automatically" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                      <TextBlock Text="Wireless debugging: pair/connect the device with Android Platform Tools; it will then appear in the global target selector." Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                      <Border Background="#0E151A" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="5" Padding="8" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding AdbDiagnostics}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" />
+                      </Border>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="Monitoring · read-only in first build" FontWeight="SemiBold" FontSize="17" />
+                      <Grid Margin="0,9,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                          <TextBlock Text="Lightweight metrics   1 second" />
+                          <TextBlock Text="Process refresh        2 seconds" />
+                          <TextBlock Text="Heavy metrics          5 seconds" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                          <TextBlock Text="Device discovery       5 seconds" />
+                          <TextBlock Text="Live chart window      10 minutes" />
+                          <TextBlock Text="Summary sparkline      60 seconds" />
+                        </StackPanel>
+                      </Grid>
+                      <TextBlock Text="These values are fixed in the first build and will become configurable in a later version." Foreground="#E7B85B" Margin="0,9,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="Storage and sessions" FontWeight="SemiBold" FontSize="17" />
+                      <TextBlock Text="{Binding SessionDirectory, StringFormat=Session directory: {0}}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                      <TextBlock Text="Retention: keep locally until manual cleanup" />
+                      <TextBlock Text="Completed sessions: saved automatically" />
+                      <TextBlock Text="{Binding SessionStorageSummary, StringFormat=Local session storage: {0}}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Exports: Documents\Android Dev Monitor\Exports" Foreground="{StaticResource MutedBrush}" />
+                      <WrapPanel Margin="0,7,0,0">
+                        <Button Content="Open session directory" Command="{Binding OpenSessionDirectoryCommand}" />
+                        <Button Content="Clear completed sessions…" Foreground="#FF8B87" Command="{Binding ClearOldSessionsCommand}" />
+                      </WrapPanel>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="Media" FontWeight="SemiBold" FontSize="17" />
+                      <TextBlock Text="{Binding ScreenshotDirectory, StringFormat=Screenshot directory: {0}}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding RecordingDirectory, StringFormat=Recording directory: {0}}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="PNG: screenshot-{serial}-{yyyyMMdd-HHmmss-fff}.png" />
+                      <TextBlock Text="MP4: recording-{serial}-{yyyyMMdd-HHmmss-fff}.mp4" />
+                      <TextBlock Text="{Binding MediaStorageSummary, StringFormat=Local media: {0}}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <WrapPanel Margin="0,7,0,0">
+                        <Button Content="Open media directory" Command="{Binding OpenMediaDirectoryCommand}" />
+                      </WrapPanel>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="Logs" FontWeight="SemiBold" FontSize="17" />
+                      <TextBlock Text="{Binding DiagnosticsDirectory, StringFormat=Application log directory: {0}}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                      <TextBlock Text="Retention: 14 daily files · maximum 25 MB per file" />
+                      <TextBlock Text="Default logcat priority: unfiltered · buffer: Android default" />
+                      <TextBlock Text="Appium follow: explicit file import; no background file watcher" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <Button Content="Open diagnostics directory" HorizontalAlignment="Left" Margin="0,7,0,0" Command="{Binding OpenDiagnosticsDirectoryCommand}" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="Appearance" FontWeight="SemiBold" FontSize="17" />
+                      <TextBlock Text="Dark theme" Margin="0,8,0,4" />
+                      <CheckBox Content="Compact density (clear for comfortable density)" IsChecked="{Binding CompactDensity}" Margin="0,4" />
+                      <TextBlock Text="Sidebar collapse, chart animation, reduce motion and font scaling are reserved for a later build; no inactive controls are exposed." Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="Alerts, notifications and safety" FontWeight="SemiBold" FontSize="17" />
+                      <CheckBox Content="Windows toast notifications (future)" IsChecked="{Binding WindowsNotificationsEnabled}" IsEnabled="False" Margin="0,4" />
+                      <CheckBox Content="Enable alert sounds" IsChecked="{Binding AlertSoundsEnabled}" Margin="0,4" />
+                      <CheckBox Content="Capture screenshot when an alert starts" IsChecked="{Binding ScreenshotOnAlert}" Margin="0,4" />
+                      <CheckBox Content="Start screen recording when an alert starts" IsChecked="{Binding RecordingOnAlert}" Margin="0,4" />
+                      <CheckBox Content="Quiet mode" IsChecked="{Binding QuietMode}" Margin="0,4" />
+                      <TextBlock Text="Default alert behavior: show active alert, add session event, sound unless Quiet mode is enabled." Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                      <TextBlock Text="Clear App Data, Uninstall, device-file deletion and Restart ADB always require confirmation showing the exact serial." Foreground="#E7B85B" Margin="0,8,0,0" TextWrapping="Wrap" />
+                      <TextBlock Text="Raw shell commands never run until Run is clicked." Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="Demo mode" FontWeight="SemiBold" FontSize="17" />
+                      <TextBlock Text="{Binding DemoModeStatus}" Margin="0,8,0,4" TextWrapping="Wrap" />
+                      <WrapPanel>
+                        <Button Content="{Binding DemoModeActionText}" Command="{Binding RestartWithOtherDataModeCommand}" />
+                        <Button Content="Reset demo data" Command="{Binding ResetDemoDataCommand}" />
+                      </WrapPanel>
+                    </StackPanel>
+                  </Border>
+                  <Border Style="{StaticResource Panel}">
+                    <StackPanel>
+                      <DockPanel>
+                        <TextBlock Text="Diagnostics" FontWeight="SemiBold" FontSize="17" />
+                        <TextBlock Text="{Binding ApplicationVersion, StringFormat=v{0}}" Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" />
+                      </DockPanel>
+                      <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130" /><ColumnDefinition /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                          <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                          <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                          <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text=".NET runtime" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Column="1" Text="{Binding DotNetVersion}" />
+                        <TextBlock Grid.Row="1" Text="Database" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DatabasePath}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DatabasePath}" />
+                        <TextBlock Grid.Row="2" Text="ADB path" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AdbPathDisplay}" TextTrimming="CharacterEllipsis" ToolTip="{Binding AdbPathDisplay}" />
+                        <TextBlock Grid.Row="3" Text="ADB version" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AdbVersion}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="4" Text="Collectors / queues" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CollectorStatus}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="5" Text="Last commands" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LastAdbCommandTimings}" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="6" Text="Last parser error" Foreground="{StaticResource MutedBrush}" /><TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LastParserError}" TextWrapping="Wrap" />
+                      </Grid>
+                      <WrapPanel Margin="0,8,0,0">
+                        <Button Content="Export diagnostics package" Command="{Binding ExportDiagnosticsCommand}" />
+                      </WrapPanel>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+      </Grid>
+    </Grid>
+    <Border Grid.Column="1" Grid.Row="1" Background="#10171D" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="12,5">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <DockPanel Margin="0,0,18,0">
+          <TextBlock DockPanel.Dock="Left" Foreground="{StaticResource TextBrush}" Text="{Binding BottomDeviceContext}" />
+          <TextBlock DockPanel.Dock="Left" Text="  ·  " />
+          <TextBlock Foreground="{StaticResource MutedBrush}" Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal">
+          <TextBlock Foreground="#E7B85B" FontWeight="Bold" Margin="0,0,16,0" Text="{Binding DemoBadge}" />
+          <TextBlock Foreground="{StaticResource MutedBrush}" Text="{Binding DataAge}" />
+          <TextBlock Text="  ·  " />
+          <TextBlock Text="{Binding SessionStatus}" />
+          <TextBlock Text="  ·  " />
+          <TextBlock Foreground="{StaticResource AccentBrush}" Text="{Binding CollectionState}" />
+          <TextBlock Text="  ·  " />
+          <TextBlock Foreground="{StaticResource SuccessBrush}" Text="{Binding ConnectionText}" />
+          <TextBlock Foreground="#FF6B6B" FontWeight="SemiBold" Margin="14,0,0,0" Text="{Binding RecordingState}" />
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

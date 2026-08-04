@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AndroidDevMonitor.Adb/AndroidDevMonitor.Adb.csproj" />
+    <Project Path="src/AndroidDevMonitor.App/AndroidDevMonitor.App.csproj" />
+    <Project Path="src/AndroidDevMonitor.Collectors/AndroidDevMonitor.Collectors.csproj" />
+    <Project Path="src/AndroidDevMonitor.Core/AndroidDevMonitor.Core.csproj" />
+    <Project Path="src/AndroidDevMonitor.Infrastructure/AndroidDevMonitor.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AndroidDevMonitor.Adb.Tests/AndroidDevMonitor.Adb.Tests.csproj" />
+    <Project Path="tests/AndroidDevMonitor.Collectors.Tests/AndroidDevMonitor.Collectors.Tests.csproj" />
+    <Project Path="tests/AndroidDevMonitor.Core.Tests/AndroidDevMonitor.Core.Tests.csproj" />
+  </Folder>
+</Solution>
