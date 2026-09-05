@@ -6,6 +6,34 @@ namespace AndroidDevMonitor.Adb.Tests;
 public sealed class AndroidParserTests
 {
     [Fact]
+    public void Storaged_uses_latest_interval_and_sums_all_uid_states()
+    {
+        var result = StoragedParser.ParseLatest("100,102\nold.app 999 999 0 0 0 0 0 0\n,104\napp 10 20 30 40 50 60 70 80\n0 1 2 3 4 5 6 7 8\n");
+        Assert.NotNull(result);
+        Assert.Equal(102, result.StartSeconds);
+        Assert.Equal(104, result.EndSeconds);
+        Assert.Equal(176, result.ReadBytes);
+        Assert.Equal(220, result.WriteBytes);
+    }
+
+    [Theory]
+    [InlineData("Permission denied")]
+    [InlineData("100,100\n")]
+    [InlineData(",101\n")]
+    [InlineData("100,101\napp 1 2 3\n")]
+    [InlineData("100,101\napp -1 2 3 4 5 6 7 8\n")]
+    public void Storaged_rejects_missing_or_invalid_measurements(string output) => Assert.Null(StoragedParser.ParseLatest(output));
+
+    [Fact]
+    public void Storaged_empty_valid_window_is_zero_activity()
+    {
+        var result = StoragedParser.ParseLatest("100,101\n");
+        Assert.NotNull(result);
+        Assert.Equal(0, result.ReadBytes);
+        Assert.Equal(0, result.WriteBytes);
+    }
+
+    [Fact]
     public void Devices_parses_connected_offline_and_unauthorized()
     {
         var result = AndroidParsers.ParseDevices("List of devices attached\nemulator-5554 device product:sdk model:Small_Phone transport_id:1\nABC offline model:Pixel_6\nXYZ unauthorized usb:1-2\n");

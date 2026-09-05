@@ -1,10 +1,14 @@
-<Window x:Class="AndroidDevMonitor.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:AndroidDevMonitor.App.Controls" xmlns:conv="clr-namespace:AndroidDevMonitor.App.Converters" Width="1600" Height="900" MinWidth="1280" MinHeight="720" WindowStartupLocation="CenterScreen" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}" FontSize="{Binding UiFontSize}" UseLayoutRounding="True" SnapsToDevicePixels="True" xmlns:app="clr-namespace:AndroidDevMonitor.App" Title="{Binding WindowTitle}">
+<Window x:Class="AndroidDevMonitor.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:AndroidDevMonitor.App.Controls" xmlns:conv="clr-namespace:AndroidDevMonitor.App.Converters" Width="1600" Height="900" MinWidth="1280" MinHeight="720" WindowStartupLocation="CenterScreen" WindowState="Maximized" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}" FontSize="{Binding UiFontSize}" UseLayoutRounding="True" SnapsToDevicePixels="True" xmlns:app="clr-namespace:AndroidDevMonitor.App" Title="{Binding WindowTitle}">
   <FrameworkElement.Resources>
     <ResourceDictionary>
       <conv:EqualityToVisibilityConverter x:Key="PageVisible" />
       <conv:NullToTextConverter x:Key="NullText" />
       <conv:MediaThumbnailConverter x:Key="MediaThumbnail" />
       <conv:PageSelectionBrushConverter x:Key="PageSelectionBrush" />
+      <conv:ProcessSelectionConverter x:Key="ProcessSelection" />
+      <conv:RatePairConverter x:Key="RatePair" />
+      <conv:NullToTextConverter x:Key="ProcessValue" MissingText="—" />
+      <conv:TabSelectionConverter x:Key="TabSelection" />
       <conv:NavigationIconConverter x:Key="NavigationIcon" />
       <Style x:Key="Panel" TargetType="{x:Type Border}">
         <Setter Property="Background" Value="{StaticResource PanelBrush}" />
@@ -49,6 +53,71 @@
         <Setter Property="Padding" Value="8,5" />
         <Setter Property="Foreground" Value="#D7E0E5" />
       </Style>
+      <Style x:Key="ProcessTabButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="FontSize" Value="12"/><Setter Property="Height" Value="30"/>
+        <Setter Property="Padding" Value="11,4"/><Setter Property="Margin" Value="0,0,5,0"/>
+        <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
+        <Style.Triggers>
+          <DataTrigger Value="True">
+            <DataTrigger.Binding><MultiBinding Converter="{StaticResource TabSelection}"><Binding Path="OverviewTab"/><Binding Path="CommandParameter" RelativeSource="{RelativeSource Self}"/></MultiBinding></DataTrigger.Binding>
+            <Setter Property="Background" Value="#123039"/><Setter Property="BorderBrush" Value="#27535E"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/><Setter Property="FontWeight" Value="SemiBold"/>
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+      <Style x:Key="ProcessHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+        <Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="#91A7B6"/><Setter Property="Background" Value="#111B22"/>
+        <Setter Property="Padding" Value="12,8"/><Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="BorderBrush" Value="#293B46"/>
+      </Style>
+      <Style x:Key="ProcessNumberHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ProcessHeader}">
+        <Setter Property="HorizontalContentAlignment" Value="Right"/>
+      </Style>
+      <Style x:Key="ProcessText" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Margin" Value="12,0"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridCell}}"/>
+        <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+        <Style.Triggers>
+          <Trigger Property="Text" Value="—"><Setter Property="Opacity" Value=".45"/></Trigger>
+        </Style.Triggers>
+      </Style>
+      <Style x:Key="ProcessNumber" TargetType="TextBlock" BasedOn="{StaticResource ProcessText}">
+        <Setter Property="TextAlignment" Value="Right"/>
+      </Style>
+      <Style x:Key="ProcessCommand" TargetType="TextBlock" BasedOn="{StaticResource ProcessText}">
+        <Setter Property="FontSize" Value="12"/><Setter Property="Opacity" Value=".72"/>
+      </Style>
+      <Style x:Key="ProcessScrollThumb" TargetType="Thumb">
+        <Setter Property="Background" Value="#3A505F"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Thumb">
+          <Border Background="{TemplateBinding Background}" CornerRadius="4" Margin="2"/>
+        </ControlTemplate></Setter.Value></Setter>
+        <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#607D8E"/></Trigger></Style.Triggers>
+      </Style>
+      <Style x:Key="ProcessScrollPage" TargetType="RepeatButton">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate></Setter.Value></Setter>
+      </Style>
+      <Style x:Key="ProcessScrollBar" TargetType="ScrollBar">
+        <Setter Property="Width" Value="12"/><Setter Property="Background" Value="#111B22"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
+          <Border Background="{TemplateBinding Background}">
+            <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" ViewportSize="{TemplateBinding ViewportSize}" Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" IsDirectionReversed="True">
+              <Track.DecreaseRepeatButton><RepeatButton x:Name="PageBack" Command="ScrollBar.PageUpCommand" Style="{StaticResource ProcessScrollPage}"/></Track.DecreaseRepeatButton>
+              <Track.Thumb><Thumb Style="{StaticResource ProcessScrollThumb}"/></Track.Thumb>
+              <Track.IncreaseRepeatButton><RepeatButton x:Name="PageForward" Command="ScrollBar.PageDownCommand" Style="{StaticResource ProcessScrollPage}"/></Track.IncreaseRepeatButton>
+            </Track>
+          </Border>
+          <ControlTemplate.Triggers><Trigger Property="Orientation" Value="Horizontal">
+            <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+            <Setter TargetName="PageBack" Property="Command" Value="ScrollBar.PageLeftCommand"/>
+            <Setter TargetName="PageForward" Property="Command" Value="ScrollBar.PageRightCommand"/>
+          </Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+        <Style.Triggers><Trigger Property="Orientation" Value="Horizontal"><Setter Property="Width" Value="Auto"/><Setter Property="Height" Value="12"/></Trigger></Style.Triggers>
+      </Style>
       <DataTemplate x:Key="MetricCardTemplate">
         <Border Margin="6" Style="{StaticResource Panel}">
           <Grid>
@@ -65,6 +134,107 @@
             <TextBlock Grid.Row="1" FontSize="27" Margin="0,10,0,1" Text="{Binding DisplayValue}" />
             <TextBlock Grid.Row="2" TextTrimming="CharacterEllipsis" Foreground="{StaticResource MutedBrush}" Text="{Binding SecondaryValue}" ToolTip="{Binding Source}" />
             <controls:Sparkline Grid.Row="3" MinHeight="58" Margin="0,7,-2,-3" ClipToBounds="True" Values="{Binding Values}" Minimum="{Binding ChartMinimum}" Maximum="{Binding ChartMaximum}" />
+          </Grid>
+        </Border>
+      </DataTemplate>
+      <DataTemplate x:Key="TrackingCardTemplate">
+        <Border Margin="6" Style="{StaticResource Panel}" MinHeight="190">
+          <Grid>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <DockPanel LastChildFill="False">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Top"><Ellipse Width="7" Height="7" Margin="0,0,8,0" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center"/><TextBlock FontSize="14" Text="{Binding DisplayTitle}"/></StackPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Width="28" Height="28" Padding="0" Margin="3,0,0,0" Content="A" Command="{Binding ShowActiveCommand}" ToolTip="{Binding PrimaryToolTip}">
+                  <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsBackground}" Value="False"><Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/><Setter Property="Foreground" Value="{StaticResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                </Button>
+                <Button Width="28" Height="28" Padding="0" Margin="5,0,0,0" Content="B" Command="{Binding ShowBackgroundCommand}" ToolTip="B: selected application, whether on screen or in the background">
+                  <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsBackground}" Value="True"><Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/><Setter Property="Foreground" Value="{StaticResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                </Button>
+              </StackPanel>
+            </DockPanel>
+            <TextBlock Grid.Row="1" FontSize="27" Margin="0,10,0,1" Text="{Binding Chart.DisplayValue}" ToolTip="{Binding Chart.Source}"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal"><TextBlock Text="{Binding PrimaryLabel}" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="{Binding PrimaryDescription}" TextTrimming="CharacterEllipsis" Foreground="{StaticResource MutedBrush}"/></StackPanel>
+            <Grid Grid.Row="3" Margin="0,3,0,2"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text="{Binding SecondaryLabel}" Foreground="{StaticResource MutedBrush}"/>
+              <ComboBox Grid.Column="1" Margin="4,0,4,0" Width="80" Height="23" Padding="5,1"
+                        ItemsSource="{Binding DataContext.BackgroundApplications, RelativeSource={RelativeSource AncestorType=Window}}"
+                        SelectedValuePath="PackageName" TextSearch.TextPath="DisplayName"
+                        SelectedValue="{Binding DataContext.BackgroundPackage, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}"
+                        AutomationProperties.Name="Application to monitor">
+                <ComboBox.Template>
+                  <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                      <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                    Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Padding="{TemplateBinding Padding}">
+                        <Grid>
+                          <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition x:Name="ArrowColumn" Width="0"/></Grid.ColumnDefinitions>
+                          <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" VerticalAlignment="Center"/>
+                          <TextBlock x:Name="DropDownArrow" Grid.Column="1" Text="⌄" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource MutedBrush}"/>
+                        </Grid>
+                      </ToggleButton>
+                      <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False">
+                        <Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="420" Background="{StaticResource Panel2Brush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="6" Padding="3">
+                          <ScrollViewer><ItemsPresenter/></ScrollViewer>
+                        </Border>
+                      </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="SelectedItem" Value="{x:Null}">
+                        <Setter TargetName="ArrowColumn" Property="Width" Value="22"/>
+                        <Setter TargetName="DropDownArrow" Property="Visibility" Value="Visible"/>
+                      </Trigger>
+                      <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".45"/></Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </ComboBox.Template>
+                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}" FontSize="11" TextTrimming="CharacterEllipsis"/></DataTemplate></ComboBox.ItemTemplate>
+                <ComboBox.ToolTip><ToolTip Background="{StaticResource Panel2Brush}" Foreground="{StaticResource TextBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                          Content="{Binding PlacementTarget.SelectedItem.Description, RelativeSource={RelativeSource Self}}"/></ComboBox.ToolTip>
+              </ComboBox>
+              <TextBlock Grid.Column="2" Text="{Binding Background.DisplayValue}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center">
+                <TextBlock.Style>
+                  <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding DataContext.BackgroundPackage, RelativeSource={RelativeSource AncestorType=Window}}" Value="{x:Null}">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                      </DataTrigger>
+                      <DataTrigger Binding="{Binding DataContext.BackgroundPackage, RelativeSource={RelativeSource AncestorType=Window}}" Value="">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </TextBlock.Style>
+              </TextBlock></Grid>
+            <controls:Sparkline Grid.Row="4" Margin="0,5,0,7" ClipToBounds="True" Values="{Binding Chart.Values}" Minimum="{Binding Chart.ChartMinimum}" Maximum="{Binding Chart.ChartMaximum}"/>
+          </Grid>
+        </Border>
+      </DataTemplate>
+      <DataTemplate x:Key="DiskCardTemplate">
+        <Border Margin="6" Style="{StaticResource Panel}" ToolTip="{Binding Source}">
+          <Grid>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="62" />
+            </Grid.RowDefinitions>
+            <DockPanel>
+              <Ellipse Width="7" Height="7" Margin="0,0,8,0" Fill="{StaticResource AccentBrush}" />
+              <TextBlock FontSize="14" Text="{Binding Title}" />
+            </DockPanel>
+            <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Height="33" Margin="0,10,0,1">
+              <TextBlock FontSize="27" Text="{Binding DisplayValue}" />
+            </Viewbox>
+            <Grid Grid.Row="2">
+              <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
+              <TextBlock Text="W · Write" Foreground="{StaticResource MutedBrush}" />
+              <TextBlock Grid.Column="1" Margin="9,0,0,0" Text="R · Read" Foreground="{StaticResource MutedBrush}" />
+            </Grid>
+            <Grid Grid.Row="3" Margin="0,7,-2,-3">
+              <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition Width="1" /><ColumnDefinition /></Grid.ColumnDefinitions>
+              <controls:Sparkline Margin="0,0,8,0" ClipToBounds="True" ShowMissingAsZero="True" Values="{Binding Write.Values}" Minimum="0" Maximum="{Binding ChartMaximum}" />
+              <Border Grid.Column="1" Background="{StaticResource BorderBrush}" />
+              <controls:Sparkline Grid.Column="2" Margin="8,0,0,0" ClipToBounds="True" ShowMissingAsZero="True" Values="{Binding Read.Values}" Minimum="0" Maximum="{Binding ChartMaximum}" />
+            </Grid>
           </Grid>
         </Border>
       </DataTemplate>
@@ -140,7 +310,7 @@
           </Border>
           <StackPanel Margin="11,0">
             <TextBlock Text="Android Dev Monitor" FontWeight="SemiBold" FontSize="15" />
-            <TextBlock Text="v1.0.0" Foreground="{StaticResource MutedBrush}" FontSize="11" />
+            <TextBlock Text="{Binding ApplicationVersion, StringFormat=v{0}}" Foreground="{StaticResource MutedBrush}" FontSize="11" />
           </StackPanel>
         </StackPanel>
         <ItemsControl Grid.Row="1" Margin="8,6" ItemsSource="{Binding NavigationItems}">
@@ -200,7 +370,24 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ComboBox>
-          <ComboBox Grid.Column="1" Margin="8,0" Height="55" VerticalContentAlignment="Center" ToolTip="Tracked application" ItemsSource="{Binding TrackedPackages}" SelectedItem="{Binding SelectedPackage}" />
+          <ComboBox x:Name="LaunchApplicationSelector" Grid.Column="1" Margin="8,0" Height="55" VerticalContentAlignment="Center"
+                    AutomationProperties.Name="Launch application" ToolTip="Choose an application to open on the Android device"
+                    ItemsSource="{Binding BackgroundPackages}" SelectedItem="{Binding SelectedPackage}"
+                    PreviewMouseLeftButtonUp="OnLaunchApplicationMouseUp" PreviewKeyDown="OnLaunchApplicationKeyDown">
+            <ComboBox.Tag>
+              <Border MinWidth="250" Padding="10,8" Margin="0,0,0,3" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                <DockPanel LastChildFill="False">
+                  <TextBlock Text="Launch application" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                  <Button DockPanel.Dock="Right" Width="20" Height="20" Margin="12,0,0,0" Padding="0" Content="i"
+                          BorderBrush="{StaticResource AccentBrush}" Foreground="{StaticResource AccentBrush}"
+                          AutomationProperties.Name="Launch application information" ToolTipService.InitialShowDelay="200" ToolTipService.ShowDuration="20000">
+                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="10"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border></ControlTemplate></Button.Template>
+                    <Button.ToolTip><ToolTip Background="{StaticResource Panel2Brush}" Foreground="{StaticResource TextBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" Padding="12"><TextBlock MaxWidth="310" Foreground="{StaticResource TextBrush}" TextWrapping="Wrap" Text="If you don't know what app this package is for, click any available package and the app should open on the main screen."/></ToolTip></Button.ToolTip>
+                  </Button>
+                </DockPanel>
+              </Border>
+            </ComboBox.Tag>
+          </ComboBox>
           <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
             <Button Content="{Binding LiveLabel}" Command="{Binding ToggleLiveCommand}" />
             <Border Background="#11272A" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="3">
@@ -235,44 +422,105 @@
               <ColumnDefinition />
               <ColumnDefinition />
             </Grid.ColumnDefinitions>
-            <ContentControl ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding CpuCard}" />
-            <ContentControl Grid.Column="1" ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding MemoryCard}" />
+            <ContentControl ContentTemplate="{StaticResource TrackingCardTemplate}" Content="{Binding CpuTracking}" />
+            <ContentControl Grid.Column="1" ContentTemplate="{StaticResource TrackingCardTemplate}" Content="{Binding MemoryTracking}" />
             <ContentControl Grid.Column="2" ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding GpuCard}" />
-            <ContentControl Grid.Column="3" ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding DiskCard}" />
+            <ContentControl Grid.Column="3" ContentTemplate="{StaticResource DiskCardTemplate}" Content="{Binding DiskCard}" />
           </Grid>
           <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="0">
             <Grid>
               <Grid.RowDefinitions>
-                <RowDefinition Height="48" />
+                <RowDefinition Height="52" />
                 <RowDefinition Height="*" />
               </Grid.RowDefinitions>
-              <Grid Margin="12,5">
+              <Grid Margin="12,8">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition />
-                  <ColumnDefinition Width="260" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="220" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal">
-                  <Button Content="Processes" CommandParameter="Processes" Command="{Binding SelectOverviewTabCommand}" />
-                  <Button Content="Performance" CommandParameter="Performance" Command="{Binding SelectOverviewTabCommand}" />
-                  <Button Content="Network" CommandParameter="Network" Command="{Binding SelectOverviewTabCommand}" />
-                  <Button Content="Storage" CommandParameter="Storage" Command="{Binding SelectOverviewTabCommand}" />
-                  <Button Content="Thermal" CommandParameter="Thermal" Command="{Binding SelectOverviewTabCommand}" />
-                  <Button Content="Logs" CommandParameter="Logs" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Processes" Style="{StaticResource ProcessTabButton}" CommandParameter="Processes" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Performance" Style="{StaticResource ProcessTabButton}" CommandParameter="Performance" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Network" Style="{StaticResource ProcessTabButton}" CommandParameter="Network" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Storage" Style="{StaticResource ProcessTabButton}" CommandParameter="Storage" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Thermal" Style="{StaticResource ProcessTabButton}" CommandParameter="Thermal" Command="{Binding SelectOverviewTabCommand}" />
+                  <Button Content="Logs" Style="{StaticResource ProcessTabButton}" CommandParameter="Logs" Command="{Binding SelectOverviewTabCommand}" />
                 </StackPanel>
-                <TextBox Grid.Column="1" VerticalAlignment="Center" ToolTip="Search name, package, or PID" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0"
+                            Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Processes}">
+                  <Ellipse Width="5" Height="5" Margin="0,0,6,0" VerticalAlignment="Center">
+                    <Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="{StaticResource SuccessBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsProcessTablePaused}" Value="True"><Setter Property="Fill" Value="#E5B260"/></DataTrigger></Style.Triggers></Style></Ellipse.Style>
+                  </Ellipse>
+                  <TextBlock Text="{Binding ProcessTableStatus}" Foreground="{StaticResource MutedBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,9,0" AutomationProperties.AutomationId="ProcessTableStatus"/>
+                  <Button Content="Start" MinWidth="50" Height="30" FontSize="12" Padding="9,4" Command="{Binding StartProcessTableCommand}" ToolTip="Resume live updates in the process table" AutomationProperties.AutomationId="ProcessTableStart"/>
+                  <Button Content="Stop" MinWidth="50" Height="30" FontSize="12" Padding="9,4" Command="{Binding StopProcessTableCommand}" ToolTip="Freeze the current process values and row order for inspection" AutomationProperties.AutomationId="ProcessTableStop"/>
+                </StackPanel>
+                <Border Grid.Column="2" Height="30" VerticalAlignment="Center" Background="#10191F" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6">
+                  <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" Background="Transparent" BorderThickness="0" Padding="0,4,8,4" VerticalContentAlignment="Center" FontSize="12" ToolTip="Search name, package, or PID" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="ProcessSearch"/>
+                    <TextBlock Grid.Column="1" Text="Search processes…" Foreground="{StaticResource MutedBrush}" FontSize="12" VerticalAlignment="Center" IsHitTestVisible="False">
+                      <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding SearchText}" Value=""><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+                    </TextBlock>
+                  </Grid>
+                </Border>
               </Grid>
-              <DataGrid Grid.Row="1" FrozenColumnCount="2" ItemsSource="{Binding ProcessRows}" SelectedItem="{Binding SelectedProcessRow}" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Processes}">
+              <DataGrid Grid.Row="1" FrozenColumnCount="2" BorderThickness="0" ColumnHeaderHeight="36" ColumnHeaderStyle="{StaticResource ProcessHeader}" HorizontalGridLinesBrush="#20313C"
+                        ItemsSource="{Binding ProcessRows}" SelectedItem="{Binding SelectedProcessRow}" AutomationProperties.AutomationId="ProcessTable" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Processes}">
+                <DataGrid.Style><Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}"><Setter Property="RowBackground" Value="#111B22"/><Setter Property="AlternatingRowBackground" Value="#141F27"/></Style></DataGrid.Style>
+                <DataGrid.Resources>
+                  <Style TargetType="ScrollBar" BasedOn="{StaticResource ProcessScrollBar}"/>
+                  <Style TargetType="ToolTip"><Setter Property="Background" Value="{StaticResource Panel2Brush}"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/><Setter Property="Padding" Value="10,6"/></Style>
+                </DataGrid.Resources>
+                <DataGrid.RowStyle>
+                  <Style TargetType="DataGridRow">
+                    <Setter Property="Foreground" Value="#D7E0E5"/>
+                    <Style.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#1C2D38"/></Trigger>
+                      <DataTrigger Value="True">
+                        <DataTrigger.Binding><MultiBinding Converter="{StaticResource ProcessSelection}"><Binding/><Binding Path="SelectedItem" RelativeSource="{RelativeSource AncestorType=DataGrid}"/></MultiBinding></DataTrigger.Binding>
+                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.CellStyle>
+                  <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                    <Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                    <Style.Triggers>
+                      <DataTrigger Value="True">
+                        <DataTrigger.Binding><MultiBinding Converter="{StaticResource ProcessSelection}"><Binding/><Binding Path="SelectedItem" RelativeSource="{RelativeSource AncestorType=DataGrid}"/></MultiBinding></DataTrigger.Binding>
+                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </DataGrid.CellStyle>
                 <DataGrid.Columns>
-                  <DataGridTextColumn Header="Group" Width="92" Binding="{Binding GroupText}" />
-                  <DataGridTemplateColumn Header="Name" SortMemberPath="Name" Width="230">
+                  <DataGridTemplateColumn Header="Group" Width="82" SortMemberPath="Group">
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate>
+                      <Border CornerRadius="4" Padding="6,3" Margin="12,0,4,0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="#21313D"/><Style.Triggers>
+                          <DataTrigger Binding="{Binding GroupText}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+                          <DataTrigger Binding="{Binding GroupText}" Value="Apps"><Setter Property="Background" Value="#163A3C"/></DataTrigger>
+                          <DataTrigger Binding="{Binding GroupText}" Value="Background"><Setter Property="Background" Value="#332A40"/></DataTrigger>
+                        </Style.Triggers></Style></Border.Style>
+                        <TextBlock Text="{Binding GroupText}" FontSize="10" Foreground="#B6CCD9"/>
+                      </Border>
+                    </DataTemplate></DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="Name" SortMemberPath="Name" Width="1.2*" MinWidth="200">
                     <DataGridTemplateColumn.CellTemplate>
                       <DataTemplate>
-                        <Grid>
+                        <Grid Margin="10,0,12,0">
                           <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="23" />
+                            <ColumnDefinition Width="18" />
                             <ColumnDefinition Width="*" />
                           </Grid.ColumnDefinitions>
-                          <Button Width="20" Height="20" Padding="0" Margin="0" BorderThickness="0" Content="{Binding ExpanderGlyph}" Command="{Binding DataContext.ToggleProcessGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+                          <Button Width="18" Height="22" VerticalAlignment="Center" Padding="0" Margin="0" BorderThickness="0" Content="{Binding ExpanderGlyph}" Command="{Binding DataContext.ToggleProcessGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                             <FrameworkElement.Style>
                               <Style BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -284,7 +532,7 @@
                               </Style>
                             </FrameworkElement.Style>
                           </Button>
-                          <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding DisplayName}">
+                          <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding DisplayName}" ToolTip="{Binding Name}" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridCell}}">
                             <FrameworkElement.Style>
                               <Style TargetType="{x:Type TextBlock}">
                                 <Setter Property="FontWeight" Value="Normal" />
@@ -300,19 +548,15 @@
                       </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                   </DataGridTemplateColumn>
-                  <DataGridTextColumn Header="Package / command" Width="235" Binding="{Binding PackageOrCommand}" />
-                  <DataGridTextColumn Header="PID" Width="72" Binding="{Binding Pid, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="Status" Width="116" Binding="{Binding Status}" />
-                  <DataGridTextColumn Header="CPU %" Width="78" Binding="{Binding CpuPercent, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="RAM" Width="90" Binding="{Binding RssBytes, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="GPU %" Width="76" Binding="{Binding GpuPercent, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="Disk Read" Width="95" Binding="{Binding DiskReadBytesPerSecond, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="Disk Write" Width="95" Binding="{Binding DiskWriteBytesPerSecond, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="Network RX" Width="100" Binding="{Binding NetworkRxBytesPerSecond, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="Network TX" Width="100" Binding="{Binding NetworkTxBytesPerSecond, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="FPS" Width="65" Binding="{Binding Fps, Converter={StaticResource NullText}}" />
-                  <DataGridTextColumn Header="Battery impact" Width="105" Binding="{Binding BatteryImpact}" />
-                  <DataGridTextColumn Header="Thermal" Width="85" Binding="{Binding ThermalRelation}" />
+                  <DataGridTextColumn Header="Package / command" Width="1.6*" MinWidth="200" ElementStyle="{StaticResource ProcessCommand}" Binding="{Binding PackageOrCommand}" />
+                  <DataGridTextColumn Header="PID" Width="62" ElementStyle="{StaticResource ProcessNumber}" HeaderStyle="{StaticResource ProcessNumberHeader}" Binding="{Binding Pid, Converter={StaticResource ProcessValue}}" />
+                  <DataGridTextColumn Header="Status" Width="108" ElementStyle="{StaticResource ProcessCommand}" Binding="{Binding Status}" />
+                  <DataGridTextColumn Header="CPU %" Width="70" ElementStyle="{StaticResource ProcessNumber}" HeaderStyle="{StaticResource ProcessNumberHeader}" Binding="{Binding CpuPercent, Converter={StaticResource ProcessValue}}" />
+                  <DataGridTextColumn Header="RAM" Width="92" ElementStyle="{StaticResource ProcessNumber}" HeaderStyle="{StaticResource ProcessNumberHeader}" Binding="{Binding RssBytes, Converter={StaticResource ProcessValue}}" />
+                  <DataGridTextColumn Header="GPU %" Width="70" ElementStyle="{StaticResource ProcessNumber}" HeaderStyle="{StaticResource ProcessNumberHeader}" Binding="{Binding GpuPercent, Converter={StaticResource ProcessValue}}" />
+                  <DataGridTextColumn Header="Disk I/O · W/R" Width="174" ElementStyle="{StaticResource ProcessNumber}" HeaderStyle="{StaticResource ProcessNumberHeader}" SortMemberPath="DiskWriteBytesPerSecond">
+                    <DataGridTextColumn.Binding><MultiBinding Converter="{StaticResource RatePair}"><Binding Path="DiskWriteBytesPerSecond"/><Binding Path="DiskReadBytesPerSecond"/></MultiBinding></DataGridTextColumn.Binding>
+                  </DataGridTextColumn>
                 </DataGrid.Columns>
               </DataGrid>
               <Grid Row="1" Visibility="{Binding OverviewTab, Converter={StaticResource PageVisible}, ConverterParameter=Performance}">
@@ -557,7 +801,7 @@
             <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="0">
               <Grid>
                 <Grid.RowDefinitions>
-                  <RowDefinition Height="250" />
+                  <RowDefinition Height="190" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="Auto" />
                   <RowDefinition Height="*" />
@@ -907,7 +1151,7 @@
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="250" />
+            <RowDefinition Height="190" />
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <DockPanel>

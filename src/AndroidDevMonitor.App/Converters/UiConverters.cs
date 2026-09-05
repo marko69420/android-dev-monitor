@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using AndroidDevMonitor.App.ViewModels;
+using AndroidDevMonitor.Core.Formatting;
 
 namespace AndroidDevMonitor.App.Converters;
 
@@ -14,7 +16,8 @@ public sealed class EqualityToVisibilityConverter : IValueConverter
 }
 public sealed class NullToTextConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch { null => "N/A", double d => d.ToString(parameter?.ToString() ?? "N1", culture), long l => Format(l), _ => value.ToString() ?? "N/A" };
+    public string MissingText { get; set; } = "N/A";
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch { null => MissingText, double d => d.ToString(parameter?.ToString() ?? "N1", culture), long l => Format(l), _ => value.ToString() ?? MissingText };
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
     private static string Format(long bytes) { string[] units = ["B", "KB", "MB", "GB"]; var n = (double)bytes; var i = 0; while (n >= 1024 && i < units.Length - 1) { n /= 1024; i++; } return $"{n:N1} {units[i]}"; }
 }
@@ -30,6 +33,39 @@ public sealed class PageSelectionBrushConverter : IMultiValueConverter
         string.Equals(values[0]?.ToString(), values[1]?.ToString(), StringComparison.Ordinal)
             ? SelectedBrush
             : Brushes.Transparent;
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        targetTypes.Select(_ => Binding.DoNothing).ToArray();
+}
+
+public sealed class ProcessSelectionConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) =>
+        values.Length >= 2 && values[0] is ProcessDisplayRow row && values[1] is ProcessDisplayRow selected &&
+        (row.Key == selected.Key || row.ParentKey == selected.Key);
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        targetTypes.Select(_ => Binding.DoNothing).ToArray();
+}
+
+public sealed class RatePairConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        var first = values.ElementAtOrDefault(0) as double?;
+        var second = values.ElementAtOrDefault(1) as double?;
+        if (first is null && second is null) return "—";
+        return $"{(first is null ? "—" : UnitFormatter.Rate(first))} / {(second is null ? "—" : UnitFormatter.Rate(second))}";
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        targetTypes.Select(_ => Binding.DoNothing).ToArray();
+}
+
+public sealed class TabSelectionConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture) =>
+        values.Length == 2 && values[0] is string selected && values[1] is string tab && selected == tab;
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
         targetTypes.Select(_ => Binding.DoNothing).ToArray();

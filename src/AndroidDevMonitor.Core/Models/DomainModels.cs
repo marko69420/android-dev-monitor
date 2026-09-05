@@ -71,7 +71,12 @@ public sealed record MetricSample(
     string? NetworkType = null,
     long? PackageCodeBytes = null,
     long? PackageDataBytes = null,
-    long? PackageCacheBytes = null);
+    long? PackageCacheBytes = null,
+    string? GpuSource = null,
+    Availability? GpuAvailability = null,
+    double? DeviceDiskReadBytesPerSecond = null,
+    double? DeviceDiskWriteBytesPerSecond = null,
+    string? DeviceDiskSource = null);
 
 public sealed record AndroidProcess(
     int Pid,

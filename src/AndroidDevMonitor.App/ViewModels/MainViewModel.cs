@@ -496,13 +496,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	public IReadOnlyList<AutomationStepKind> AutomationStepKinds { get; } = Enum.GetValues<AutomationStepKind>();
 
-	public MetricCardViewModel CpuCard { get; } = new MetricCardViewModel("CPU usage", "%", 0.0, 100.0);
+	public MetricCardViewModel CpuCard => CpuTracking.Total;
 
-	public MetricCardViewModel MemoryCard { get; } = new MetricCardViewModel("Memory", "%", 0.0, 100.0);
+	public MetricCardViewModel MemoryCard => MemoryTracking.Total;
 
 	public MetricCardViewModel GpuCard { get; } = new MetricCardViewModel("GPU", "%", 0.0, 100.0);
 
-	public MetricCardViewModel DiskCard { get; } = new MetricCardViewModel("Disk I/O", "B/s", 0.0);
+	public DiskMetricCardViewModel DiskCard { get; } = new();
 
 	public LiveChartViewModel CpuChart { get; } = new LiveChartViewModel("CPU", "Device", "Selected app", "%", 0.0, 100.0);
 
@@ -516,7 +516,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	public LiveChartViewModel JankChart { get; } = new LiveChartViewModel("Jank", "Jank", "", "%", 0.0, 100.0);
 
-	public LiveChartViewModel DiskChart { get; } = new LiveChartViewModel("Selected-process I/O", "Read", "Write", "B/s", 0.0);
+	public LiveChartViewModel DiskChart { get; } = new LiveChartViewModel("Disk I/O · app or device", "Read", "Write", "B/s", 0.0);
 
 	public LiveChartViewModel NetworkChart { get; } = new LiveChartViewModel("Device-total network", "RX", "TX", "B/s", 0.0);
 
@@ -2256,8 +2256,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			"Overview", "Instances", "Media", "Performance", "Logs", "File Explorer", "Network", "ADB Shell", "Automation", "Alerts",
 			"Settings"
 		});
-		TrackedPackages.Add("com.company.mygame");
-		SelectedPackage = TrackedPackages[0];
+		if (isDemo) { TrackedPackages.Add("com.company.mygame"); SelectedPackage = TrackedPackages[0]; }
 		PerformanceCharts = new global::_003C_003Ez__ReadOnlyArray<LiveChartViewModel>(new LiveChartViewModel[11]
 		{
 			CpuChart, DeviceMemoryChart, AppMemoryChart, FpsChart, FrameTimeChart, JankChart, DiskChart, NetworkChart, AppNetworkChart, ThermalChart,
@@ -2366,7 +2365,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			{
 				_expandedProcessGroups.Remove(row.Key);
 			}
-			ApplyProcessRowSnapshot(BuildProcessRows(FilterProcesses(_allProcesses)));
+			ApplyProcessFilter();
 		}
 	}
 
@@ -3887,6 +3886,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 		ConnectionText = "Connecting";
 		_liveSamples.Clear();
+		ResetProcessTable();
+		CpuCard.Clear(); MemoryCard.Clear(); GpuCard.Clear(); DiskCard.Clear();
+		ResetTracking();
 		LiveSamples.Clear();
 		Processes.Clear();
 		ProcessRows.Clear();
@@ -3946,6 +3948,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			_contextCts = new CancellationTokenSource();
 			CancellationToken token = _contextCts.Token;
 			_lastSampleUtc = default(DateTimeOffset);
+			GpuCard.Clear(); DiskCard.Clear();
 			_ = CollectAsync(SelectedDevice, _session, token);
 			_ = ProcessLoopAsync(SelectedDevice, token);
 			_ = TimerLoopAsync(_session, token);
@@ -4040,25 +4043,51 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 	private async Task RefreshProcessesAsync(AndroidDevice device, CancellationToken token)
 	{
 		IReadOnlyList<AndroidProcess> source = await _monitoring.GetProcessesAsync(device, token);
-		if (device.Serial != SelectedDevice?.Serial)
+		if (token.IsCancellationRequested || device.Serial != SelectedDevice?.Serial)
 		{
 			return;
 		}
 		List<AndroidProcess> ordered = (from x in source
 			orderby x.CpuPercent ?? (-1.0) descending, GroupRank(x.Group)
 			select x).ToList();
-		string foreground = null;
-		if (!IsDemo && _packageAutoSelectedForSerial != device.Serial)
+		string foreground = IsDemo ? ordered.FirstOrDefault(p => p.PackageName != null)?.PackageName : null;
+		if (!IsDemo)
 		{
 			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(device.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "dumpsys", "activity", "activities" }), TimeSpan.FromSeconds(10L), token);
 			if (adbCommandResult.Success)
 			{
-				foreground = Regex.Match(adbCommandResult.StandardOutput, "mResumedActivity[^\\n]*\\s(?<package>[A-Za-z][\\w]*(?:\\.[\\w]+)+)/").Groups["package"].Value;
+				foreground = AndroidDevMonitor.Adb.Parsers.ForegroundParser.Parse(adbCommandResult.StandardOutput);
 			}
-			_packageAutoSelectedForSerial = device.Serial;
+		}
+		string[] installed = null;
+		if (_installedPackagesSerial != device.Serial)
+		{
+			if (IsDemo) installed = ordered
+				.Where(p => p.Group == ProcessGroup.Apps || p.PackageName is "com.android.chrome" or "com.android.vending")
+				.Select(p => p.PackageName).Where(p => p != null).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+			else
+			{
+				var packages = await _adb.ExecuteAsync(device.Serial, new[] { "shell", "cmd", "package", "query-activities", "--brief", "--components", "--user", "current", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER" }, TimeSpan.FromSeconds(10), token);
+				if (packages.Success) installed = packages.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+					.Where(p => Regex.IsMatch(p, @"^[A-Za-z_][A-Za-z0-9_.]*/[A-Za-z0-9_.$]+$", RegexOptions.CultureInvariant))
+					.Select(p => p[..p.IndexOf('/')]).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+			}
 		}
 		await ((DispatcherObject)Application.Current).Dispatcher.InvokeAsync((Action)delegate
 		{
+			if (token.IsCancellationRequested || device.Serial != SelectedDevice?.Serial) return;
+			if (installed is not null)
+			{
+				BackgroundPackages.Clear();
+				BackgroundApplications.Clear();
+				foreach (var package in installed)
+				{
+					BackgroundPackages.Add(package);
+					BackgroundApplications.Add(CreateApplicationChoice(package));
+				}
+				_installedPackagesSerial = device.Serial;
+			}
+			if (IsLive) UpdateTracking(ordered, foreground);
 			_allProcesses = ordered;
 			if (ordered.Any((AndroidProcess process) => process.CpuPercent.HasValue))
 			{
@@ -4068,8 +4097,11 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			{
 				_processSnapshotCpuTotal = null;
 			}
-			ApplyProcessSnapshot(ordered);
-			ApplyProcessRowSnapshot(BuildProcessRows(FilterProcesses(ordered)));
+			if (!IsProcessTablePaused)
+			{
+				ApplyProcessSnapshot(ordered);
+				ApplyProcessFilter();
+			}
 			EvaluateSelectedProcessAlert(ordered);
 			foreach (string item in (from x in ordered
 				select x.PackageName into x
@@ -4081,8 +4113,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 					TrackedPackages.Add(item);
 				}
 			}
-			if (!string.IsNullOrWhiteSpace(foreground) && TrackedPackages.Contains(foreground))
+			if (_packageAutoSelectedForSerial != device.Serial && !string.IsNullOrWhiteSpace(foreground) && TrackedPackages.Contains(foreground))
 			{
+				_packageAutoSelectedForSerial = device.Serial;
 				SelectedPackage = foreground;
 			}
 		}, (DispatcherPriority)4);
@@ -4125,7 +4158,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	private void ApplyProcessFilter()
 	{
-		ApplyProcessRowSnapshot(BuildProcessRows(FilterProcesses(_allProcesses)));
+		ApplyProcessRowSnapshot(BuildProcessRows(FilterProcesses(_frozenProcesses ?? _allProcesses)));
 	}
 
 	private IReadOnlyList<AndroidProcess> FilterProcesses(IReadOnlyList<AndroidProcess> source)
@@ -4135,7 +4168,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		{
 			return source.Where(delegate(AndroidProcess process)
 			{
-				if (!process.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+				if (!process.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+					&& !FriendlyProcessName(process.Name).Contains(search, StringComparison.OrdinalIgnoreCase))
 				{
 					string? packageName = process.PackageName;
 					if (packageName == null || !packageName.Contains(search, StringComparison.OrdinalIgnoreCase))
@@ -4204,9 +4238,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 				Key = @group.Key,
 				Items = @group.ToArray()
 			} into @group
-			orderby (@group.Items.Sum((AndroidProcess process) => process.CpuPercent.GetValueOrDefault()) > 0.05 ? 0 : 1),
-				@group.Items.Sum((AndroidProcess process) => process.CpuPercent.GetValueOrDefault()) descending,
-				GroupRank(@group.Items[0].Group)
+			orderby @group.Items.Min((AndroidProcess process) => GroupRank(process.Group)),
+				(@group.Items.Sum((AndroidProcess process) => process.CpuPercent.GetValueOrDefault()) > 0.05 ? 0 : 1),
+				@group.Items.Sum((AndroidProcess process) => process.CpuPercent.GetValueOrDefault()) descending
 			select @group).ThenBy(group => FriendlyGroupName(group.Key, group.Items), StringComparer.OrdinalIgnoreCase);
 		List<ProcessDisplayRow> list = new List<ProcessDisplayRow>();
 		if (unattributed != null)
@@ -4235,16 +4269,16 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 				AndroidProcess[] array2 = array;
 				foreach (AndroidProcess androidProcess2 in array2)
 				{
-					list.Add(ToLeafRow(androidProcess2, $"child:{item.Key}:{androidProcess2.Pid}:{androidProcess2.StartTicks}", DescribeTask(androidProcess2), isChild: true));
+					list.Add(ToLeafRow(androidProcess2, $"child:{item.Key}:{androidProcess2.Pid}:{androidProcess2.StartTicks}", DescribeTask(androidProcess2), isChild: true, parentKey: text2));
 				}
 			}
 		}
 		return list;
 	}
 
-	private static ProcessDisplayRow ToLeafRow(AndroidProcess process, string key, string name, bool isChild)
+	private static ProcessDisplayRow ToLeafRow(AndroidProcess process, string key, string name, bool isChild, string? parentKey = null)
 	{
-		return new ProcessDisplayRow(key, process.Group, name, process.PackageName ?? process.CommandLine, process.Pid, process.Status, process.CpuPercent, process.RssBytes, process.GpuPercent, process.DiskReadBytesPerSecond, process.DiskWriteBytesPerSecond, process.NetworkRxBytesPerSecond, process.NetworkTxBytesPerSecond, process.Fps, process.BatteryImpact ?? "N/A", process.ThermalRelation ?? "N/A", CanExpand: false, IsExpanded: false, isChild, process.PackageName);
+		return new ProcessDisplayRow(key, process.Group, name, process.PackageName ?? process.CommandLine, process.Pid, process.Status, process.CpuPercent, process.RssBytes, process.GpuPercent, process.DiskReadBytesPerSecond, process.DiskWriteBytesPerSecond, process.NetworkRxBytesPerSecond, process.NetworkTxBytesPerSecond, process.Fps, process.BatteryImpact ?? "N/A", process.ThermalRelation ?? "N/A", CanExpand: false, IsExpanded: false, isChild, process.PackageName, parentKey);
 	}
 
 	private void ApplyProcessRowSnapshot(IReadOnlyList<ProcessDisplayRow> snapshot)
@@ -4462,7 +4496,82 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	private static string FriendlyProcessName(string name)
 	{
-		if (name.StartsWith("android.system.suspend@", StringComparison.OrdinalIgnoreCase))
+		name = name.Trim();
+		string task = name.Trim('[', ']').ToLowerInvariant();
+		string? description = task switch
+		{
+			_ when task.StartsWith("jbd2/", StringComparison.Ordinal) => "Disk journal",
+			_ when task.StartsWith("irq/", StringComparison.Ordinal) => "Hardware interrupt handler",
+			_ when task.StartsWith("idle_inject/", StringComparison.Ordinal) => "CPU idle control",
+			_ when task.StartsWith("kworker/", StringComparison.Ordinal) => "System background worker",
+			_ when task.StartsWith("rcu", StringComparison.Ordinal) => "Kernel synchronization",
+			_ when task.StartsWith("migration/", StringComparison.Ordinal) => "CPU task balancing",
+			_ when task.StartsWith("ksoftirqd/", StringComparison.Ordinal) => "Deferred interrupt handler",
+			_ when task.StartsWith("kswapd", StringComparison.Ordinal) => "Memory reclaim",
+			_ when task.StartsWith("kcompactd", StringComparison.Ordinal) => "Memory compaction",
+			_ when task.StartsWith("cpuhp/", StringComparison.Ordinal) => "CPU availability manager",
+			"hwrng" => "Hardware random number generator",
+			"kthreadd" => "Kernel task manager",
+			"kauditd" => "Security event logging",
+			"khungtaskd" => "Unresponsive task monitor",
+			"khugepaged" => "Large memory page manager",
+			"oom_reaper" => "Low memory cleanup",
+			"watchdogd" => "System health watchdog",
+			"acpi_thermal_pm" => "Hardware temperature management",
+			"dmabuf-deferred-free-worker" => "Shared buffer cleanup",
+			"pool_workqueue_release" => "System worker cleanup",
+			"kernel" => "Kernel and interrupts",
+			"init" => "Android startup manager",
+			"surfaceflinger" => "Android display compositor",
+			"audioserver" => "Android audio service",
+			"cameraserver" => "Android camera service",
+			"netd" => "Android network service",
+			"iptables-restore" => "Network firewall rules (IPv4)",
+			"ip6tables-restore" => "Network firewall rules (IPv6)",
+			"installd" => "App installer",
+			"incidentd" => "System diagnostic reports",
+			"storaged" => "Storage monitoring",
+			"vold" => "Storage manager",
+			"ueventd" => "Device event manager",
+			"gatekeeperd" => "Device unlock verification",
+			"lmkd" => "Low memory manager",
+			"artd" => "App code optimization",
+			"keystore2" => "Encryption key storage",
+			"credstore" => "Credential storage",
+			"drmserver" => "Protected media service",
+			"mediaserver" => "Media playback service",
+			"media.extractor" => "Media file reader",
+			"media.metrics" => "Media playback statistics",
+			"media.swcodec" => "Software media processing",
+			"gpuservice" => "Graphics service",
+			"tombstoned" => "Crash report service",
+			"traced" => "Performance tracing service",
+			"traced_probes" => "Performance trace collector",
+			"wificond" => "Wi-Fi control service",
+			"wpa_supplicant" => "Wi-Fi authentication",
+			"mdnsd" => "Local network discovery",
+			"prng_seeder" => "Random number initialization",
+			"bt_vhci_forwarder" => "Emulator Bluetooth service",
+			"qemu-props" => "Emulator settings service",
+			"adbd" => "Android debugging service",
+			"system_server" => "Core Android services",
+			"servicemanager" => "Android service manager",
+			"hwservicemanager" => "Hardware service manager",
+			"vndservicemanager" => "Vendor service manager",
+			"logd" => "System log service",
+			"logcat" => "System log reader",
+			"statsd" => "System statistics service",
+			"zygote" or "zygote64" => "Application process launcher",
+			"webview_zygote" => "Web content process launcher",
+			"ps" => "Process list reader",
+			"sh" => "Command shell",
+			_ => null
+		};
+		if (description != null)
+		{
+			return description;
+		}
+		if (name.StartsWith("android.system.suspend", StringComparison.OrdinalIgnoreCase))
 		{
 			return "System suspend service";
 		}
@@ -4474,24 +4583,15 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		{
 			return "Android hardware service";
 		}
-		if (name.Equals("[acpi_thermal_pm]", StringComparison.OrdinalIgnoreCase))
-		{
-			return "ACPI thermal manager";
-		}
-		return name switch
-		{
-			"kernel" => "Kernel and interrupts", 
-			"init" => "Android init", 
-			"surfaceflinger" => "Android display compositor", 
-			"audioserver" => "Android audio service", 
-			"cameraserver" => "Android camera service", 
-			"netd" => "Android network service", 
-			_ => name.StartsWith('[') ? name.Trim('[', ']') : FriendlyPackageFallback(name), 
-		};
+		return name.StartsWith('[') ? "Kernel background task" : FriendlyPackageFallback(name);
 	}
 
 	private static string DescribeTask(AndroidProcess process)
 	{
+		if (process.PackageName == null)
+		{
+			return FriendlyProcessName(process.Name);
+		}
 		if (process.Name.Contains("persistent", StringComparison.OrdinalIgnoreCase))
 		{
 			return "Persistent background service";
@@ -4511,14 +4611,6 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		if (process.Name.Contains(':'))
 		{
 			return FriendlyPackageFallback(process.Name.Substring(process.Name.LastIndexOf(':') + 1)) + " service";
-		}
-		if (process.Name.StartsWith("[kworker", StringComparison.OrdinalIgnoreCase))
-		{
-			return "Kernel worker " + process.Name.Trim('[', ']');
-		}
-		if (process.Name.StartsWith("[rcu", StringComparison.OrdinalIgnoreCase))
-		{
-			return "Kernel RCU task " + process.Name.Trim('[', ']');
 		}
 		if (process.PackageName != null && string.Equals(NormalizePackage(process.PackageName), process.PackageName, StringComparison.Ordinal) && string.Equals(process.Name, process.PackageName, StringComparison.Ordinal))
 		{
@@ -4572,9 +4664,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 	{
 		return group switch
 		{
-			ProcessGroup.Apps => 0, 
-			ProcessGroup.Background => 1, 
-			ProcessGroup.System => 2, 
+			ProcessGroup.System => 0,
+			ProcessGroup.Apps => 1,
+			ProcessGroup.Background => 2,
 			_ => 3, 
 		};
 	}
@@ -4632,16 +4724,21 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		long? deviceMemoryUsedBytes = s.DeviceMemoryUsedBytes;
 		double? value = ((deviceMemoryUsedBytes.HasValue && num3 > 0) ? new double?((double)deviceMemoryUsedBytes.Value * 100.0 / (double)num3.Value) : ((double?)null));
 		MemoryCard.Push(value, (!deviceMemoryUsedBytes.HasValue) ? "N/A" : ((!num3.HasValue) ? FormatBytes(deviceMemoryUsedBytes) : (FormatBytes(deviceMemoryUsedBytes) + " / " + FormatBytes(num3))), (!s.ProcessPssBytes.HasValue) ? (SelectedPackage + " RSS: " + FormatBytes(s.ProcessRssBytes)) : (SelectedPackage + " PSS: " + FormatBytes(s.ProcessPssBytes)), s.Source);
-		GpuCard.Push(s.GpuPercent, (!s.GpuPercent.HasValue) ? "N/A" : $"{s.GpuPercent:N1}%", (!s.GpuPercent.HasValue) ? "Unsupported on this target" : $"{SelectedPackage}: {s.GpuPercent:N1}%", (!s.GpuPercent.HasValue) ? "No supported GPU provider" : s.Source);
-		double? value2 = ((!s.DiskReadBytesPerSecond.HasValue && !s.DiskWriteBytesPerSecond.HasValue) ? ((double?)null) : new double?(s.DiskReadBytesPerSecond.GetValueOrDefault() + s.DiskWriteBytesPerSecond.GetValueOrDefault()));
-		DiskCard.Push(value2, (!value2.HasValue) ? "N/A" : ("R " + FormatRate(s.DiskReadBytesPerSecond)), "W " + FormatRate(s.DiskWriteBytesPerSecond), s.Source);
+		GpuCard.Push(s.GpuPercent, s.GpuPercent.HasValue ? $"{s.GpuPercent:N1}%" : s.GpuAvailability == Availability.Waiting ? "Waiting" : "N/A",
+			s.GpuSource ?? (IsDemo ? "Demo GPU" : "Unsupported on this target"), s.GpuSource ?? s.Source);
+		var deviceDisk = s.DeviceDiskSource is not null;
+		if (DiskCard.Title.StartsWith("Device", StringComparison.Ordinal) != deviceDisk) DiskChart.Clear();
+		DiskCard.Push(deviceDisk ? s.DeviceDiskWriteBytesPerSecond : s.DiskWriteBytesPerSecond,
+			deviceDisk ? s.DeviceDiskReadBytesPerSecond : s.DiskReadBytesPerSecond, s.DeviceDiskSource);
 		CpuChart.Push(s.TimestampUtc, num2, s.ProcessCpuPercent);
 		DeviceMemoryChart.Push(s.TimestampUtc, s.DeviceMemoryUsedBytes, s.DeviceMemoryAvailableBytes);
 		AppMemoryChart.Push(s.TimestampUtc, s.ProcessRssBytes, s.ProcessPssBytes, preserveMissing: false);
 		FpsChart.Push(s.TimestampUtc, s.Fps, null, preserveMissing: false);
 		FrameTimeChart.Push(s.TimestampUtc, s.FrameTimeP95Ms, null, preserveMissing: false);
 		JankChart.Push(s.TimestampUtc, s.JankPercent, null, preserveMissing: false);
-		DiskChart.Push(s.TimestampUtc, s.DiskReadBytesPerSecond, s.DiskWriteBytesPerSecond);
+		DiskChart.Push(s.TimestampUtc, deviceDisk ? s.DeviceDiskReadBytesPerSecond : s.DiskReadBytesPerSecond,
+			deviceDisk ? s.DeviceDiskWriteBytesPerSecond : s.DiskWriteBytesPerSecond);
+		DiskChart.CurrentText = (deviceDisk ? "Device · " : "App · ") + DiskChart.CurrentText;
 		NetworkChart.Push(s.TimestampUtc, s.NetworkRxBytesPerSecond, s.NetworkTxBytesPerSecond);
 		AppNetworkChart.Push(s.TimestampUtc, s.AppNetworkRxBytesPerSecond, s.AppNetworkTxBytesPerSecond);
 		ThermalChart.Push(s.TimestampUtc, s.TemperatureCelsius, null, preserveMissing: false);
@@ -4697,12 +4794,15 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 				NetworkTxBytesPerSecond = s.AppNetworkTxBytesPerSecond,
 				Fps = s.Fps
 			};
-			AndroidProcess androidProcess = Processes.FirstOrDefault((AndroidProcess p) => p.Pid == current.Pid);
-			if ((object)androidProcess != null)
+			if (!IsProcessTablePaused)
 			{
-				Processes[Processes.IndexOf(androidProcess)] = _allProcesses[num6];
+				AndroidProcess androidProcess = Processes.FirstOrDefault((AndroidProcess p) => p.Pid == current.Pid);
+				if ((object)androidProcess != null)
+				{
+					Processes[Processes.IndexOf(androidProcess)] = _allProcesses[num6];
+				}
+				ApplyProcessFilter();
 			}
-			ApplyProcessRowSnapshot(BuildProcessRows(FilterProcesses(_allProcesses)));
 		}
 		EvaluateAlertCondition(
 			"HighCpu",
@@ -5116,7 +5216,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 				StoredCpuChart.Push(item.TimestampUtc, item.DeviceCpuPercent, item.ProcessCpuPercent);
 				StoredMemoryChart.Push(item.TimestampUtc, item.DeviceMemoryUsedBytes, item.ProcessPssBytes ?? item.ProcessRssBytes);
 				StoredFpsFrameChart.Push(item.TimestampUtc, item.Fps, item.FrameTimeP95Ms);
-				StoredDiskChart.Push(item.TimestampUtc, item.DiskReadBytesPerSecond, item.DiskWriteBytesPerSecond);
+				StoredDiskChart.Push(item.TimestampUtc,
+					item.DeviceDiskSource is null ? item.DiskReadBytesPerSecond : item.DeviceDiskReadBytesPerSecond,
+					item.DeviceDiskSource is null ? item.DiskWriteBytesPerSecond : item.DeviceDiskWriteBytesPerSecond);
 				StoredNetworkChart.Push(item.TimestampUtc, item.NetworkRxBytesPerSecond, item.NetworkTxBytesPerSecond);
 				StoredThermalChart.Push(item.TimestampUtc, item.TemperatureCelsius);
 			}

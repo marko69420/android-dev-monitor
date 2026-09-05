@@ -30,20 +30,27 @@ public sealed class Sparkline : FrameworkElement
     public IEnumerable? Values { get => (IEnumerable?)GetValue(ValuesProperty); set => SetValue(ValuesProperty, value); }
     public double Minimum { get => (double)GetValue(MinimumProperty); set => SetValue(MinimumProperty, value); }
     public double Maximum { get => (double)GetValue(MaximumProperty); set => SetValue(MaximumProperty, value); }
+    public static readonly DependencyProperty ShowMissingAsZeroProperty = DependencyProperty.Register(
+        nameof(ShowMissingAsZero), typeof(bool), typeof(Sparkline),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+    public bool ShowMissingAsZero { get => (bool)GetValue(ShowMissingAsZeroProperty); set => SetValue(ShowMissingAsZeroProperty, value); }
 
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
         if (ActualWidth <= 0 || ActualHeight <= 0) return;
 
-        var numbers = Values?.Cast<object>().Select(Convert.ToDouble).Where(double.IsFinite).ToArray() ?? [];
+        var numbers = Values?.Cast<object>().Select(Convert.ToDouble).ToArray() ?? [];
+        if (ShowMissingAsZero)
+            numbers = numbers.Length == 0 ? [0, 0] : numbers.Select(value => double.IsFinite(value) ? value : 0).ToArray();
+        var valid = numbers.Where(double.IsFinite).ToArray();
         var bottom = Math.Max(2, ActualHeight - 2);
         dc.DrawLine(GridPen, new Point(0, bottom), new Point(ActualWidth, bottom));
-        if (numbers.Length == 0) return;
+        if (valid.Length == 0) return;
         if (numbers.Length == 1) numbers = [numbers[0], numbers[0]];
 
-        var min = double.IsNaN(Minimum) ? Math.Min(0, numbers.Min()) : Minimum;
-        var max = double.IsNaN(Maximum) ? numbers.Max() : Maximum;
+        var min = double.IsNaN(Minimum) ? Math.Min(0, valid.Min()) : Minimum;
+        var max = double.IsNaN(Maximum) ? valid.Max() : Maximum;
         if (max <= min) max = min + 1;
         var range = max - min;
         var points = new Point[numbers.Length];
@@ -57,18 +64,28 @@ public sealed class Sparkline : FrameworkElement
         var area = new StreamGeometry();
         using (var context = area.Open())
         {
-            context.BeginFigure(new Point(points[0].X, bottom), true, true);
-            context.LineTo(points[0], true, false);
-            foreach (var point in points.Skip(1)) context.LineTo(point, true, false);
-            context.LineTo(new Point(points[^1].X, bottom), true, false);
+            for (var i = 0; i < points.Length; i++)
+            {
+                if (!double.IsFinite(points[i].Y)) continue;
+                context.BeginFigure(new Point(points[i].X, bottom), true, true);
+                context.LineTo(points[i], true, false);
+                while (i + 1 < points.Length && double.IsFinite(points[i + 1].Y)) context.LineTo(points[++i], true, false);
+                context.LineTo(new Point(points[i].X, bottom), true, false);
+            }
         }
         area.Freeze();
 
         var line = new StreamGeometry();
         using (var context = line.Open())
         {
-            context.BeginFigure(points[0], false, false);
-            foreach (var point in points.Skip(1)) context.LineTo(point, true, false);
+            var start = true;
+            foreach (var point in points)
+            {
+                if (!double.IsFinite(point.Y)) { start = true; continue; }
+                if (start) context.BeginFigure(point, false, false);
+                else context.LineTo(point, true, false);
+                start = false;
+            }
         }
         line.Freeze();
         dc.DrawGeometry(AreaBrush, null, area);

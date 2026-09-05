@@ -19,6 +19,7 @@ public sealed class LiveMonitoringSource(IAdbExecutor adb, IGpuMetricProvider gp
         ProcCpuStat? oldCpu = null; ProcessCpuStat? oldProcessCpu = null; IoCounters? oldIo = null;
         (long Rx, long Tx)? oldNetwork = null; (long Rx, long Tx)? oldAppNetwork = null;
         var last = DateTimeOffset.UtcNow; var iteration = 0; int? pid = null; int? processUid = null;
+        long lastDiskWindowEnd = 0;
         using var timer = new PeriodicTimer(MonitoringConstants.LightweightInterval);
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -57,7 +58,25 @@ public sealed class LiveMonitoringSource(IAdbExecutor adb, IGpuMetricProvider gp
             }
             var elapsed = now - last;
 
-            long? pss = null; double? fps = null; double? p95 = null; double? jank = null; double? temperature = null; double? gpuValue = null;
+            double? deviceDiskRead = null, deviceDiskWrite = null;
+            string? deviceDiskSource = null;
+            if (io is null)
+            {
+                var diskResult = await ShellResult(device.Serial, ["shell", "dumpsys", "storaged", "--force", "--hours", "0.001"], cancellationToken);
+                var window = diskResult.Success ? StoragedParser.ParseLatest(diskResult.StandardOutput) : null;
+                deviceDiskSource = "Device disk I/O · all Android UIDs · storaged";
+                if (lastDiskWindowEnd > 0 && window is not null && window.EndSeconds > lastDiskWindowEnd && window.EndSeconds - window.StartSeconds <= 30)
+                {
+                    var seconds = window.EndSeconds - window.StartSeconds;
+                    deviceDiskRead = window.ReadBytes / seconds;
+                    deviceDiskWrite = window.WriteBytes / seconds;
+                    deviceDiskSource += $" · {seconds}s interval";
+                }
+                if (window is not null) lastDiskWindowEnd = window.EndSeconds;
+            }
+
+            var gpuReading = await gpu.ReadAsync(device, packageName, cancellationToken);
+            long? pss = null; double? fps = null; double? p95 = null; double? jank = null; double? temperature = null;
             long? storageTotal = null; long? storageAvailable = null; int? batteryPercent = null; bool? charging = null; string? thermalSeverity = null;
             string? activeInterface = null; string? ipAddress = null; string? networkType = null;
             long? packageCodeBytes = null; long? packageDataBytes = null; long? packageCacheBytes = null;
@@ -96,8 +115,6 @@ public sealed class LiveMonitoringSource(IAdbExecutor adb, IGpuMetricProvider gp
                 thermalSeverity = AndroidParsers.ParseThermalSeverity(await Shell(device.Serial, "dumpsys", "thermalservice", cancellationToken));
                 var networkContext = ParseNetworkContext(await Shell(device.Serial, "ip", "-o", "-4", "addr", "show", "scope", "global", cancellationToken));
                 activeInterface = networkContext.Interface; ipAddress = networkContext.IpAddress; networkType = networkContext.Type;
-                var gpuReading = await gpu.ReadAsync(device, packageName, cancellationToken);
-                gpuValue = gpuReading.Value;
             }
 
             yield return new(sessionId, device.Serial, packageName, now,
@@ -113,12 +130,14 @@ public sealed class LiveMonitoringSource(IAdbExecutor adb, IGpuMetricProvider gp
                 oldNetwork is not null && network is not null ? MetricCalculators.Rate(oldNetwork.Value.Tx, network.Value.Tx, elapsed) : null,
                 oldAppNetwork is not null && appNetwork is not null ? MetricCalculators.Rate(oldAppNetwork.Value.Rx, appNetwork.Value.Rx, elapsed) : null,
                 oldAppNetwork is not null && appNetwork is not null ? MetricCalculators.Rate(oldAppNetwork.Value.Tx, appNetwork.Value.Tx, elapsed) : null,
-                Fps: fps, FrameTimeP95Ms: p95, JankPercent: jank, TemperatureCelsius: temperature, GpuPercent: gpuValue, Source: "ADB /proc + dumpsys",
+                Fps: fps, FrameTimeP95Ms: p95, JankPercent: jank, TemperatureCelsius: temperature, GpuPercent: gpuReading.Value, Source: "ADB /proc + dumpsys",
                 DeviceStorageTotalBytes: storageTotal, DeviceStorageAvailableBytes: storageAvailable, BatteryPercent: batteryPercent, IsCharging: charging,
                 ThermalSeverity: thermalSeverity, ActiveNetworkInterface: activeInterface, IpAddress: ipAddress, NetworkType: networkType,
-                PackageCodeBytes: packageCodeBytes, PackageDataBytes: packageDataBytes, PackageCacheBytes: packageCacheBytes);
+                PackageCodeBytes: packageCodeBytes, PackageDataBytes: packageDataBytes, PackageCacheBytes: packageCacheBytes,
+                GpuSource: gpuReading.Source, GpuAvailability: gpuReading.Availability,
+                DeviceDiskReadBytesPerSecond: deviceDiskRead, DeviceDiskWriteBytesPerSecond: deviceDiskWrite, DeviceDiskSource: deviceDiskSource);
 
-            oldCpu = cpu ?? oldCpu; oldProcessCpu = procCpu ?? oldProcessCpu; oldIo = io ?? oldIo;
+            oldCpu = cpu ?? oldCpu; oldProcessCpu = procCpu ?? oldProcessCpu; oldIo = io;
             oldNetwork = network ?? oldNetwork; oldAppNetwork = appNetwork ?? oldAppNetwork; last = now;
             if (!await timer.WaitForNextTickAsync(cancellationToken)) break;
         }

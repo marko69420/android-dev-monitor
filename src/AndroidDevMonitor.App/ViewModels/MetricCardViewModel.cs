@@ -20,16 +20,19 @@ public partial class MetricCardViewModel(string title, string unit, double chart
     {
         DisplayValue = display; SecondaryValue = secondary; Source = source; IsAvailable = value.HasValue;
         var now = DateTimeOffset.UtcNow;
-        if (value.HasValue)
-        {
-            Values.Add(value.Value);
-            _timestamps.Enqueue(now);
-        }
+        Values.Add(value ?? double.NaN);
+        _timestamps.Enqueue(now);
         var cutoff = now - MonitoringConstants.SummaryWindow;
         while (_timestamps.TryPeek(out var timestamp) && timestamp < cutoff)
         {
             _timestamps.Dequeue();
             if (Values.Count > 0) Values.RemoveAt(0);
         }
+    }
+
+    public void Clear()
+    {
+        Values.Clear(); _timestamps.Clear(); DisplayValue = "Waiting for data";
+        SecondaryValue = ""; Source = "Waiting for data"; IsAvailable = false;
     }
 }

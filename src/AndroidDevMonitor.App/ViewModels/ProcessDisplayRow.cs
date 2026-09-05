@@ -25,9 +25,11 @@ public sealed partial class ProcessDisplayRow : ObservableObject
         bool CanExpand,
         bool IsExpanded,
         bool IsChild,
-        string? PackageName)
+        string? PackageName,
+        string? ParentKey = null)
     {
         this.Key = Key;
+        this.ParentKey = ParentKey;
         _group = Group;
         _name = Name;
         _packageOrCommand = PackageOrCommand;
@@ -50,6 +52,7 @@ public sealed partial class ProcessDisplayRow : ObservableObject
     }
 
     public string Key { get; }
+    public string? ParentKey { get; }
     [ObservableProperty] private ProcessGroup _group;
     [ObservableProperty] private string _name;
     [ObservableProperty] private string _packageOrCommand;

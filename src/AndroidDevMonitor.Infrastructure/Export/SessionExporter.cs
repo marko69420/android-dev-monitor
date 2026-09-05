@@ -24,12 +24,12 @@ public sealed class SessionExporter : ISessionExporter
         var csv = await Task.Run(() =>
         {
             var builder = new StringBuilder();
-            builder.AppendLine("timestamp_utc,device_serial,package,device_cpu_percent,process_cpu_percent,device_memory_used_bytes,process_rss_bytes,process_pss_bytes,disk_read_bps,disk_write_bps,network_rx_bps,network_tx_bps,fps,p95_frame_ms,jank_percent,temperature_c,gpu_percent,source");
+            builder.AppendLine("timestamp_utc,device_serial,package,device_cpu_percent,process_cpu_percent,device_memory_used_bytes,process_rss_bytes,process_pss_bytes,disk_read_bps,disk_write_bps,network_rx_bps,network_tx_bps,fps,p95_frame_ms,jank_percent,temperature_c,gpu_percent,source,gpu_source,gpu_availability,device_disk_read_bps,device_disk_write_bps,device_disk_source");
             MetricSample[] samples; lock (session.SyncRoot) samples = session.Samples.ToArray();
             foreach (var s in samples)
             {
                 string V(double? v) => v?.ToString(CultureInfo.InvariantCulture) ?? "";
-                builder.AppendLine(string.Join(',', Q(s.TimestampUtc.ToString("O")), Q(s.DeviceSerial), Q(s.PackageName), V(s.DeviceCpuPercent), V(s.ProcessCpuPercent), s.DeviceMemoryUsedBytes, s.ProcessRssBytes, s.ProcessPssBytes, V(s.DiskReadBytesPerSecond), V(s.DiskWriteBytesPerSecond), V(s.NetworkRxBytesPerSecond), V(s.NetworkTxBytesPerSecond), V(s.Fps), V(s.FrameTimeP95Ms), V(s.JankPercent), V(s.TemperatureCelsius), V(s.GpuPercent), Q(s.Source)));
+                builder.AppendLine(string.Join(',', Q(s.TimestampUtc.ToString("O")), Q(s.DeviceSerial), Q(s.PackageName), V(s.DeviceCpuPercent), V(s.ProcessCpuPercent), s.DeviceMemoryUsedBytes, s.ProcessRssBytes, s.ProcessPssBytes, V(s.DiskReadBytesPerSecond), V(s.DiskWriteBytesPerSecond), V(s.NetworkRxBytesPerSecond), V(s.NetworkTxBytesPerSecond), V(s.Fps), V(s.FrameTimeP95Ms), V(s.JankPercent), V(s.TemperatureCelsius), V(s.GpuPercent), Q(s.Source), Q(s.GpuSource), Q(s.GpuAvailability?.ToString()), V(s.DeviceDiskReadBytesPerSecond), V(s.DeviceDiskWriteBytesPerSecond), Q(s.DeviceDiskSource)));
             }
             return builder.ToString();
         }, cancellationToken).ConfigureAwait(false);

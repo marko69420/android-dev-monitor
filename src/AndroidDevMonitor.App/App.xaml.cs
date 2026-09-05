@@ -7,6 +7,7 @@ using AndroidDevMonitor.App.ViewModels;
 using AndroidDevMonitor.Collectors.Sources;
 using AndroidDevMonitor.Core.Services;
 using AndroidDevMonitor.Infrastructure.Database;
+using AndroidDevMonitor.Infrastructure.Gpu;
 using AndroidDevMonitor.Infrastructure.Export;
 using AndroidDevMonitor.Infrastructure.Media;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +35,7 @@ public partial class App : Application
         services.AddSingleton<ISessionStore>(_ => new SqliteSessionStore(data)); services.AddSingleton<ISessionExporter, SessionExporter>();
         services.AddSingleton<IMediaService>(sp => demo ? new DemoMediaService(Path.Combine(data, "DemoMedia")) : new AdbMediaService(sp.GetRequiredService<IAdbExecutor>(), Path.Combine(data, "Media")));
         if (demo) { services.AddSingleton<IDeviceDiscoveryService, DemoDeviceDiscoveryService>(); services.AddSingleton<IMonitoringSource, DemoMonitoringSource>(); }
-        else { services.AddSingleton<IDeviceDiscoveryService, DeviceDiscoveryService>(); services.AddSingleton<IGpuMetricProvider, UnsupportedGpuMetricProvider>(); services.AddSingleton<IMonitoringSource, LiveMonitoringSource>(); }
+        else { services.AddSingleton<IDeviceDiscoveryService, DeviceDiscoveryService>(); services.AddSingleton<IGpuMetricProvider, EmulatorGpuMetricProvider>(); services.AddSingleton<IMonitoringSource, LiveMonitoringSource>(); }
         services.AddSingleton(sp => new MainViewModel(sp.GetRequiredService<IDeviceDiscoveryService>(), sp.GetRequiredService<IMonitoringSource>(), sp.GetRequiredService<ISessionStore>(), sp.GetRequiredService<IMediaService>(), sp.GetRequiredService<ISessionExporter>(), sp.GetRequiredService<IAdbExecutor>(), sp.GetRequiredService<IDialogService>(), demo));
         services.AddSingleton<MainWindow>(); _provider = services.BuildServiceProvider(); var window = _provider.GetRequiredService<MainWindow>(); MainWindow = window; window.Show();
         try { await _provider.GetRequiredService<MainViewModel>().InitializeAsync(); } catch (Exception ex) { Log.Error(ex, "Startup failed"); MessageBox.Show(ex.Message, "Android Dev Monitor", MessageBoxButton.OK, MessageBoxImage.Error); }

@@ -22,7 +22,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>AndroidDevMonitor</AssemblyName>
     <RootNamespace>AndroidDevMonitor.App</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>2.0.0</Version>
     <AssemblyTitle>Android Dev Monitor</AssemblyTitle>
     <Product>Android Dev Monitor</Product>
     <Description>Native Windows Android performance and ADB monitoring tool</Description>
