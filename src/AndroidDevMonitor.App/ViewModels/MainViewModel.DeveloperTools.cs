@@ -280,7 +280,7 @@ public partial class MainViewModel
     {
         int seconds = Math.Clamp(TraceDurationSeconds, 5, 120);
         string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-        string remote = $"/data/local/tmp/adm-{stamp}.perfetto-trace";
+        string remote = $"/data/misc/perfetto-traces/adm-{stamp}.perfetto-trace";
         string local = Path.Combine(DeveloperLabDirectory, $"perfetto-{SafeName(target.Serial)}-{stamp}.perfetto-trace");
         AdbCommandResult capture = await _adb.ExecuteAsync(target.Serial, ["shell", "perfetto", "-o", remote, "-t", $"{seconds}s", "sched", "freq", "idle", "am", "wm", "gfx", "view", "binder_driver", "hal", "dalvik"], TimeSpan.FromSeconds(seconds + 20), LabToken);
         LabToken.ThrowIfCancellationRequested();
