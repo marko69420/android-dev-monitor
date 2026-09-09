@@ -1,0 +1,26 @@
+name: Bug report
+description: Report incorrect behavior or a broken Android monitoring workflow.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include the action, expected result, and actual result.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Device and Android version
+      placeholder: Pixel 8, Android 16 / emulator-5554
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Android Dev Monitor version
+      placeholder: v2.0.0
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Relevant logs or screenshots

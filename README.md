@@ -4,6 +4,18 @@
 
 **Version 2.0.0** · Windows desktop app · Physical Android devices and local emulators
 
+![Android Dev Monitor v2.0.0 monitoring YouTube and opening live logs](docs/images/android-dev-monitor-demo.gif)
+
+## [Download for Windows](https://github.com/marko69420/android-dev-monitor/releases/download/v2.0.0/AndroidDevMonitor-v2.0.0-win-x64.zip)
+
+[![Download Android Dev Monitor v2.0.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.0.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.0.0/AndroidDevMonitor-v2.0.0-win-x64.zip)
+
+No installer and no .NET SDK required: download the ZIP, extract it, and run `AndroidDevMonitor.exe`.
+
+1. Enable **Developer options → USB debugging** on the Android device, or start a local emulator.
+2. Connect the device and accept its USB-debugging prompt.
+3. Open Android Dev Monitor and select the detected device.
+
 ![Android Dev Monitor v2.0.0 dashboard and process table](docs/images/android-dev-monitor-overview.png)
 
 > [!NOTE]
@@ -62,8 +74,9 @@ The **Name** column uses descriptions such as *Disk journal* and *App installer*
 ## Prerequisites
 
 - Windows 10/11 x64.
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), matching `global.json`, to build from source. A self-contained published build includes its runtime.
 - Optional for live mode: Android SDK Platform Tools. The app resolves a configured path, `ANDROID_SDK_ROOT`, `ANDROID_HOME`, then `PATH`.
+
+The downloadable Windows build is self-contained and does not require .NET. Building from source requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) matching `global.json`.
 
 The app still opens without ADB; use `--demo` to explore it with sample data. Unauthorized devices require accepting the Android USB-debugging prompt. Unavailable measurements appear as `—` in the process table or `N/A` in other views.
 
@@ -113,3 +126,7 @@ Local data is under `%LOCALAPPDATA%\AndroidDevMonitor`: SQLite database, diagnos
 - **Recording:** `screenrecord` support varies by build. Recordings open in the Windows player; the Media page does not decode video thumbnails in-process.
 
 See [metric definitions](docs/METRICS.md), [ADB limitations](docs/ADB_LIMITATIONS.md), and [product notes](docs/PRODUCT_NOTES.md) for more detail.
+
+## License
+
+Android Dev Monitor is available under the [MIT License](LICENSE).

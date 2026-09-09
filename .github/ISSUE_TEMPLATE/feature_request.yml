@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an improvement for Android development, profiling, or ADB workflows.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: Developer problem
+      description: Describe the Android development task that is difficult today.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed behavior
+      description: Explain what Android Dev Monitor should do.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Alternatives or examples
