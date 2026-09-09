@@ -2,13 +2,13 @@
 
 **A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
 
-**Stable release 2.0.0 · v2.5.0 in development** · Windows desktop app · Physical Android devices and local emulators
+**Version 2.5.0** · Windows desktop app · Physical Android devices and local emulators
 
 ![Android Dev Monitor v2.0.0 monitoring YouTube and opening live logs](docs/images/android-dev-monitor-demo.gif)
 
-## [Download for Windows](https://github.com/marko69420/android-dev-monitor/releases/download/v2.0.0/AndroidDevMonitor-v2.0.0-win-x64.zip)
+## [Download for Windows](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip)
 
-[![Download Android Dev Monitor v2.0.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.0.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.0.0/AndroidDevMonitor-v2.0.0-win-x64.zip)
+[![Download Android Dev Monitor v2.5.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.5.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip)
 
 No installer and no .NET SDK required: download the ZIP, extract it, and run `AndroidDevMonitor.exe`.
 
@@ -42,7 +42,7 @@ It is designed for:
 - **Start/Stop for the process table:** freeze the current values and row order to inspect a busy list, then resume with the latest measurements.
 - **A refreshed dark interface:** maximized startup, compact tabs, readable tooltips, and matching dark scrollbars.
 
-## In development for v2.5.0
+## What's new in v2.5.0
 
 - **Wireless Device Center:** mDNS discovery, secure pairing, connect/disconnect, latency checks, reconnect support, and accurate Platform Tools 37 / ADB Wi-Fi 2.0 detection.
 - **Developer Lab:** cancellable Perfetto, CPU, frame/jank, GPU, startup, memory, package, permission, background-work, storage, network, logcat, crash/ANR, bugreport, instrumentation, Monkey, emulator, security, capability, and APK reports saved locally.
