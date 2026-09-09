@@ -4894,7 +4894,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 				}
 				else
 				{
-					AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(device.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[6] { "logcat", "-d", "-v", "threadtime", "-t", "100" }), TimeSpan.FromSeconds(10L), token);
+					AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(device.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[8] { "logcat", "-d", "-b", "main,system,crash,events,radio", "-v", "threadtime", "-t", "100" }), TimeSpan.FromSeconds(10L), token);
 					logcatResult = adbCommandResult;
 					source = (adbCommandResult.Success ? ((IEnumerable<string>)adbCommandResult.StandardOutput.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries)) : ((IEnumerable<string>)Array.Empty<string>()));
 				}

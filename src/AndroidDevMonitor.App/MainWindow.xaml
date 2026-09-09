@@ -767,6 +767,8 @@
                   <TextBlock Text="{Binding SelectedDeveloperTool.Description}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/>
                   <WrapPanel Margin="0,8,0,0">
                     <Button Content="Select APK" Command="{Binding SelectApkCommand}"/>
+                    <Button Content="Baseline APK" Command="{Binding SelectComparisonApkCommand}"/>
+                    <Button Content="Bugreport file" Command="{Binding SelectBugReportCommand}"/>
                     <TextBlock Text="Trace seconds" VerticalAlignment="Center"/>
                     <TextBox Width="55" Margin="6,0,14,0" Text="{Binding TraceDurationSeconds}"/>
                     <TextBlock Text="Monkey events" VerticalAlignment="Center"/>
@@ -861,11 +863,29 @@
                       <Button Content="Vol −" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_DOWN"/>
                     </WrapPanel>
                     <Button Content="Start device mirroring with scrcpy" Command="{Binding StartDeviceMirroringCommand}" Margin="0,8,0,0"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Run background test" Command="{Binding RunBackgroundScenarioCommand}"/>
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Background wait" VerticalAlignment="Center"/>
+                        <TextBox Width="55" Margin="7,0" Text="{Binding BackgroundTestSeconds}" ToolTip="5–300 seconds"/>
+                        <TextBlock Text="seconds" VerticalAlignment="Center"/>
+                      </StackPanel>
+                    </DockPanel>
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
                   <StackPanel>
                     <TextBlock Text="Emulator Control Center" FontSize="17" FontWeight="SemiBold"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Refresh AVDs" Command="{Binding RefreshAvdsCommand}"/>
+                      <ComboBox ItemsSource="{Binding AvailableAvds}" SelectedItem="{Binding SelectedAvd}" ToolTip="Installed Android Virtual Devices"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Start" Command="{Binding StartAvdCommand}" CommandParameter="normal"/>
+                      <Button Content="Cold boot" Command="{Binding StartAvdCommand}" CommandParameter="cold"/>
+                      <Button Content="Stop running" Command="{Binding StopEmulatorCommand}"/>
+                      <Button Content="Wipe data…" Foreground="#FF8B87" Command="{Binding WipeAndStartAvdCommand}"/>
+                    </WrapPanel>
                     <DockPanel Margin="0,8,0,0">
                       <Button DockPanel.Dock="Right" Content="Apply" Command="{Binding ApplyEmulatorActionCommand}"/>
                       <ComboBox ItemsSource="{Binding EmulatorActions}" SelectedItem="{Binding SelectedEmulatorAction}"/>

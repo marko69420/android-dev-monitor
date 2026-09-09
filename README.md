@@ -2,7 +2,7 @@
 
 **A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
 
-**Stable release 2.0.0 · v2.1.0 in development** · Windows desktop app · Physical Android devices and local emulators
+**Stable release 2.0.0 · v2.5.0 in development** · Windows desktop app · Physical Android devices and local emulators
 
 ![Android Dev Monitor v2.0.0 monitoring YouTube and opening live logs](docs/images/android-dev-monitor-demo.gif)
 
@@ -42,12 +42,16 @@ It is designed for:
 - **Start/Stop for the process table:** freeze the current values and row order to inspect a busy list, then resume with the latest measurements.
 - **A refreshed dark interface:** maximized startup, compact tabs, readable tooltips, and matching dark scrollbars.
 
-## In development for v2.1.0
+## In development for v2.5.0
 
 - **Wireless Device Center:** mDNS discovery, secure pairing, connect/disconnect, latency checks, reconnect support, and accurate Platform Tools 37 / ADB Wi-Fi 2.0 detection.
 - **Developer Lab:** cancellable Perfetto, CPU, frame/jank, GPU, startup, memory, package, permission, background-work, storage, network, logcat, crash/ANR, bugreport, instrumentation, Monkey, emulator, security, capability, and APK reports saved locally.
 - **App & Device Lab:** runtime permission controls, AppOps reset, instrumentation test runner, deep-link launcher, ADB port mappings, device keys, emulator simulation controls, scrcpy mirroring, and a multi-device startup/memory matrix.
 - **Session comparison:** compare peak CPU, peak memory, average FPS, P95 frame time, and alert counts between two saved sessions.
+- **Bug Report Analyzer:** capture or import a bugreport ZIP/TXT and summarize ANRs, crashes, tombstones, watchdog, low-memory, StrictMode, and thermal signals.
+- **Build comparison:** inspect APK contents and native ABIs, then compare DEX, resources, native libraries, assets, metadata, and download-size changes between two APKs.
+- **AVD lifecycle and test matrix:** list installed AVDs, start, cold boot, stop, perform confirmed wipe-data, simulate common emulator states, and compare startup/memory across connected devices.
+- **Background scenario:** automate launch → foreground snapshot → Home → timed background snapshot for the selected package.
 
 ## Track an application
 

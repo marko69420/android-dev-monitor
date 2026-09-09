@@ -31,10 +31,13 @@ public partial class MainViewModel
     [ObservableProperty] private int _forwardDevicePort = 8080;
     [ObservableProperty] private string _selectedPortDirection = "Forward PC → device";
     [ObservableProperty] private string _selectedEmulatorAction = "Battery 50%";
+    [ObservableProperty] private string? _selectedAvd;
+    [ObservableProperty] private int _backgroundTestSeconds = 30;
     private readonly Stack<PermissionChangeRow> _permissionRollbackStack = new();
 
     public ObservableCollection<InstrumentationRow> Instrumentations { get; } = [];
     public ObservableCollection<PermissionChangeRow> PermissionChanges { get; } = [];
+    public ObservableCollection<string> AvailableAvds { get; } = [];
     public IReadOnlyList<string> PortDirections { get; } = ["Forward PC → device", "Reverse device → PC"];
     public IReadOnlyList<string> EmulatorActions { get; } =
     [
@@ -224,6 +227,52 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
+    private async Task RefreshAvdsAsync()
+    {
+        string? emulator = ResolveSdkExecutable("emulator.exe", "emulator");
+        if (emulator is null) { DeviceLabStatus = "Android Emulator was not found in the configured SDK."; return; }
+        string output = await RunHiddenProcessAsync(emulator, ["-list-avds"]);
+        AvailableAvds.Clear();
+        foreach (string avd in output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)) AvailableAvds.Add(avd);
+        SelectedAvd = AvailableAvds.FirstOrDefault();
+        DeviceLabStatus = $"Found {AvailableAvds.Count} local AVD(s).";
+    }
+
+    [RelayCommand]
+    private void StartAvd(string? mode)
+    {
+        string? emulator = ResolveSdkExecutable("emulator.exe", "emulator");
+        if (emulator is null || string.IsNullOrWhiteSpace(SelectedAvd)) { DeviceLabStatus = "Refresh and select a local AVD first."; return; }
+        ProcessStartInfo start = new(emulator) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(emulator)! };
+        start.ArgumentList.Add("-avd"); start.ArgumentList.Add(SelectedAvd);
+        if (mode == "cold") start.ArgumentList.Add("-no-snapshot-load");
+        Process.Start(start);
+        DeviceLabStatus = mode == "cold" ? $"Cold boot started for {SelectedAvd}." : $"AVD {SelectedAvd} started.";
+    }
+
+    [RelayCommand]
+    private async Task StopEmulatorAsync()
+    {
+        AndroidDevice? device = SelectedDevice;
+        if (device is null || device.Kind != DeviceKind.Emulator) { DeviceLabStatus = "Select a running emulator."; return; }
+        AdbCommandResult result = await _adb.ExecuteAsync(device.Serial, ["emu", "kill"], TimeSpan.FromSeconds(15), CancellationToken.None);
+        DeviceLabStatus = result.Success ? $"Stopped {device.FriendlyName}." : "Stop failed: " + CleanError(result);
+        await RefreshDevicesAsync();
+    }
+
+    [RelayCommand]
+    private void WipeAndStartAvd()
+    {
+        string? emulator = ResolveSdkExecutable("emulator.exe", "emulator");
+        if (emulator is null || string.IsNullOrWhiteSpace(SelectedAvd)) { DeviceLabStatus = "Refresh and select a local AVD first."; return; }
+        if (!_dialogs.Confirm("Wipe emulator data", $"Delete all user data from AVD {SelectedAvd} and start it? This cannot be undone.")) return;
+        ProcessStartInfo start = new(emulator) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(emulator)! };
+        start.ArgumentList.Add("-avd"); start.ArgumentList.Add(SelectedAvd); start.ArgumentList.Add("-wipe-data"); start.ArgumentList.Add("-no-snapshot-load");
+        Process.Start(start);
+        DeviceLabStatus = $"Wipe and cold boot started for {SelectedAvd}.";
+    }
+
+    [RelayCommand]
     private void StartDeviceMirroring()
     {
         AndroidDevice? device = SelectedDevice;
@@ -267,6 +316,27 @@ public partial class MainViewModel
         }
         DeviceLabOutput = await SaveStandaloneTextAsync("device-matrix", report.ToString());
         DeviceLabStatus = $"Saved matrix for {targets.Length} connected device(s).";
+    }
+
+    [RelayCommand]
+    private async Task RunBackgroundScenarioAsync()
+    {
+        if (!TryGetDeviceAndPackage(out AndroidDevice device, out string package)) return;
+        int seconds = Math.Clamp(BackgroundTestSeconds, 5, 300);
+        DeviceLabStatus = $"Running {seconds}-second foreground → background scenario…";
+        AdbCommandResult resolve = await _adb.ExecuteAsync(device.Serial, ["shell", "cmd", "package", "resolve-activity", "--brief", package], TimeSpan.FromSeconds(10), CancellationToken.None);
+        string component = resolve.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault() ?? "";
+        if (!component.Contains('/')) { DeviceLabStatus = "The selected package has no launchable activity."; return; }
+        _ = await _adb.ExecuteAsync(device.Serial, ["shell", "am", "force-stop", package], TimeSpan.FromSeconds(10), CancellationToken.None);
+        AdbCommandResult launch = await _adb.ExecuteAsync(device.Serial, ["shell", "am", "start", "-W", "-n", component], TimeSpan.FromSeconds(30), CancellationToken.None);
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        AdbCommandResult foreground = await _adb.ExecuteAsync(device.Serial, ["shell", "sh", "-c", $"echo __MEMORY__; dumpsys meminfo {package}; echo __CPU__; top -b -n 1 | grep {package}; echo __JOBS__; dumpsys jobscheduler {package}"], TimeSpan.FromSeconds(30), CancellationToken.None);
+        _ = await _adb.ExecuteAsync(device.Serial, ["shell", "input", "keyevent", "HOME"], TimeSpan.FromSeconds(10), CancellationToken.None);
+        await Task.Delay(TimeSpan.FromSeconds(seconds));
+        AdbCommandResult background = await _adb.ExecuteAsync(device.Serial, ["shell", "sh", "-c", $"echo __MEMORY__; dumpsys meminfo {package}; echo __CPU__; top -b -n 1 | grep {package}; echo __SERVICES__; dumpsys activity services {package}; echo __JOBS__; dumpsys jobscheduler {package}; echo __STANDBY__; am get-standby-bucket {package}"], TimeSpan.FromSeconds(45), CancellationToken.None);
+        string report = $"BACKGROUND SCENARIO\nPackage: {package}\nWait: {seconds}s\nLaunch: {launch.StandardOutput.Trim()}\n\n===== FOREGROUND =====\n{foreground.StandardOutput}\n\n===== BACKGROUND AFTER {seconds}s =====\n{background.StandardOutput}";
+        DeviceLabOutput = await SaveTextAsync(device, "background-scenario", report);
+        DeviceLabStatus = "Background scenario completed and saved locally.";
     }
 
     private bool TryGetDeviceAndPackage(out AndroidDevice device, out string package)
@@ -317,5 +387,13 @@ public partial class MainViewModel
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "scoop", "apps", "scrcpy", "current", name)
         ];
         return candidates.FirstOrDefault(File.Exists);
+    }
+
+    private static string? ResolveSdkExecutable(string name, string folder)
+    {
+        string? sdk = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT") ?? Environment.GetEnvironmentVariable("ANDROID_HOME");
+        sdk ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Android", "Sdk");
+        string candidate = Path.Combine(sdk, folder, name);
+        return File.Exists(candidate) ? candidate : ResolveExecutable(name);
     }
 }

@@ -2,12 +2,15 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
 using AndroidDevMonitor.Adb.Parsers;
+using AndroidDevMonitor.Core.Analysis;
 using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 
 namespace AndroidDevMonitor.App.ViewModels;
 
@@ -32,6 +35,8 @@ public partial class MainViewModel
     [ObservableProperty] private bool _developerLabIsRunning;
     [ObservableProperty] private SessionSummary? _comparisonSession;
     [ObservableProperty] private string _sessionComparison = "Choose a second session to compare against the selected session.";
+    [ObservableProperty] private string? _comparisonApkPath;
+    [ObservableProperty] private string? _bugReportPath;
     private CancellationTokenSource? _developerLabCts;
 
     public ObservableCollection<WirelessServiceRow> WirelessServices { get; } = [];
@@ -48,10 +53,12 @@ public partial class MainViewModel
         new("Background work report", "Application", "ADB", "Services, jobs, alarms, wake locks, standby and restrictions"),
         new("Storage report", "Application", "ADB", "Package disk usage, volumes, quotas and device free space"),
         new("APK analyzer", "Build", "Local Android SDK", "Manifest, permissions, files, resources, native ABIs and signing data"),
+        new("APK build comparison", "Build", "Local files", "Compare download size and DEX, native, resources, assets and metadata between two APKs"),
         new("Network and ports report", "Connectivity", "ADB", "Interfaces, DNS, routes, sockets and ADB forward/reverse mappings"),
         new("Logcat diagnostic bundle", "Diagnostics", "ADB", "Main, system, crash and events buffers"),
         new("Crash and ANR scan", "Diagnostics", "ADB", "Extract fatal exceptions, ANRs, watchdog and low-memory events"),
         new("Full bug report", "Diagnostics", "ADB", "Create Android bugreport ZIP for offline analysis"),
+        new("Analyze bug report file", "Diagnostics", "Local ZIP/TXT", "Summarize ANRs, crashes, tombstones, watchdog, LMK, StrictMode and thermal signals"),
         new("Instrumentation inventory", "Testing", "ADB", "List installed test runners and package instrumentation targets"),
         new("Monkey stress test", "Testing", "ADB · changes device", "Repeatable package-scoped input stress test"),
         new("Emulator report", "Emulator", "ADB · emulator", "AVD identity, snapshots, display, battery, network and sensor state"),
@@ -161,7 +168,7 @@ public partial class MainViewModel
         DeveloperToolRow? tool = SelectedDeveloperTool;
         AndroidDevice? target = SelectedDevice;
         if (tool is null) { DeveloperLabStatus = "Choose a tool first."; return; }
-        bool requiresDevice = tool.Name != "APK analyzer";
+        bool requiresDevice = tool.Name is not ("APK analyzer" or "APK build comparison" or "Analyze bug report file");
         if (requiresDevice && target is null) { DeveloperLabStatus = "Select a connected Android device."; return; }
         Directory.CreateDirectory(DeveloperLabDirectory);
         _developerLabCts = new CancellationTokenSource();
@@ -169,8 +176,11 @@ public partial class MainViewModel
         DeveloperLabStatus = requiresDevice ? $"Running {tool.Name} on {target!.FriendlyName}…" : $"Running {tool.Name}…";
         try
         {
-            string output = tool.Name == "APK analyzer" ? await AnalyzeApkAsync() : tool.Name switch
+            string output = tool.Name switch
             {
+                "APK analyzer" => await AnalyzeApkAsync(),
+                "APK build comparison" => await CompareApksAsync(),
+                "Analyze bug report file" => await AnalyzeBugReportFileAsync(),
                 "Perfetto system trace" => await CapturePerfettoAsync(target!),
                 "CPU sampling report" => await RunShellReportAsync(target!, "cpu", ["package=" + ShellPackage() + "; pid=$(pidof $package | cut -d' ' -f1); echo PACKAGE=$package PID=$pid; echo __SIMPLEPERF__; if [ -n \"$pid\" ]; then simpleperf stat -p $pid --duration 10 2>&1; fi; echo __THREADS__; top -b -n 1 -H -p $pid 2>/dev/null; echo __PROC_STAT__; cat /proc/$pid/stat 2>/dev/null"]),
                 "Frame and jank report" => await RunShellReportAsync(target!, "frames", ["dumpsys gfxinfo " + ShellPackage() + " framestats; echo __DISPLAY__; dumpsys display; echo __SURFACEFLINGER__; dumpsys SurfaceFlinger --list 2>/dev/null"]),
@@ -182,7 +192,7 @@ public partial class MainViewModel
                 "Background work report" => await RunShellReportAsync(target!, "background", ["dumpsys activity services " + ShellPackage() + "; echo __JOBS__; dumpsys jobscheduler " + ShellPackage() + "; echo __ALARMS__; dumpsys alarm; echo __POWER__; dumpsys power; echo __STANDBY__; am get-standby-bucket " + ShellPackage()]),
                 "Storage report" => await RunShellReportAsync(target!, "storage", ["dumpsys diskstats; echo __PACKAGE__; dumpsys package " + ShellPackage() + " | grep -E 'codePath=|dataDir=|primaryCpuAbi=|secondaryCpuAbi='; echo __VOLUMES__; df -h; echo __QUOTA__; dumpsys storaged 2>/dev/null"]),
                 "Network and ports report" => await RunNetworkReportAsync(target!),
-                "Logcat diagnostic bundle" => await RunAdbReportAsync(target!, "logcat", ["logcat", "-d", "-b", "main,system,crash,events", "-v", "threadtime"]),
+                "Logcat diagnostic bundle" => await RunAdbReportAsync(target!, "logcat", ["logcat", "-d", "-b", "main,system,crash,events,radio", "-v", "threadtime"]),
                 "Crash and ANR scan" => await RunShellReportAsync(target!, "crash-anr", ["logcat -d -b crash -b system -b main -v threadtime | grep -iE -B 5 -A 40 'FATAL EXCEPTION|ANR in|am_anr|Watchdog|lowmemorykiller|lmkd|has died|tombstone'"]),
                 "Full bug report" => await CaptureBugReportAsync(target!),
                 "Instrumentation inventory" => await RunShellReportAsync(target!, "instrumentation", ["pm list instrumentation -f; echo __SELECTED_PACKAGE__; dumpsys package " + ShellPackage() + " | grep -i -A 12 instrumentation"]),
@@ -252,6 +262,20 @@ public partial class MainViewModel
         Process.Start(new ProcessStartInfo(DeveloperLabDirectory) { UseShellExecute = true });
     }
 
+    [RelayCommand]
+    private void SelectComparisonApk()
+    {
+        OpenFileDialog picker = new() { Title = "Select baseline APK", Filter = "Android package (*.apk)|*.apk", CheckFileExists = true };
+        if (picker.ShowDialog() == true) ComparisonApkPath = picker.FileName;
+    }
+
+    [RelayCommand]
+    private void SelectBugReport()
+    {
+        OpenFileDialog picker = new() { Title = "Select Android bug report", Filter = "Android bug report (*.zip;*.txt)|*.zip;*.txt|All files (*.*)|*.*", CheckFileExists = true };
+        if (picker.ShowDialog() == true) BugReportPath = picker.FileName;
+    }
+
     private async Task<string> CapturePerfettoAsync(AndroidDevice target)
     {
         int seconds = Math.Clamp(TraceDurationSeconds, 5, 120);
@@ -305,7 +329,11 @@ public partial class MainViewModel
         string path = Path.Combine(DeveloperLabDirectory, $"bugreport-{SafeName(target.Serial)}-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
         AdbCommandResult result = await _adb.ExecuteAsync(target.Serial, ["bugreport", path], TimeSpan.FromMinutes(8), LabToken);
         LabToken.ThrowIfCancellationRequested();
-        return result.Success ? path : CleanError(result);
+        if (!result.Success) return CleanError(result);
+        BugReportAnalysis analysis = await BugReportAnalyzer.AnalyzeAsync(path, LabToken);
+        string reportPath = Path.ChangeExtension(path, ".analysis.txt");
+        await File.WriteAllTextAsync(reportPath, analysis.ToReport(), Encoding.UTF8, LabToken);
+        return $"Bug report: {path}\nAnalysis: {reportPath}\n\n{analysis.ToReport()}";
     }
 
     private async Task<string> RunMonkeyAsync(AndroidDevice target)
@@ -352,13 +380,31 @@ public partial class MainViewModel
         if (string.IsNullOrWhiteSpace(apk) || !File.Exists(apk)) return "Choose an APK with Select APK first.";
         string? aapt = FindLatestBuildTool("aapt.exe");
         if (aapt is null) return "Android SDK Build Tools (aapt.exe) were not found.";
-        StringBuilder report = new($"APK: {apk}\nSize: {new FileInfo(apk).Length:N0} bytes\nTool: {aapt}\n\n");
+        ApkArchiveSnapshot snapshot = ApkArchiveAnalyzer.Analyze(apk);
+        StringBuilder report = new(snapshot.ToReport() + $"\nAndroid SDK tool: {aapt}\n\n");
         foreach (string command in new[] { "badging", "permissions", "resources", "configurations" })
         {
             report.AppendLine($"__{command.ToUpperInvariant()}__");
             report.AppendLine(await RunHiddenProcessAsync(aapt, ["dump", command, apk]));
         }
         return await SaveStandaloneTextAsync("apk", report.ToString());
+    }
+
+    private async Task<string> CompareApksAsync()
+    {
+        string? current = SelectedApkPath;
+        string? baseline = ComparisonApkPath;
+        if (string.IsNullOrWhiteSpace(current) || !File.Exists(current) || string.IsNullOrWhiteSpace(baseline) || !File.Exists(baseline))
+            return "Choose the current APK and baseline APK first.";
+        string report = ApkArchiveAnalyzer.Compare(ApkArchiveAnalyzer.Analyze(current), ApkArchiveAnalyzer.Analyze(baseline));
+        return await SaveStandaloneTextAsync("apk-comparison", report);
+    }
+
+    private async Task<string> AnalyzeBugReportFileAsync()
+    {
+        if (string.IsNullOrWhiteSpace(BugReportPath) || !File.Exists(BugReportPath)) return "Choose a bugreport ZIP or TXT first.";
+        BugReportAnalysis analysis = await BugReportAnalyzer.AnalyzeAsync(BugReportPath, LabToken);
+        return await SaveStandaloneTextAsync("bugreport-analysis", analysis.ToReport());
     }
 
     private static string? FindLatestBuildTool(string fileName)
