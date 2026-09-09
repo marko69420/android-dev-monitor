@@ -688,6 +688,108 @@
             </DataGrid.Columns>
           </DataGrid>
         </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Wireless}">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="Wireless Device Center" Style="{StaticResource SectionTitle}"/>
+              <TextBlock Text="Secure ADB Wi-Fi discovery, pairing, reconnect and connection health" Foreground="{StaticResource MutedBrush}"/>
+            </StackPanel>
+            <Button DockPanel.Dock="Right" Content="Refresh mDNS" Command="{Binding RefreshWirelessCommand}"/>
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="10"/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Panel}">
+              <StackPanel>
+                <TextBlock Text="Pair or connect" FontWeight="SemiBold" FontSize="17"/>
+                <TextBlock Text="On Android: Developer options → Wireless debugging → Pair device" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,10"/>
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                  <TextBox ToolTip="IP address or mDNS host and port" Text="{Binding WirelessHost, UpdateSourceTrigger=PropertyChanged}"/>
+                  <TextBox Grid.Column="1" Margin="6,0" ToolTip="Six-digit pairing code" MaxLength="6" Text="{Binding PairingCode, UpdateSourceTrigger=PropertyChanged}"/>
+                  <Button Grid.Column="2" Content="Pair securely" Command="{Binding PairWirelessCommand}"/>
+                </Grid>
+                <WrapPanel Margin="0,8,0,0">
+                  <Button Content="Connect" Command="{Binding ConnectWirelessCommand}"/>
+                  <Button Content="Disconnect" Command="{Binding DisconnectWirelessCommand}"/>
+                  <Button Content="Measure latency" Command="{Binding MeasureWirelessLatencyCommand}"/>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Panel}">
+              <StackPanel>
+                <TextBlock Text="Connection health" FontWeight="SemiBold" FontSize="17"/>
+                <TextBlock Text="{Binding WirelessStatus}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                <TextBlock Text="{Binding MdnsBackend, StringFormat=mDNS: {0}}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <TextBlock Text="{Binding ConnectionHealth}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <TextBlock Text="ADB Wi-Fi 2.0 auto-reconnect requires Android 17 and Platform Tools 37+. Android 11+ secure pairing remains supported." Foreground="#E7B85B" TextWrapping="Wrap" Margin="0,8,0,0"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+          <Border Grid.Row="2" Style="{StaticResource Panel}" Padding="0">
+            <DataGrid ItemsSource="{Binding WirelessServices}" SelectedItem="{Binding SelectedWirelessService}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Device/service" Width="2*" Binding="{Binding Name}"/>
+                <DataGridTextColumn Header="Security/transport" Width="180" Binding="{Binding Type}"/>
+                <DataGridTextColumn Header="Address" Width="190" Binding="{Binding Address}"/>
+                <DataGridTextColumn Header="State" Width="*" Binding="{Binding Purpose}"/>
+              </DataGrid.Columns>
+            </DataGrid>
+          </Border>
+        </Grid>
+
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Developer Lab}">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="Developer Lab" Style="{StaticResource SectionTitle}"/>
+              <TextBlock Text="Performance traces, startup, memory, packages, background work, bug reports and stress testing" Foreground="{StaticResource MutedBrush}"/>
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button Content="Open results" Command="{Binding OpenDeveloperLabDirectoryCommand}"/>
+              <Button Content="Cancel" Command="{Binding CancelDeveloperToolCommand}" IsEnabled="{Binding DeveloperLabIsRunning}"/>
+              <Button Content="Run selected tool" Command="{Binding RunDeveloperToolCommand}"/>
+            </StackPanel>
+          </DockPanel>
+          <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="430"/><ColumnDefinition Width="10"/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Panel}" Padding="0">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <DataGrid ItemsSource="{Binding DeveloperTools}" SelectedItem="{Binding SelectedDeveloperTool}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Tool" Width="165" Binding="{Binding Name}"/>
+                    <DataGridTextColumn Header="Category" Width="90" Binding="{Binding Category}"/>
+                    <DataGridTextColumn Header="Access" Width="*" Binding="{Binding Access}"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+                <StackPanel Grid.Row="1" Margin="10">
+                  <TextBlock Text="{Binding SelectedDeveloperTool.Description}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/>
+                  <WrapPanel Margin="0,8,0,0">
+                    <Button Content="Select APK" Command="{Binding SelectApkCommand}"/>
+                    <TextBlock Text="Trace seconds" VerticalAlignment="Center"/>
+                    <TextBox Width="55" Margin="6,0,14,0" Text="{Binding TraceDurationSeconds}"/>
+                    <TextBlock Text="Monkey events" VerticalAlignment="Center"/>
+                    <TextBox Width="65" Margin="6,0,14,0" Text="{Binding MonkeyEventCount}"/>
+                    <TextBlock Text="Seed" VerticalAlignment="Center"/>
+                    <TextBox Width="65" Margin="6,0" Text="{Binding MonkeySeed}"/>
+                  </WrapPanel>
+                </StackPanel>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Panel}">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <DockPanel Margin="0,0,0,8">
+                  <TextBlock Text="Result" FontWeight="SemiBold" FontSize="17"/>
+                  <TextBlock DockPanel.Dock="Right" Text="{Binding DeveloperLabStatus}" Foreground="{StaticResource AccentBrush}" TextTrimming="CharacterEllipsis" MaxWidth="620"/>
+                </DockPanel>
+                <TextBox Grid.Row="1" Text="{Binding DeveloperLabOutput}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
         <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Media}">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -897,6 +999,15 @@
           </DataGrid>
           <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <StackPanel>
+              <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                <Grid>
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="280"/><ColumnDefinition Width="Auto"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                  <TextBlock Text="Compare with" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                  <ComboBox Grid.Column="1" Margin="10,0" ItemsSource="{Binding StoredSessions}" SelectedItem="{Binding ComparisonSession}" DisplayMemberPath="StartedUtc"/>
+                  <Button Grid.Column="2" Content="Compare A/B" Command="{Binding CompareSessionsCommand}"/>
+                  <TextBlock Grid.Column="3" Text="{Binding SessionComparison}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{StaticResource MutedBrush}"/>
+                </Grid>
+              </Border>
               <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
                 <DockPanel>
                   <TextBlock Text="{Binding StoredSessionDetails}" TextWrapping="Wrap" />

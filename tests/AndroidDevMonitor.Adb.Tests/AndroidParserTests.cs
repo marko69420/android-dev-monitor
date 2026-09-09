@@ -6,6 +6,46 @@ namespace AndroidDevMonitor.Adb.Tests;
 public sealed class AndroidParserTests
 {
     [Fact]
+    public void Wireless_adb_version_distinguishes_protocol_from_platform_tools()
+    {
+        const string output = "Android Debug Bridge version 1.0.41\nVersion 37.0.1-14107812\nInstalled as C:\\Android\\adb.exe\n";
+        AdbVersionInfo parsed = WirelessAdbParser.ParseVersion(output);
+        Assert.Equal(new Version(1, 0, 41), parsed.ProtocolVersion);
+        Assert.Equal(new Version(37, 0, 1), parsed.PlatformToolsVersion);
+        Assert.True(parsed.SupportsSecureWireless);
+        Assert.True(parsed.SupportsWifi2);
+    }
+
+    [Fact]
+    public void Wireless_adb_version_requires_platform_tools_37_for_wifi2()
+    {
+        AdbVersionInfo parsed = WirelessAdbParser.ParseVersion("Android Debug Bridge version 1.0.41\nVersion 36.0.2-13206524\n");
+        Assert.True(parsed.SupportsSecureWireless);
+        Assert.False(parsed.SupportsWifi2);
+    }
+
+    [Fact]
+    public void Wireless_mdns_services_parse_pairing_and_connect_records()
+    {
+        IReadOnlyList<AdbMdnsService> services = WirelessAdbParser.ParseServices(
+            "adb-ABC-123 _adb-tls-pairing._tcp 192.168.1.20:37111\n" +
+            "adb-ABC-123 _adb-tls-connect._tcp 192.168.1.20:40123\n");
+        Assert.Equal(2, services.Count);
+        Assert.True(services[0].CanPair);
+        Assert.True(services[1].CanConnect);
+    }
+
+    [Theory]
+    [InlineData("192.168.1.20:37111", true)]
+    [InlineData("adb-device.local:5555", true)]
+    [InlineData("[fe80::1234%wlan0]:5555", true)]
+    [InlineData("192.168.1.20:0", false)]
+    [InlineData("192.168.1.20:70000", false)]
+    [InlineData("192.168.1.20", false)]
+    public void Wireless_endpoint_validates_host_and_port(string endpoint, bool expected) =>
+        Assert.Equal(expected, WirelessAdbParser.IsValidEndpoint(endpoint));
+
+    [Fact]
     public void Storaged_uses_latest_interval_and_sums_all_uid_states()
     {
         var result = StoragedParser.ParseLatest("100,102\nold.app 999 999 0 0 0 0 0 0\n,104\napp 10 20 30 40 50 60 70 80\n0 1 2 3 4 5 6 7 8\n");

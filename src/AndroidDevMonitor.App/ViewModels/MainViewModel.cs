@@ -2251,9 +2251,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		_adb = adb;
 		_dialogs = dialogs;
 		IsDemo = isDemo;
-		NavigationItems = new global::_003C_003Ez__ReadOnlyArray<string>(new string[11]
+		NavigationItems = new global::_003C_003Ez__ReadOnlyArray<string>(new string[13]
 		{
-			"Overview", "Instances", "Media", "Performance", "Logs", "File Explorer", "Network", "ADB Shell", "Automation", "Alerts",
+			"Overview", "Instances", "Wireless", "Developer Lab", "Media", "Performance", "Logs", "File Explorer", "Network", "ADB Shell", "Automation", "Alerts",
 			"Settings"
 		});
 		if (isDemo) { TrackedPackages.Add("com.company.mygame"); SelectedPackage = TrackedPackages[0]; }
@@ -2315,6 +2315,10 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			else if (page == "Network")
 			{
 				_ = RefreshNetworkDiagnosticsAsync();
+			}
+			else if (page == "Wireless")
+			{
+				_ = RefreshWirelessAsync();
 			}
 		}
 	}

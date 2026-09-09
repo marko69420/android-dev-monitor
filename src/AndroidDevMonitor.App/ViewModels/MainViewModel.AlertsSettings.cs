@@ -977,7 +977,15 @@ public partial class MainViewModel
             WorkingDirectory = AppContext.BaseDirectory
         };
         if (string.Equals(Path.GetFileNameWithoutExtension(executable), "dotnet", StringComparison.OrdinalIgnoreCase))
-            start.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);
+        {
+            string? managedEntryPoint = Environment.GetCommandLineArgs().FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(managedEntryPoint) || !File.Exists(managedEntryPoint))
+            {
+                _dialogs.Notify("The managed application path could not be resolved.", true);
+                return;
+            }
+            start.ArgumentList.Add(managedEntryPoint);
+        }
         if (!IsDemo)
             start.ArgumentList.Add("--demo");
         Process.Start(start);
