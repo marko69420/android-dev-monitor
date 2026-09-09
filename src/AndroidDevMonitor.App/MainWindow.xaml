@@ -790,6 +790,125 @@
           </Grid>
         </Grid>
 
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=App &amp; Device Lab}">
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock Text="App &amp; Device Lab" Style="{StaticResource SectionTitle}"/>
+              <TextBlock Text="Permissions, instrumentation tests, deep links, ports, emulator controls and mirroring" Foreground="{StaticResource MutedBrush}"/>
+            </StackPanel>
+            <Button DockPanel.Dock="Right" Content="Build device matrix" Command="{Binding BuildMultiDeviceMatrixCommand}"/>
+          </DockPanel>
+          <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="1.05*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="1.05*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="1.35*"/></Grid.ColumnDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel>
+                <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Permission Laboratory" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="Runtime permission changes target only the selected application." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <TextBox Text="{Binding PermissionName, UpdateSourceTrigger=PropertyChanged}" ToolTip="Example: android.permission.POST_NOTIFICATIONS"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Refresh state" Command="{Binding RefreshPermissionStateCommand}"/>
+                      <Button Content="Grant" Command="{Binding GrantPermissionCommand}"/>
+                      <Button Content="Revoke" Command="{Binding RevokePermissionCommand}"/>
+                      <Button Content="Reset AppOps" Command="{Binding ResetAppOpsCommand}"/>
+                      <Button Content="Rollback last" Command="{Binding RollbackPermissionChangeCommand}"/>
+                    </WrapPanel>
+                    <ItemsControl ItemsSource="{Binding PermissionChanges}" Margin="0,8,0,0">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <DockPanel ToolTip="{Binding Timestamp}">
+                            <TextBlock Text="{Binding Status}" DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}"/>
+                            <TextBlock Text="{Binding Action}" Foreground="{StaticResource AccentBrush}" Margin="0,0,7,0"/>
+                            <TextBlock Text="{Binding Permission}" TextTrimming="CharacterEllipsis"/>
+                          </DockPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}">
+                  <StackPanel>
+                    <TextBlock Text="Instrumentation Test Runner" FontSize="17" FontWeight="SemiBold"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Discover" Command="{Binding DiscoverInstrumentationCommand}"/>
+                      <ComboBox ItemsSource="{Binding Instrumentations}" SelectedItem="{Binding SelectedInstrumentation}" DisplayMemberPath="DisplayName"/>
+                    </DockPanel>
+                    <TextBox Margin="0,7,0,0" Text="{Binding InstrumentationClass, UpdateSourceTrigger=PropertyChanged}" ToolTip="Optional class or Class#method filter"/>
+                    <DockPanel Margin="0,7,0,0">
+                      <Button DockPanel.Dock="Right" Content="Run tests" Command="{Binding RunInstrumentationTestsCommand}"/>
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Repeat" VerticalAlignment="Center"/>
+                        <TextBox Width="55" Margin="7,0" Text="{Binding InstrumentationRepeatCount}"/>
+                      </StackPanel>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+              <StackPanel>
+                <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Device controls &amp; mirroring" FontSize="17" FontWeight="SemiBold"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Home" Command="{Binding SendDeviceKeyCommand}" CommandParameter="HOME"/>
+                      <Button Content="Back" Command="{Binding SendDeviceKeyCommand}" CommandParameter="BACK"/>
+                      <Button Content="Recent" Command="{Binding SendDeviceKeyCommand}" CommandParameter="APP_SWITCH"/>
+                      <Button Content="Power" Command="{Binding SendDeviceKeyCommand}" CommandParameter="POWER"/>
+                      <Button Content="Vol +" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_UP"/>
+                      <Button Content="Vol −" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_DOWN"/>
+                    </WrapPanel>
+                    <Button Content="Start device mirroring with scrcpy" Command="{Binding StartDeviceMirroringCommand}" Margin="0,8,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Emulator Control Center" FontSize="17" FontWeight="SemiBold"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Apply" Command="{Binding ApplyEmulatorActionCommand}"/>
+                      <ComboBox ItemsSource="{Binding EmulatorActions}" SelectedItem="{Binding SelectedEmulatorAction}"/>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Deep Link Launcher" FontSize="17" FontWeight="SemiBold"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Launch" Command="{Binding LaunchDeepLinkCommand}"/>
+                      <TextBox Text="{Binding DeepLinkUri, UpdateSourceTrigger=PropertyChanged}"/>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}">
+                  <StackPanel>
+                    <TextBlock Text="ADB Port Manager" FontSize="17" FontWeight="SemiBold"/>
+                    <ComboBox Margin="0,8,0,0" ItemsSource="{Binding PortDirections}" SelectedItem="{Binding SelectedPortDirection}"/>
+                    <Grid Margin="0,7,0,0">
+                      <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+                      <TextBox Text="{Binding ForwardLocalPort}" ToolTip="PC port"/>
+                      <TextBox Grid.Column="2" Text="{Binding ForwardDevicePort}" ToolTip="Device port"/>
+                    </Grid>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Apply" Command="{Binding ApplyPortMappingCommand}"/>
+                      <Button Content="Remove" Command="{Binding RemovePortMappingCommand}"/>
+                      <Button Content="List mappings" Command="{Binding ListPortMappingsCommand}"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+            <Border Grid.Column="4" Style="{StaticResource Panel}">
+              <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <TextBlock Text="{Binding DeviceLabStatus}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBox Grid.Row="1" Text="{Binding DeviceLabOutput}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
         <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Media}">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

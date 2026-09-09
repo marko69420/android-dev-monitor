@@ -46,6 +46,16 @@ public sealed class AndroidParserTests
         Assert.Equal(expected, WirelessAdbParser.IsValidEndpoint(endpoint));
 
     [Fact]
+    public void Instrumentation_list_parses_runner_target_and_source()
+    {
+        const string output = "instrumentation:/data/app/~~abc/test/base.apk=com.example.test/androidx.test.runner.AndroidJUnitRunner (target=com.example.app)\n";
+        InstrumentationInfo runner = Assert.Single(InstrumentationParser.Parse(output));
+        Assert.Equal("com.example.test/androidx.test.runner.AndroidJUnitRunner", runner.Component);
+        Assert.Equal("com.example.app", runner.TargetPackage);
+        Assert.Equal("/data/app/~~abc/test/base.apk", runner.SourcePath);
+    }
+
+    [Fact]
     public void Storaged_uses_latest_interval_and_sums_all_uid_states()
     {
         var result = StoragedParser.ParseLatest("100,102\nold.app 999 999 0 0 0 0 0 0\n,104\napp 10 20 30 40 50 60 70 80\n0 1 2 3 4 5 6 7 8\n");

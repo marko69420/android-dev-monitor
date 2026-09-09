@@ -80,6 +80,7 @@ public sealed class NavigationIconConverter : IValueConverter
             "Instances" => "\uE80A",
             "Wireless" => "\uE701",
             "Developer Lab" => "\uE9CA",
+            "App & Device Lab" => "\uECAA",
             "Media" => "\uE91B",
             "Performance" => "\uE9D9",
             "Logs" => "\uE8A5",
