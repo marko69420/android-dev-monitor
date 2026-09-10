@@ -15,7 +15,8 @@ public sealed record BugReportAnalysis(
     int LowMemoryCount,
     int StrictModeCount,
     int ThermalCount,
-    IReadOnlyList<BugReportFinding> Findings)
+    IReadOnlyList<BugReportFinding> Findings,
+    int FilesScanned = 1)
 {
     public int TotalSignals => AnrCount + CrashCount + TombstoneCount + WatchdogCount + LowMemoryCount + StrictModeCount + ThermalCount;
 
@@ -24,6 +25,7 @@ public sealed record BugReportAnalysis(
         StringBuilder text = new();
         text.AppendLine("ANDROID BUG REPORT ANALYSIS");
         text.AppendLine($"Source: {Source}");
+        text.AppendLine($"Files scanned: {FilesScanned:N0}");
         text.AppendLine($"Lines scanned: {LinesScanned:N0}");
         text.AppendLine($"Signals: {TotalSignals:N0}");
         text.AppendLine($"ANR {AnrCount} · crashes {CrashCount} · tombstones {TombstoneCount} · watchdog {WatchdogCount} · low memory {LowMemoryCount} · StrictMode {StrictModeCount} · thermal {ThermalCount}");
@@ -38,6 +40,9 @@ public sealed record BugReportAnalysis(
 public static class BugReportAnalyzer
 {
     private const int MaximumFindings = 250;
+    private const int MaximumFiles = 60;
+    private const long MaximumEntryBytes = 64L * 1024 * 1024;
+    private const long MaximumTotalBytes = 256L * 1024 * 1024;
 
     public static async Task<BugReportAnalysis> AnalyzeAsync(string path, CancellationToken cancellationToken)
     {
@@ -45,14 +50,44 @@ public static class BugReportAnalyzer
         if (string.Equals(Path.GetExtension(path), ".zip", StringComparison.OrdinalIgnoreCase))
         {
             using ZipArchive archive = ZipFile.OpenRead(path);
-            ZipArchiveEntry? entry = archive.Entries
-                .Where(item => item.FullName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
+            ZipArchiveEntry[] entries = archive.Entries
+                .Where(IsRelevantArchiveEntry)
                 .OrderByDescending(item => item.FullName.Contains("bugreport", StringComparison.OrdinalIgnoreCase))
+                .ThenByDescending(item => item.FullName.Contains("tombstone", StringComparison.OrdinalIgnoreCase))
                 .ThenByDescending(item => item.Length)
-                .FirstOrDefault();
-            if (entry is null) throw new InvalidDataException("The ZIP does not contain a readable bugreport text file.");
-            await using Stream stream = entry.Open();
-            return await AnalyzeStreamAsync(stream, $"{path} :: {entry.FullName}", cancellationToken);
+                .ToArray();
+            if (entries.Length == 0) throw new InvalidDataException("The ZIP does not contain a readable bugreport text file.");
+
+            long lines = 0;
+            int anr = 0, crash = 0, tombstone = 0, watchdog = 0, lowMemory = 0, strictMode = 0, thermal = 0;
+            List<BugReportFinding> findings = [];
+            long totalBytes = 0;
+            int filesScanned = 0;
+            List<string> scannedNames = [];
+            foreach (ZipArchiveEntry entry in entries.Take(MaximumFiles))
+            {
+                if (entry.Length == 0 || entry.Length > MaximumEntryBytes || totalBytes + entry.Length > MaximumTotalBytes) continue;
+                totalBytes += entry.Length;
+                filesScanned++;
+                scannedNames.Add(entry.FullName);
+                await using Stream stream = entry.Open();
+                BugReportAnalysis result = await AnalyzeStreamAsync(stream, entry.FullName, cancellationToken);
+                lines += result.LinesScanned;
+                anr += result.AnrCount;
+                crash += result.CrashCount;
+                tombstone += result.TombstoneCount;
+                watchdog += result.WatchdogCount;
+                lowMemory += result.LowMemoryCount;
+                strictMode += result.StrictModeCount;
+                thermal += result.ThermalCount;
+                findings.AddRange(result.Findings.Select(finding => new BugReportFinding(finding.Category, $"{entry.FullName}: {finding.Text}")));
+                if (findings.Count >= MaximumFindings) findings.RemoveRange(MaximumFindings, findings.Count - MaximumFindings);
+                if (totalBytes >= MaximumTotalBytes) break;
+            }
+
+            if (filesScanned == 0) throw new InvalidDataException("The ZIP entries are too large to analyze safely.");
+            string fileCount = filesScanned == 1 ? "1 file" : $"{filesScanned} files";
+            return new($"{path} :: {string.Join(", ", scannedNames)} ({fileCount})", lines, anr, crash, tombstone, watchdog, lowMemory, strictMode, thermal, findings, filesScanned);
         }
 
         await using FileStream file = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -95,6 +130,18 @@ public static class BugReportAnalyzer
         if (line.Contains("StrictMode", StringComparison.OrdinalIgnoreCase)) return "STRICTMODE";
         if (line.Contains("thermal thrott", StringComparison.OrdinalIgnoreCase) || line.Contains("THERMAL_STATUS", StringComparison.OrdinalIgnoreCase)) return "THERMAL";
         return null;
+    }
+
+    private static bool IsRelevantArchiveEntry(ZipArchiveEntry entry)
+    {
+        string name = entry.FullName;
+        if (entry.Length == 0) return false;
+        if (name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) return true;
+        return name.Contains("tombstone", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("anr", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("crash", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("logcat", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("dropbox", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string Normalize(string line)

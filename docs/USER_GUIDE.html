@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Android Dev Monitor — jednostavna uputstva</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #0d1217;
+      --panel: #151e25;
+      --panel-2: #18232b;
+      --border: #26343d;
+      --text: #f2f6f8;
+      --muted: #93a2ad;
+      --accent: #19c3d4;
+      --success: #59d35f;
+      --warning: #e7b85b;
+      --danger: #ff8b87;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font: 15px/1.65 "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    .layout { max-width: 1080px; margin: 0 auto; padding: 32px 22px 70px; }
+    header.hero {
+      background: linear-gradient(135deg, #10171d 0%, #151e25 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 34px;
+      margin-bottom: 22px;
+    }
+    h1 { font-size: 34px; margin: 0 0 8px; }
+    h2 { font-size: 23px; margin: 0 0 12px; }
+    h3 { font-size: 17px; margin: 0 0 7px; }
+    p { margin: 0 0 10px; }
+    .subtitle { color: var(--muted); font-size: 17px; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+    .muted { color: var(--muted); }
+    .accent { color: var(--accent); }
+    .success { color: var(--success); }
+    .warning { color: var(--warning); }
+    .steps { counter-reset: step; display: grid; gap: 12px; }
+    .step {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #12343d;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0 6px 8px 0;
+    }
+    .tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+    .tag.green::before { background: var(--success); }
+    .tag.yellow::before { background: var(--warning); }
+    code {
+      background: #111a20;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 6px;
+      font-size: 13px;
+    }
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--panel-2);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 0 0 14px;
+    }
+    .section-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 20px;
+    }
+    .section-nav a {
+      color: var(--text);
+      text-decoration: none;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 11px;
+      font-size: 13px;
+    }
+    .section-nav a:hover { border-color: var(--accent); color: var(--accent); }
+    .table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .table th, .table td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .table th { background: #121b21; color: #c6d0d6; font-size: 13px; }
+    .table tr:last-child td { border-bottom: 0; }
+    .table td:first-child { white-space: nowrap; font-weight: 600; }
+    footer { color: var(--muted); margin-top: 28px; font-size: 13px; }
+    @media (max-width: 780px) {
+      .grid, .grid.two { grid-template-columns: 1fr; }
+      .layout { padding: 20px 14px 50px; }
+      header.hero { padding: 22px; }
+      h1 { font-size: 28px; }
+      .table td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+<main class="layout">
+  <header class="hero">
+    <h1>Android Dev Monitor</h1>
+    <p class="subtitle">Task Manager za Android aplikacije — poveži uređaj, prati problem, sačuvaj dokaz.</p>
+    <p style="margin-top:18px"><span class="tag">Windows</span><span class="tag green">USB ili Wi-Fi ADB</span><span class="tag yellow">Demo mod bez uređaja</span></p>
+  </header>
+
+  <nav class="section-nav">
+    <a href="#brzi-pocetak">Brzi početak</a>
+    <a href="#bez-uredaja">Bez uređaja</a>
+    <a href="#stranice">Šta je gdje</a>
+    <a href="#svakodnevni-rad">Svakodnevni rad</a>
+    <a href="#logs">Logovi</a>
+    <a href="#developer-lab">Developer Lab</a>
+    <a href="#problemi">Problemi</a>
+      <a href="#sigurnost">Sigurnost</a>
+      <a href="#mirror">Live mirror</a>
+      <a href="#logcat2">Logcat 2.0</a>
+      <a href="#background12">Pozadinski rad</a>
+      <a href="#productivity19">Svakodnevni alati</a>
+      <a href="#emulator17">Emulator centar</a>
+      <a href="#fleet18">Više uređaja</a>
+      <a href="#testrunner15">Test Runner</a>
+      <a href="#aab14">App bundle</a>
+      <a href="#companion20">Companion SDK</a>
+      <a href="#cloud21">Cloud (faza 3)</a>
+    </nav>
+
+  <section id="brzi-pocetak" class="card">
+    <h2>Počni u 3 koraka</h2>
+    <div class="steps">
+      <div class="step">
+        <div>
+          <h3>Uključi Developer options i USB debugging</h3>
+          <p class="muted">Na telefonu otvori <strong>Settings → About phone</strong> i tapni sedam puta na <strong>Build number</strong>. Zatidi u <strong>Developer options</strong> i uključi <strong>USB debugging</strong>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Poveži telefon i prihvati upit</h3>
+          <p class="muted">Kada priključiš kabel, na telefonu će se pojaviti pitanje. Označi <strong>Always allow from this computer</strong> i potvrdi.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Odaberi uređaj i aplikaciju</h3>
+          <p class="muted">U aplikaciji odaberi telefon u prvom selektoru gore, a aplikaciju u drugom. Reproduciraj problem na telefonu i klikni <strong>Mark Event</strong> u trenutku kada se desi.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="bez-uredaja" class="card">
+    <h2>Nemaš uređaj? Istraži demo mod</h2>
+    <p>Ako želiš samo vidjeti kako aplikacija izgleda, pokreni je sa:</p>
+    <p><code>AndroidDevMonitor.exe --demo</code></p>
+    <p class="muted">Demo mod ima stalnu žutu oznaku <strong>DEMO DATA</strong>. On ne pokreće ADB niti dira pravi uređaj, a možeš ga resetovati iz <strong>Settings → Demo mode</strong>.</p>
+  </section>
+
+  <section id="stranice" class="card">
+    <h2>Šta je gdje</h2>
+    <table class="table">
+      <tr><th>Stranica</th><th>Koristi je kada…</th></tr>
+      <tr><td>Overview</td><td>pratiš live CPU, memoriju, FPS, disk, mrežu, temperaturu i procese.</td></tr>
+      <tr><td>Instances</td><td>provljeravaš povezane uređaje i detalje o njima.</td></tr>
+      <tr><td>Wireless</td><td>želiš raditi bez USB kabla, upariti uređaj kodom ili provjeriti latenciju.</td></tr>
+      <tr><td>Developer Tools</td><td>generiraš izvještaje: Perfetto, startup, memorija, frame, bugreport, logcat i slično.</td></tr>
+      <tr><td>Media</td><td>tražiš screenshot ili snimak ekrana povezan sa sesijom.</td></tr>
+      <tr><td>Performance</td><td>upoređuješ dvije sačuvane sesije ili otvaraš stariji zapis.</td></tr>
+      <tr><td>Logs</td><td>filtriraš live logcat i čitaš cijelu poruku izabranog reda.</td></tr>
+      <tr><td>File Explorer</td><td>kopiraš datoteke između Windowsa i Androida.</td></tr>
+      <tr><td>Network</td><td>provjeravaš interfejse, DNS, rute i sockete.</td></tr>
+      <tr><td>ADB Shell</td><td>želiš ručno pokrenuti ADB komandu. Komanda se izvršava samo kada klikneš Run.</td></tr>
+      <tr><td>Automation</td><td>ponavljaš tapove, swipeove, tekst i pauze.</td></tr>
+      <tr><td>Alerts</td><td>postavljaš pragove za CPU, memoriju, mrežu ili disk.</td></tr>
+      <tr><td>Help</td><td>treba ti kratko objašnjenje bez napuštanja aplikacije.</td></tr>
+      <tr><td>Settings</td><td>postavljaš ADB putanju, storage, sigurnosne potvrde i dijagnostiku.</td></tr>
+    </table>
+  </section>
+
+  <section id="svakodnevni-rad" class="card">
+    <h2>Najbrži svakodnevni tok</h2>
+    <div class="grid">
+      <div>
+        <h3>Pronađi skup ekran</h3>
+        <p class="muted">Odaberi aplikaciju, pokreni ekran na telefonu i klikni <strong>Mark Event</strong>. CPU i memorija se automatski zapisuju svake sekunde.</p>
+      </div>
+      <div>
+        <h3>Sačuvaj dokaz</h3>
+        <p class="muted">Klikni <strong>Export Session</strong>. Izvoz može biti JSON, CSV ili ZIP sa metrikama, markerima, alertima i događajima.</p>
+      </div>
+      <div>
+        <h3>Uporedi verziju</h3>
+        <p class="muted">Sačuvaj sesiju za staru verziju, zatim novu. U <strong>Performance</strong> odaberi obje i uporedi peak CPU, memoriju, FPS i P95 frame time.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="logs" class="card">
+    <h2>Logovi bez pravila</h2>
+    <p>U <strong>Logs</strong> stranici kucaj tekst u pretragu. Filtriranje se dešava na ekranu, pa originalni redovi ostaju sačuvani.</p>
+    <div class="callout">
+      <strong>Brzi filteri:</strong> <code>ANR</code> za zamrzavanje, <code>FATAL EXCEPTION</code> za crash, <code>GC</code> za pritisak na memoriju, <code>StrictMode</code> za spore operacije.</p>
+    </div>
+    <p class="muted">Ako uključiš regex pretragu, isti tekst postaje šablon. Kada regex bude nevažeći, aplikacija to prikaže i ne prekine log.</p>
+  </section>
+
+  <section id="developer-lab" class="card">
+    <h2>Developer Lab</h2>
+    <div class="grid two">
+      <div>
+        <h3>Izvještaji</h3>
+        <p class="muted">Perfetto, CPU sampling, frame/jank, GPU, startup, memorija, paket, permisije, background work, storage, mreža, logcat, crash/ANR, bugreport, Monkey, emulator i sigurnost. Svaki izvještaj se može prekinuti i čuva se lokalno.</p>
+      </div>
+      <div>
+        <h3>APK i build</h3>
+        <p class="muted">APK Analyzer pokazuje manifest, permisije, datoteke, resurse, native ABI i potpis. Build comparison pokazuje šta je tačno poraslo između dvije verzije.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="problemi" class="card">
+    <h2>Ako nešto ne radi</h2>
+    <table class="table">
+      <tr><th>Simptom</th><th>Šta uradi</th></tr>
+      <tr><td>Uređaj se ne pojavljuje</td><td>Otvori <strong>Settings → ADB</strong>, klikni <strong>Auto-detect</strong>, pa <strong>Test connection</strong>. Provjeri da li je USB debugging prihvaćen na telefonu.</td></tr>
+      <tr><td>Vrijednost je N/A</td><td>To znači da Android nije izložio taj brojač. Nije greška u aplikaciji i vrijednost se ne smišlja.</td></tr>
+      <tr><td>Live podaci kasne</td><td>Provjeri kabel, Wi-Fi kvalitet i trenutno opterećenje emulatora. ADB odgovori mogu biti sporiji od intervala prikaza.</td></tr>
+      <tr><td>scrcpy se ne otvara</td><td>Instaliraj <code>scrcpy.exe</code> ili dodaj njegovu lokaciju u Windows <code>PATH</code>.</td></tr>
+    </table>
+  </section>
+
+  <section id="sigurnost" class="card">
+    <h2>Sigurnost i privatnost</h2>
+    <div class="grid two">
+      <div>
+        <h3>Potvrde</h3>
+        <p class="muted">Brisanje aplikacije, brisanje podataka, brisanje datoteka, wipe AVD-a i restart ADB servera uvijek traže potvrdu sa tačnim imenom uređaja ili paketa.</p>
+      </div>
+      <div>
+        <h3>Lokalni podaci</h3>
+        <p class="muted">Sesije, screenshoti, snimci, izvještaji i baza ostaju na ovom računaru. Standardno praćenje ne koristi root i ne šalje telemetriju.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Android Dev Monitor · Lokalna uputstva · Ako neka vrijednost nije dostupna, aplikacija je prikazuje kao N/A ili — umjesto da nagađa.
+  </footer>
+</main>
+</body>
+</html>
+  <section id="mirror">
+    <h2>Živi prikaz uređaja unutar aplikacije</h2>
+    <p>Otvorite <strong>App &amp; Device Lab</strong>. Na vrhu desnog stupca je panel <strong>Live mirror inside this window</strong>. Odaberite uređaj u gornjoj traci i pritisnite <strong>Start mirror</strong>.</p>
+    <div class="grid">
+      <div>
+        <h3>Radi bez scrcpy</h3>
+        <p class="muted">Prikaz ide preko ADB-a (<code>exec-out screencap -p</code>), pa radi na svakom povezanom uređaju ili emulatoru.</p>
+      </div>
+      <div>
+        <h3>Brzina</h3>
+        <p class="muted">1–2 fps je najlakše čitati. 4–8 fps daje glatkiji dojam dok pritiščete kontrole ispod prikaza.</p>
+      </div>
+      <div>
+        <h3>Spremanje kadra</h3>
+        <p class="muted"><strong>Save frame</strong> sprema zadnji kadar kao PNG u mapu Developer Lab rezultata.</p>
+      </div>
+    </div>
+    <p>Treba li vam najveća glatkoća i zvuk, ispod prikaza je dugme <strong>Open full-speed scrcpy window</strong>. scrcpy 4.1 je instaliran u <code>%LOCALAPPDATA%\Programs\scrcpy</code> i aplikacija ga nađe automatski.</p>
+    <p class="muted">Ako prikaz ostane crn ili prazan, provjerite da je uređaj i dalje u stanju <code>device</code> (ne <code>unauthorized</code>) i da nije zaključan ekran.</p>
+  </section>
+
+  <section id="logcat2">
+    <h2>Logcat 2.0 — brzo do uzroka</h2>
+    <p>Na stranici <strong>Logs</strong> su tri alata koja štede vrijeme:</p>
+    <ul>
+      <li><strong>Crash / ANR only</strong> — ostavlja samo fatalne iznimke i ANR događaje.</li>
+      <li><strong>Bookmark</strong> i <strong>Bookmarked only</strong> — označite važan redak i filtrirajte samo označene.</li>
+      <li><strong>10 s before event</strong> — prikaže 10 sekundi prije odabranog retka; idealno nakon crasha ili skoka u grafikonu.</li>
+    </ul>
+    <p>Kombinaciju filtera spremite upisom imena i pritiskom na <strong>Save filter</strong>. Spremljeni filteri ostaju i nakon zatvaranja aplikacije.</p>
+  </section>
+
+  <section id="background12">
+    <h2>Background work — što aplikacija radi dok nije na ekranu</h2>
+    <p>Otvorite <strong>Developer Tools → Diagnostics &amp; profiling</strong> i pokrenite <strong>Background work report</strong> nad odabranom aplikacijom. Izvještaj je jedan tekstualni dokument sa jasno označenim blokovima:</p>
+    <div class="grid">
+      <div>
+        <h3>Servisi, jobovi, alarmi</h3>
+        <p class="muted">Pokrenuti i foreground servisi, JobScheduler poslovi i alarmi vezani na odabrani paket.</p>
+      </div>
+      <div>
+        <h3>Doze i App Standby</h3>
+        <p class="muted">Trenutni standby bucket paketa i stanje device idle režima, pa se odmah vidi je li aplikacija u aktivnom ili rijetkom bucketu.</p>
+      </div>
+      <div>
+        <h3>Restrikcije i whitelist</h3>
+        <p class="muted">AppOps <code>RUN_ANY_IN_BACKGROUND</code> pokazuje je li pozadinski rad zabranjen, a battery whitelist je li aplikacija izuzeta od optimizacije.</p>
+      </div>
+    </div>
+    <p>Za usporedbu ponašanja prije i poslije odlaska u pozadinu koristite <strong>Run foreground → background scenario</strong> u istoj stranici; on snimi memoriju, CPU i jobove prije i poslije odabranog čekanja (5–300 sekundi) i spremi izvještaj lokalno.</p>
+  </section>
+
+  <section id="productivity19">
+    <h2>Svakodnevni razvojni alati</h2>
+    <p>Na dnu <strong>App &amp; Device Lab</strong> stranice je panel <strong>Application productivity</strong>. Radi nad paketom koji je odabran u gornjoj traci.</p>
+    <ul>
+      <li><strong>Browse</strong> odabere lokalni APK, a <strong>Install / update</strong> ga instalira ili zamijeni postojeću verziju (<code>install -r -t</code>) — podaci aplikacije ostaju sačuvani.</li>
+      <li><strong>Restart cold</strong> radi force stop pa ponovno pokretanje, idealno kao priprema za mjerenje start-upa. <strong>Force stop</strong> samo zaustavlja aplikaciju i njezin pozadinski rad.</li>
+      <li><strong>Clear data…</strong> i <strong>Uninstall…</strong> su destruktivne radnje i uvijek traže potvrdu sa imenom paketa i uređaja.</li>
+      <li><strong>Type on device</strong> upisuje tekst u polje koje je trenutno fokusirano na uređaju — praktično za login i pretrage bez ručnog tipkanja.</li>
+      <li><strong>Diff device properties</strong> prvi put spremi baseline svih <code>getprop</code> vrijednosti za taj uređaj, a svaki sljedeći put ispiše samo dodane, uklonjene i promijenjene vrijednosti s prije/poslije parom. Korisno nakon flešanja imagea ili promjene postavki.</li>
+    </ul>
+    <p class="muted">Svi izvještaji i kadrovi spremaju se lokalno u mapu Android Dev Monitor podataka; dugme <strong>Open session directory</strong> otvara tu mapu.</p>
+    <p><strong>Compare screenshots</strong> uzme dvije najnovije snimke zaslona i usporedi ih piksel po piksel (koliko posto se promijenilo, najveća razlika kanala i u kojem području), pa zapiše izvještaj u Test Runner listu artefakata. Snimke moraju biti iste veličine — rotacija ili promjena rezolucije čini usporedbu besmislenom i alat će to jasno reći.</p>
+    <p><strong>List</strong> i <strong>Pull file…</strong> čitaju privatne podatke odabrane aplikacije preko <code>run-as</code>, što radi samo na debuggable buildovima. Upišite relativnu putanju, na primjer <code>shared_prefs/settings.xml</code> ili <code>databases/</code>; povučena datoteka ide u lokalnu mapu i pojavi se u Test Runner listi.</p>
+  </section>
+
+  <section id="emulator17">
+    <h2>Emulator Control Center</h2>
+    <p>Panel <strong>Emulator Control Center</strong> u <strong>App &amp; Device Lab</strong> radi samo dok je odabran pokrenuti emulator. Sve komande su provjerene na stvarnim AVD-ovima.</p>
+    <div class="grid">
+      <div>
+        <h3>Pokretanje i snapshots</h3>
+        <p class="muted">Start, Cold boot, Wipe data, Stop. Upišite ime snapshota i koristite <strong>Save</strong>, <strong>Load</strong>, <strong>List</strong> i <strong>Delete…</strong> (brisanje traži potvrdu).</p>
+      </div>
+      <div>
+        <h3>Simulacija</h3>
+        <p class="muted">Battery, charger, network speed i latency, rotate, te <strong>Fold</strong> i <strong>Unfold</strong> za sklopive profile.</p>
+      </div>
+      <div>
+        <h3>GPS</h3>
+        <p class="muted">Upišite latitude i longitude pa <strong>Send GPS fix</strong> — aplikacija šalje <code>emu geo fix</code> s ispravnim redoslijedom lon/lat.</p>
+      </div>
+      <div>
+        <h3>Prikaz i lokalizacija</h3>
+        <p class="muted"><strong>Toggle dark mode</strong> mijenja <code>cmd uimode night</code>, a <strong>Apply font scale</strong> postavlja <code>font_scale</code> između 0.5 i 2.0.</p>
+      </div>
+    </div>
+    <p><strong>Read profile</strong> ispisuje API razinu, ABI, rezoluciju i density, locale, font scale, dark mode, ime AVD-a i je li Play Store prisutan. <strong>Check Play Store</strong> provjerava <code>com.android.vending</code>: ako ga nema, image je AOSP i Play ovisni testovi ne mogu raditi — Google Play services sam nije dovoljan.</p>
+  </section>
+
+  <section id="fleet18">
+    <h2>Više uređaja odjednom</h2>
+    <p>Panel <strong>Multi-device lab</strong> izvršava jednu radnju na svakom povezanom uređaju i sprema rezultat u jednu mapu.</p>
+    <ul>
+      <li><strong>Install on all</strong> instalira APK odabran u <em>Application productivity</em> panelu na sve uređaje i vraća tablicu OK/FAILED po serijskom broju.</li>
+      <li><strong>Launch on all</strong> radi force stop i zatim launch preko monkey launcher intenta.</li>
+      <li><strong>Screenshot all</strong> snima svaki uređaj i kopira PNG-ove u session mapu s imenom serijskog broja.</li>
+      <li><strong>Collect logs</strong> uzima zadnjih 400 logcat linija po uređaju i sprema jedan tekstualni izvještaj.</li>
+      <li><strong>Export bundle</strong> pakira sve <code>fleet-</code> artefakte u ZIP. Lista ispod omogućuje otvaranje pojedinog artefakta.</li>
+    </ul>
+    <p class="muted">Fleet radnje koriste samo uređaje u stanju <code>Connected</code>; offline ili neautorizirani uređaji se preskaču.</p>
+  </section>
+
+  <section id="testrunner15">
+    <h2>Test Runner</h2>
+    <p>Panel <strong>Test Runner</strong> u <strong>App &amp; Device Lab</strong> pokriva četiri praktična toka.</p>
+    <div class="grid">
+      <div>
+        <h3>Monkey stress</h3>
+        <p class="muted">Broj događaja, seed (0 = slučajno) i throttle. Izvještaj sadrži verdict: je li bilo crasha ili ANR-a i je li run dovršen.</p>
+      </div>
+      <div>
+        <h3>Crash / ANR scan</h3>
+        <p class="muted">Čita crash buffer i prijavljuje fatalne iznimke i ANR-ove s vremenom i paketom.</p>
+      </div>
+      <div>
+        <h3>UI hierarchy</h3>
+        <p class="muted">UI Automator dump u lokalni XML plus sažetak vidljivih tekstova i <code>resource-id</code> vrijednosti.</p>
+      </div>
+      <div>
+        <h3>Export</h3>
+        <p class="muted"><strong>Export ZIP</strong> pakira sve testne artefakte, a <strong>Stop on failure</strong> automatski snima screenshot i logcat čim run padne.</p>
+      </div>
+    </div>
+    <p class="muted">Rezultati se pojavljuju u listi artefakata ispod panela; <strong>Open</strong> otvara odabrani artefakt.</p>
+  </section>
+
+  <section id="aab14">
+    <h2>App bundle (AAB) analiza</h2>
+    <p>U <strong>Developer Tools</strong> stranici, alat <strong>App bundle analyzer</strong> radi lokalno i ne treba uređaj. Odaberite <code>.aab</code> datoteku preko <strong>Select APK</strong> pa pokrenite alat.</p>
+    <p>Izvještaj prikazuje module (base i feature), je li u modulu manifest, broj datoteka i veličine, sve native ABI-je, DEX i resurse, te postoji li <code>BundleConfig.pb</code>. Za usporedbu dvije APK verzije koristite <strong>APK build comparison</strong>.</p>
+    <p class="muted">Napomena: Play bundle razdvaja i potpisuje po uređaju, tako da alat prikazuje ono što je u prenesenom bundleu, ne ono što telefon konkretno skida.</p>
+  </section>
+
+  <section id="companion20">
+    <h2>Companion SDK</h2>
+    <p>Android Dev Monitor može čitati događaje iz vaše aplikacije ako koristite mali companion SDK iz mape <code>companion-sdk</code>.</p>
+    <ol>
+      <li>Kopirajte <code>AdmCompanion.java</code> u svoj projekt.</li>
+      <li>Pozovite <code>AdmCompanion.mark("feed load")</code>, <code>metric("frames", 42, "fps")</code> ili <code>duration("startup", 412, "ms")</code>.</li>
+      <li>U aplikaciji pokrenite <strong>Companion event report</strong> i odaberite paket — izvještaj sadrži brojanje po tipu, statistiku vrijednosti i timeline.</li>
+    </ol>
+    <p class="muted">SDK je namjerno minimalan i ne radi ništa osim ispisa jedne logcat linije s prefiksom <code>ADM_COMPANION</code>, pa ne mijenja ponašanje vaše aplikacije i lako se uklanja.</p>
+  </section>
+
+  <section id="cloud21">
+    <h2>Cloud podaci — kasnija faza</h2>
+    <p>Android Dev Monitor zasad radi potpuno lokalno. Cloud dio iz roadmappa (Firebase Crashlytics, Firebase Performance, Google Play Android Vitals i Firebase Device Streaming) svjesno nije uključen jer traži OAuth prijavu, vlastiti Firebase/Play projekt i jasnu obradu privatnih podataka.</p>
+    <div class="grid">
+      <div>
+        <h3>Što to znači u praksi</h3>
+        <p class="muted">Sve lokalne funkcije rade bez računa i bez interneta. Nema telemetrije, nema slanja podataka i nema skrivenih konekcija.</p>
+      </div>
+      <div>
+        <h3>Kada postane dostupno</h3>
+        <p class="muted">Kada povežete svoj Firebase ili Play projekt, ovdje će stajati uputa za prijavu te pregled crash-free users/sessions i produkcijskih ANR trendova.</p>
+      </div>
+    </div>
+    <p class="muted">Do tada produkcijske podatke zamijenite lokalnima: Bug Report Analyzer, crash/ANR scan u Test Runneru i Background Inspector pokrivaju isti tip signala na uređaju koji imate pri ruci.</p>
+  </section>
+
+  <footer>

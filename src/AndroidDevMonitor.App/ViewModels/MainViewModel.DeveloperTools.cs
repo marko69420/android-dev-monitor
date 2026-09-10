@@ -54,6 +54,8 @@ public partial class MainViewModel
         new("Storage report", "Application", "ADB", "Package disk usage, volumes, quotas and device free space"),
         new("APK analyzer", "Build", "Local Android SDK", "Manifest, permissions, files, resources, native ABIs and signing data"),
         new("APK build comparison", "Build", "Local files", "Compare download size and DEX, native, resources, assets and metadata between two APKs"),
+        new("App bundle analyzer", "Build", "Local files", "App bundle (AAB) modules, DEX, native ABIs, resources, BundleConfig and per-module sizes"),
+        new("Companion event report", "Diagnostics", "ADB · optional SDK", "Performance markers, business metrics and background events your app sends through the optional companion SDK"),
         new("Network and ports report", "Connectivity", "ADB", "Interfaces, DNS, routes, sockets and ADB forward/reverse mappings"),
         new("Logcat diagnostic bundle", "Diagnostics", "ADB", "Main, system, crash and events buffers"),
         new("Crash and ANR scan", "Diagnostics", "ADB", "Extract fatal exceptions, ANRs, watchdog and low-memory events"),
@@ -174,7 +176,7 @@ public partial class MainViewModel
         DeveloperToolRow? tool = SelectedDeveloperTool;
         AndroidDevice? target = SelectedDevice;
         if (tool is null) { DeveloperLabStatus = "Choose a tool first."; return; }
-        bool requiresDevice = tool.Name is not ("APK analyzer" or "APK build comparison" or "Analyze bug report file");
+        bool requiresDevice = tool.Name is not ("APK analyzer" or "APK build comparison" or "App bundle analyzer" or "Analyze bug report file");
         if (requiresDevice && target is null) { DeveloperLabStatus = "Select a connected Android device."; return; }
         Directory.CreateDirectory(DeveloperLabDirectory);
         _developerLabCts = new CancellationTokenSource();
@@ -186,6 +188,8 @@ public partial class MainViewModel
             {
                 "APK analyzer" => await AnalyzeApkAsync(),
                 "APK build comparison" => await CompareApksAsync(),
+                "App bundle analyzer" => await AnalyzeAppBundleAsync(),
+                "Companion event report" => await RunCompanionReportAsync(target!),
                 "Analyze bug report file" => await AnalyzeBugReportFileAsync(),
                 "Perfetto system trace" => await CapturePerfettoAsync(target!),
                 "CPU sampling report" => await RunShellReportAsync(target!, "cpu", ["package=" + ShellPackage() + "; pid=$(pidof $package | cut -d' ' -f1); echo PACKAGE=$package PID=$pid; echo __SIMPLEPERF__; if [ -n \"$pid\" ]; then simpleperf stat -p $pid --duration 10 2>&1; fi; echo __THREADS__; top -b -n 1 -H -p $pid 2>/dev/null; echo __PROC_STAT__; cat /proc/$pid/stat 2>/dev/null"]),
@@ -195,7 +199,7 @@ public partial class MainViewModel
                 "Memory report" => await RunShellReportAsync(target!, "memory", ["dumpsys meminfo -a " + ShellPackage() + "; echo __PROCRANK__; procrank 2>/dev/null; echo __MEMINFO__; cat /proc/meminfo; echo __LMK__; dumpsys activity lmk 2>/dev/null"]),
                 "Package inspector" => await RunShellReportAsync(target!, "package", ["dumpsys package " + ShellPackage() + "; echo __APPOPS__; appops get " + ShellPackage() + "; echo __ACTIVITY__; dumpsys activity package " + ShellPackage()]),
                 "Permission state report" => await RunShellReportAsync(target!, "permissions", ["dumpsys package " + ShellPackage() + " | grep -A 120 -E 'requested permissions:|install permissions:|runtime permissions:'; echo __APPOPS__; appops get " + ShellPackage() + "; echo __NOTIFICATIONS__; dumpsys notification --noredact | grep -i -A 8 " + ShellPackage() + "; echo __IDLE__; dumpsys deviceidle whitelist | grep " + ShellPackage()]),
-                "Background work report" => await RunShellReportAsync(target!, "background", ["dumpsys activity services " + ShellPackage() + "; echo __JOBS__; dumpsys jobscheduler " + ShellPackage() + "; echo __ALARMS__; dumpsys alarm; echo __POWER__; dumpsys power; echo __STANDBY__; am get-standby-bucket " + ShellPackage()]),
+                "Background work report" => await RunShellReportAsync(target!, "background", ["dumpsys activity services " + ShellPackage() + "; echo __JOBS__; dumpsys jobscheduler " + ShellPackage() + "; echo __ALARMS__; dumpsys alarm | grep -i -B 2 -A 6 " + ShellPackage() + "; echo __POWER__; dumpsys power; echo __STANDBY__; am get-standby-bucket " + ShellPackage() + "; echo __DEVICEIDLE__; dumpsys deviceidle | head -40; echo __BACKGROUND_RESTRICTION__; (cmd appops get " + ShellPackage() + " RUN_ANY_IN_BACKGROUND 2>/dev/null || appops get " + ShellPackage() + " RUN_ANY_IN_BACKGROUND 2>/dev/null); echo __BATTERY_WHITELIST__; dumpsys deviceidle whitelist | grep " + ShellPackage()]),
                 "Storage report" => await RunShellReportAsync(target!, "storage", ["dumpsys diskstats; echo __PACKAGE__; dumpsys package " + ShellPackage() + " | grep -E 'codePath=|dataDir=|primaryCpuAbi=|secondaryCpuAbi='; echo __VOLUMES__; df -h; echo __QUOTA__; dumpsys storaged 2>/dev/null"]),
                 "Network and ports report" => await RunNetworkReportAsync(target!),
                 "Logcat diagnostic bundle" => await RunAdbReportAsync(target!, "logcat", ["logcat", "-d", "-b", "main,system,crash,events,radio", "-v", "threadtime"]),
@@ -404,6 +408,41 @@ public partial class MainViewModel
             return "Choose the current APK and baseline APK first.";
         string report = ApkArchiveAnalyzer.Compare(ApkArchiveAnalyzer.Analyze(current), ApkArchiveAnalyzer.Analyze(baseline));
         return await SaveStandaloneTextAsync("apk-comparison", report);
+    }
+
+    private async Task<string> AnalyzeAppBundleAsync()
+    {
+        string? bundle = SelectedApkPath;
+        if (string.IsNullOrWhiteSpace(bundle) || !File.Exists(bundle))
+            return "Choose an .aab file with Select APK first.";
+        if (!AppBundleAnalyzer.IsAppBundle(bundle))
+            return $"'{Path.GetFileName(bundle)}' is not an .aab file. Use APK analyzer for .apk builds.";
+        AppBundleSnapshot snapshot = AppBundleAnalyzer.Analyze(bundle);
+        StringBuilder report = new(snapshot.ToReport());
+        report.AppendLine();
+        report.AppendLine("NOTE\tApp bundles ship from Play, which splits and re-signs them per device. Analyzer reports what is inside the uploaded bundle, not what a specific phone downloads.");
+        return await SaveStandaloneTextAsync("app-bundle", report.ToString());
+    }
+
+    private async Task<string> RunCompanionReportAsync(AndroidDevice target)
+    {
+        AdbCommandResult result = await _adb.ExecuteAsync(
+            target.Serial,
+            ["shell", "sh", "-c", "logcat -d -v time | grep -F ADM_COMPANION | tail -n 2000"],
+            TimeSpan.FromSeconds(45),
+            LabToken);
+        LabToken.ThrowIfCancellationRequested();
+        string[] lines = result.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        List<CompanionEvent> events = [];
+        foreach (string line in lines)
+        {
+            if (CompanionEventParser.TryParse(line, SelectedPackage ?? "", target.Serial, out CompanionEvent? parsed) && parsed is not null)
+                events.Add(parsed);
+        }
+        string report = CompanionEventParser.BuildReport(SelectedPackage ?? "", target.Serial, events, lines.Length);
+        if (!result.Success && events.Count == 0)
+            report += Environment.NewLine + "ADB note: " + CleanError(result);
+        return await SaveStandaloneTextAsync("companion-events", report);
     }
 
     private async Task<string> AnalyzeBugReportFileAsync()

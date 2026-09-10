@@ -37,6 +37,7 @@ public partial class MainViewModel
 
     public ObservableCollection<InstrumentationRow> Instrumentations { get; } = [];
     public ObservableCollection<PermissionChangeRow> PermissionChanges { get; } = [];
+    public string PermissionAuditPath => Path.Combine(DeveloperLabDirectory, "permission-audit.jsonl");
     public ObservableCollection<string> AvailableAvds { get; } = [];
     public IReadOnlyList<string> PortDirections { get; } = ["Forward PC → device", "Reverse device → PC"];
     public IReadOnlyList<string> EmulatorActions { get; } =
@@ -93,6 +94,18 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
+    private void OpenPermissionAudit()
+    {
+        if (!File.Exists(PermissionAuditPath))
+        {
+            _dialogs.Notify("No permission changes have been recorded yet.", error: true);
+            return;
+        }
+
+        Process.Start(new ProcessStartInfo(PermissionAuditPath) { UseShellExecute = true });
+    }
+
+    [RelayCommand]
     private async Task ResetAppOpsAsync()
     {
         if (!TryGetDeviceAndPackage(out AndroidDevice device, out string package)) return;
@@ -136,7 +149,23 @@ public partial class MainViewModel
             report.AppendLine($"===== RUN {run}/{repeats} · {timer.Elapsed:g} · {(result.Success ? "COMPLETED" : "FAILED")} =====");
             report.AppendLine(result.StandardOutput);
             if (!string.IsNullOrWhiteSpace(result.StandardError)) report.AppendLine(result.StandardError);
-            if (!result.Success) break;
+            bool failed = !result.Success ||
+                result.StandardOutput.Contains("FAILURES!!!", StringComparison.Ordinal) ||
+                result.StandardOutput.Contains("INSTRUMENTATION_FAILED", StringComparison.Ordinal) ||
+                result.StandardOutput.Contains("INSTRUMENTATION_ABORTED", StringComparison.Ordinal);
+            if (failed)
+            {
+                if (StopOnFailure)
+                {
+                    string? artifacts = await CaptureFailureArtifactsAsync(device, runner.TargetPackage, $"instrumentation-run-{run}");
+                    if (artifacts is not null)
+                    {
+                        report.AppendLine("ARTIFACTS CAPTURED ON FAILURE");
+                        report.AppendLine(artifacts);
+                    }
+                }
+                break;
+            }
         }
         DeviceLabOutput = await SaveTextAsync(device, "instrumentation", report.ToString());
         DeviceLabStatus = "Instrumentation run finished and was saved locally.";
@@ -371,7 +400,7 @@ public partial class MainViewModel
     private void AddPermissionChange(PermissionChangeRow change)
     {
         PermissionChanges.Insert(0, change);
-        while (PermissionChanges.Count > 5) PermissionChanges.RemoveAt(PermissionChanges.Count - 1);
+        while (PermissionChanges.Count > 20) PermissionChanges.RemoveAt(PermissionChanges.Count - 1);
     }
 
     private static string? ResolveExecutable(string name)

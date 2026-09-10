@@ -24,7 +24,7 @@ public sealed class NullToTextConverter : IValueConverter
 
 public sealed class PageSelectionBrushConverter : IMultiValueConverter
 {
-    private static readonly Brush SelectedBrush = new SolidColorBrush(Color.FromRgb(27, 42, 50));
+    private static readonly Brush SelectedBrush = new LinearGradientBrush(Color.FromRgb(32, 78, 90), Color.FromRgb(19, 33, 41), 0);
 
     static PageSelectionBrushConverter() => SelectedBrush.Freeze();
 
@@ -89,6 +89,7 @@ public sealed class NavigationIconConverter : IValueConverter
             "Automation" => "\uE945",
             "Alerts" => "\uEA39",
             "Settings" => "\uE713",
+            "Help" => "\uE897",
             _ => "\uE10C"
         };
 

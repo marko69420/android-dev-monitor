@@ -2251,10 +2251,10 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		_adb = adb;
 		_dialogs = dialogs;
 		IsDemo = isDemo;
-		NavigationItems = new global::_003C_003Ez__ReadOnlyArray<string>(new string[13]
+		NavigationItems = new global::_003C_003Ez__ReadOnlyArray<string>(new string[14]
 		{
 			"Overview", "Instances", "Wireless", "Developer Tools", "Media", "Performance", "Logs", "File Explorer", "Network", "ADB Shell", "Automation", "Alerts",
-			"Settings"
+			"Settings", "Help"
 		});
 		if (isDemo) { TrackedPackages.Add("com.company.mygame"); SelectedPackage = TrackedPackages[0]; }
 		PerformanceCharts = new global::_003C_003Ez__ReadOnlyArray<LiveChartViewModel>(new LiveChartViewModel[11]

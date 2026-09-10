@@ -40,6 +40,21 @@ It is designed for:
 - **Start/Stop for the process table:** freeze the current values and row order to inspect a busy list, then resume with the latest measurements.
 - **A refreshed dark interface:** maximized startup, compact tabs, readable tooltips, and matching dark scrollbars.
 
+## What's new since v2.5.0
+
+- **Refreshed dark design:** dark check boxes with an accent check, gradient panel surfaces, taller sidebar rows with a gradient selection highlight, accent focus on text fields, and unified toolbar and status bars.
+
+- **Logcat 2.0:** crash/ANR-only mode, bookmarks, "10 seconds before event", persisted filter presets, and a two-row toolbar that is easier to scan.
+- **In-app device mirror:** live ADB screencap stream with click-to-tap input, a visible touch marker, frame saving, Windows-clipboard push into the device, and an optional full-speed scrcpy window (scrcpy also forwards device audio on Android 11+).
+- **Emulator Control Center:** GPS fix, fold/unfold, dark-mode toggle, font scale, Play Store image detection, full device profile, sensor status, airplane-mode toggle, and snapshot save/load/list/delete.
+- **Multi-device lab:** install, launch, screenshot, and logcat across every connected device, one ZIP report, and one scrcpy window per device.
+- **Test Runner:** Monkey stress with seed/throttle and a crash verdict, crash/ANR scan, UI Automator hierarchy dump, automatic screenshot + logcat on failure, and ZIP export of all artifacts.
+- **App bundle (AAB) analyzer:** modules, DEX, native ABIs, resources, and `BundleConfig.pb`, each with per-module sizes.
+- **Companion SDK:** tiny `AdmCompanion.java` plus a `Companion event report` that reads `ADM_COMPANION` markers, value statistics, and a timeline.
+- **Background Inspector:** Doze state, App Standby bucket, background restriction, and battery whitelist added to the background work report.
+- **Developer productivity:** APK install/update, uninstall, clear data, force stop, cold restart, on-device text typing, device property diff, screenshot pixel diff, and app-data browsing or pulls on debuggable builds.
+- **Dark guide and help center:** `docs/USER_GUIDE.html` ships inside the build and opens from the in-app Help page.
+
 ## What's new in v2.5.0
 
 - **Wireless Device Center:** mDNS discovery, secure pairing, connect/disconnect, latency checks, reconnect support, and accurate Platform Tools 37 / ADB Wi-Fi 2.0 detection.

@@ -1,4 +1,4 @@
-<Window x:Class="AndroidDevMonitor.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:AndroidDevMonitor.App.Controls" xmlns:conv="clr-namespace:AndroidDevMonitor.App.Converters" Width="1600" Height="900" MinWidth="1280" MinHeight="720" WindowStartupLocation="CenterScreen" WindowState="Maximized" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}" FontSize="{Binding UiFontSize}" UseLayoutRounding="True" SnapsToDevicePixels="True" xmlns:app="clr-namespace:AndroidDevMonitor.App" Title="{Binding WindowTitle}">
+<Window x:Class="AndroidDevMonitor.App.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="clr-namespace:AndroidDevMonitor.App.Controls" xmlns:conv="clr-namespace:AndroidDevMonitor.App.Converters" Width="1600" Height="900" MinWidth="1280" MinHeight="720" WindowStartupLocation="CenterScreen" WindowState="Maximized" Background="{StaticResource WindowBackgroundBrush}" Foreground="{StaticResource TextBrush}" FontSize="{Binding UiFontSize}" UseLayoutRounding="True" SnapsToDevicePixels="True" xmlns:app="clr-namespace:AndroidDevMonitor.App" Title="{Binding WindowTitle}">
   <FrameworkElement.Resources>
     <ResourceDictionary>
       <conv:EqualityToVisibilityConverter x:Key="PageVisible" />
@@ -11,11 +11,11 @@
       <conv:TabSelectionConverter x:Key="TabSelection" />
       <conv:NavigationIconConverter x:Key="NavigationIcon" />
       <Style x:Key="Panel" TargetType="{x:Type Border}">
-        <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+        <Setter Property="Background" Value="{StaticResource PanelGradientBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Border.CornerRadius" Value="9" />
-        <Setter Property="Border.Padding" Value="14" />
+        <Setter Property="Border.CornerRadius" Value="10" />
+        <Setter Property="Border.Padding" Value="15" />
       </Style>
       <Style x:Key="SectionTitle" TargetType="{x:Type TextBlock}">
         <Setter Property="FontSize" Value="20" />
@@ -349,11 +349,11 @@
             <TextBlock Text="{Binding ApplicationVersion, StringFormat=v{0}}" Foreground="{StaticResource MutedBrush}" FontSize="11" />
           </StackPanel>
         </StackPanel>
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="8,6">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="10,8">
           <ItemsControl ItemsSource="{Binding NavigationItems}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Button HorizontalContentAlignment="Left" Width="210" Margin="0,2" Padding="13,8" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+                <Button HorizontalContentAlignment="Left" Width="210" Height="38" Margin="0,3" Padding="14,9" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                 <Button.Background>
                   <MultiBinding Converter="{StaticResource PageSelectionBrush}">
                     <Binding />
@@ -382,7 +382,7 @@
         <RowDefinition Height="78" />
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
-      <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Background="#0E1419" Padding="14,10">
+      <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Background="{StaticResource SidebarBrush}" Padding="14,10">
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="240" />
@@ -444,6 +444,7 @@
             <Button Content="{Binding RecordingLabel}" Command="{Binding ToggleRecordingCommand}" />
             <Button Content="Screenshot" Command="{Binding ScreenshotCommand}" />
             <Button Content="•••" ToolTip="Collection diagnostics" Command="{Binding ShowMoreCommand}" />
+            <Button Content="Help" Style="{StaticResource PrimaryActionButton}" Command="{Binding NavigateCommand}" CommandParameter="Help" ToolTip="Open the built-in quick guide" />
           </StackPanel>
         </Grid>
       </Border>
@@ -858,7 +859,9 @@
                       <Button Content="Revoke" Command="{Binding RevokePermissionCommand}"/>
                       <Button Content="Reset AppOps" Command="{Binding ResetAppOpsCommand}"/>
                       <Button Content="Rollback last" Command="{Binding RollbackPermissionChangeCommand}"/>
+                      <Button Content="Open audit file" Command="{Binding OpenPermissionAuditCommand}"/>
                     </WrapPanel>
+                    <TextBlock Text="{Binding PermissionAuditPath, StringFormat=Audit file: {0}}" Foreground="{StaticResource MutedBrush}" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip="{Binding PermissionAuditPath}" Margin="0,8,0,0"/>
                     <ItemsControl ItemsSource="{Binding PermissionChanges}" Margin="0,8,0,0">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -889,10 +892,81 @@
                     </DockPanel>
                   </StackPanel>
                 </Border>
+                <Border Style="{StaticResource Panel}" Margin="0,10,0,0">
+                  <StackPanel>
+                    <TextBlock Text="Test Runner · Monkey · crash scan · UI hierarchy" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TestRunnerSummary}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <WrapPanel>
+                      <TextBlock Text="Events" VerticalAlignment="Center"/>
+                      <TextBox Width="60" Margin="7,0" Text="{Binding MonkeyEventCount}"/>
+                      <TextBlock Text="Seed" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                      <TextBox Width="60" Margin="7,0" Text="{Binding MonkeySeed}"/>
+                      <TextBlock Text="Throttle ms" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                      <TextBox Width="50" Margin="7,0" Text="{Binding MonkeyThrottleMs}"/>
+                    </WrapPanel>
+                    <CheckBox Content="Stop on failure and capture screenshot + logcat" IsChecked="{Binding StopOnFailure}" Margin="0,7,0,0"/>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Monkey stress" Command="{Binding RunMonkeyStressCommand}"/>
+                      <Button Content="Scan crash / ANR" Command="{Binding ScanForCrashOrAnrCommand}"/>
+                      <Button Content="Dump UI hierarchy" Command="{Binding DumpUiHierarchyCommand}"/>
+                      <Button Content="Export ZIP" Command="{Binding ExportTestArtifactsCommand}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,7,0,0">
+                      <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenTestArtifactCommand}" CommandParameter="{Binding SelectedTestArtifact}"/>
+                      <ComboBox ItemsSource="{Binding TestArtifacts}" SelectedItem="{Binding SelectedTestArtifact}" ToolTip="Captured screenshots, logs, UI dumps and ZIP exports"/>
+                    </DockPanel>
+                    <Button Content="Clear artifact list" Command="{Binding ClearTestArtifactsCommand}" Margin="0,6,0,0" HorizontalAlignment="Left"/>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}" Margin="0,10,0,0">
+                  <StackPanel>
+                    <TextBlock Text="Multi-device lab" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding MultiDeviceSummary}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <WrapPanel>
+                      <Button Content="Install on all" ToolTip="Installs the APK chosen in Application productivity on every connected device" Command="{Binding InstallOnAllDevicesCommand}"/>
+                      <Button Content="Launch on all" Command="{Binding LaunchOnAllDevicesCommand}"/>
+                      <Button Content="Screenshot all" Command="{Binding CaptureAllScreenshotsCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Collect logs" Command="{Binding CollectFleetLogsCommand}"/>
+                      <Button Content="Export bundle" ToolTip="ZIP with every fleet- report, screenshot and log" Command="{Binding ExportFleetBundleCommand}"/>
+                      <Button Content="scrcpy on all" ToolTip="Opens one scrcpy window per connected device; scrcpy forwards device audio on Android 11+" Command="{Binding OpenScrcpyForAllDevicesCommand}"/>
+                      <Button Content="Clear list" Command="{Binding ClearFleetArtifactsCommand}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,7,0,0">
+                      <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenFleetArtifactCommand}" CommandParameter="{Binding SelectedFleetArtifact}"/>
+                      <ComboBox ItemsSource="{Binding FleetArtifacts}" SelectedItem="{Binding SelectedFleetArtifact}" ToolTip="Screenshots, logcat snapshots, install/launch reports and ZIP bundles"/>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
               </StackPanel>
             </ScrollViewer>
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
               <StackPanel>
+                <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Live mirror inside this window" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="Streams the real device screen over ADB only, so no scrcpy install is required. Click anywhere on the image to tap that exact spot on the device. 2 fps is easy to read; 4-8 fps gives smoother feedback while you work." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <Border Background="{StaticResource Panel2Brush}" CornerRadius="6" Height="230" ClipToBounds="True">
+                      <Grid>
+                        <Image x:Name="MirrorImage" Source="{Binding MirrorFrame}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" Cursor="Cross" MouseLeftButtonUp="OnMirrorFrameClick" ToolTip="Click to tap this point on the device"/>
+                        <Canvas IsHitTestVisible="False">
+                          <Ellipse x:Name="MirrorTapMarker" Width="34" Height="34" Visibility="Collapsed" Opacity="0" Stroke="#FF19C3D4" StrokeThickness="2" Fill="#4019C3D4"/>
+                        </Canvas>
+                      </Grid>
+                    </Border>
+                    <TextBlock Text="{Binding MirrorStatus}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="{Binding MirrorButtonLabel}" Command="{Binding ToggleMirrorCommand}" MinWidth="110"/>
+                      <Button Content="Save frame" Command="{Binding SaveMirrorFrameCommand}"/>
+                      <Button Content="Paste clipboard to device" ToolTip="Types the Windows clipboard into the field that has focus on the device" Command="{Binding PasteClipboardToDeviceCommand}"/>
+                      <StackPanel Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Frames per second" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox Width="62" ItemsSource="{Binding MirrorFpsOptions}" SelectedItem="{Binding MirrorFps}"/>
+                      </StackPanel>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
                 <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
                   <StackPanel>
                     <TextBlock Text="Device controls &amp; mirroring" FontSize="17" FontWeight="SemiBold"/>
@@ -904,7 +978,7 @@
                       <Button Content="Vol +" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_UP"/>
                       <Button Content="Vol −" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_DOWN"/>
                     </WrapPanel>
-                    <Button Content="Start device mirroring with scrcpy" Command="{Binding StartDeviceMirroringCommand}" Margin="0,8,0,0"/>
+                    <Button Content="Open full-speed scrcpy window" Command="{Binding StartDeviceMirroringCommand}" Margin="0,8,0,0" ToolTip="scrcpy 4.1 is installed at %LOCALAPPDATA%\Programs\scrcpy. The external window is faster than the in-app mirror."/>
                     <StackPanel Margin="0,8,0,0">
                       <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Background wait" VerticalAlignment="Center"/>
@@ -932,6 +1006,42 @@
                       <Button DockPanel.Dock="Right" Content="Apply" Command="{Binding ApplyEmulatorActionCommand}"/>
                       <ComboBox ItemsSource="{Binding EmulatorActions}" SelectedItem="{Binding SelectedEmulatorAction}"/>
                     </DockPanel>
+                    <TextBlock Text="{Binding EmulatorProfileSummary}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,9,0,0" FontSize="11"/>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Read profile" ToolTip="API, ABI, display, locale, font scale, dark mode, AVD name and Play Store" Command="{Binding ReadExtendedProfileCommand}"/>
+                      <Button Content="Toggle dark mode" Command="{Binding ToggleDarkModeCommand}"/>
+                      <Button Content="Check Play Store" Command="{Binding CheckPlayStoreCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <TextBlock Text="Font scale" VerticalAlignment="Center"/>
+                      <TextBox Width="48" Margin="7,0" Text="{Binding DeviceFontScale}" ToolTip="0.5 – 2.0, for example 1.15"/>
+                      <Button Content="Apply font scale" Command="{Binding ApplyFontScaleCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <TextBlock Text="GPS lat" VerticalAlignment="Center"/>
+                      <TextBox Width="72" Margin="7,0" Text="{Binding GpsLatitude}"/>
+                      <TextBlock Text="lon" VerticalAlignment="Center"/>
+                      <TextBox Width="72" Margin="7,0" Text="{Binding GpsLongitude}"/>
+                      <Button Content="Send GPS fix" Command="{Binding SendGeoFixCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Fold" Command="{Binding FoldDeviceCommand}"/>
+                      <Button Content="Unfold" Command="{Binding UnfoldDeviceCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Sensor status" ToolTip="emu sensor status: which virtual sensors this AVD exposes and whether they are enabled" Command="{Binding ReadSensorStatusCommand}"/>
+                      <Button Content="Toggle airplane mode" ToolTip="cmd connectivity airplane-mode enable/disable, for offline handling tests" Command="{Binding ToggleAirplaneModeCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <TextBlock Text="Snapshot" VerticalAlignment="Center"/>
+                      <TextBox Width="110" Margin="7,0" Text="{Binding SnapshotName}" ToolTip="Letters, digits, dash, dot or underscore"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,6,0,0">
+                      <Button Content="Save" Command="{Binding SaveEmulatorSnapshotCommand}"/>
+                      <Button Content="Load" Command="{Binding LoadEmulatorSnapshotCommand}"/>
+                      <Button Content="List" Command="{Binding ListEmulatorSnapshotsCommand}"/>
+                      <Button Content="Delete…" Foreground="#FF8B87" Command="{Binding DeleteEmulatorSnapshotCommand}"/>
+                    </WrapPanel>
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
@@ -941,6 +1051,44 @@
                       <Button DockPanel.Dock="Right" Content="Launch" Command="{Binding LaunchDeepLinkCommand}"/>
                       <TextBox Text="{Binding DeepLinkUri, UpdateSourceTrigger=PropertyChanged}"/>
                     </DockPanel>
+                  </StackPanel>
+                </Border>
+                <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Application productivity" FontSize="17" FontWeight="SemiBold"/>
+                    <TextBlock Text="Install a new build and control the selected package without leaving this window." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <DockPanel>
+                      <Button DockPanel.Dock="Right" Content="Browse" Command="{Binding PickApkFileCommand}"/>
+                      <TextBox Text="{Binding ApkPath, UpdateSourceTrigger=PropertyChanged}" ToolTip="Full path to a local APK"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Install / update" ToolTip="adb install -r keeps existing app data" Command="{Binding InstallApkCommand}"/>
+                      <Button Content="Restart cold" ToolTip="Force stop, then relaunch and measure" Command="{Binding RestartAppCommand}"/>
+                      <Button Content="Force stop" Command="{Binding ForceStopAppCommand}"/>
+                      <Button Content="Clear data…" Foreground="#FF8B87" Command="{Binding ClearAppDataCommand}"/>
+                      <Button Content="Uninstall…" Foreground="#FF8B87" Command="{Binding UninstallAppCommand}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Type on device" Command="{Binding SendInputTextCommand}"/>
+                      <TextBox Text="{Binding InputTextToSend, UpdateSourceTrigger=PropertyChanged}" ToolTip="Text is typed into whatever field has focus on the device"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Diff device properties" ToolTip="First run saves a baseline; later runs list added, removed and changed properties" Command="{Binding CompareDevicePropertiesCommand}"/>
+                      <Button Content="Open session directory" Command="{Binding OpenSessionDirectoryCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding DevicePropertiesSummary}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Compare screenshots" ToolTip="Pixel-diffs the two newest screenshots of the selected device and writes a report" Command="{Binding CompareLatestScreenshotsCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ScreenshotDiffSummary}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="List" ToolTip="Lists this path inside the app's private data over run-as" Command="{Binding ListAppDataCommand}"/>
+                      <TextBox Text="{Binding AppDataFile, UpdateSourceTrigger=PropertyChanged}" ToolTip="Path inside the app data directory, for example shared_prefs/settings.xml or databases/"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,6,0,0">
+                      <Button Content="Pull file…" ToolTip="Copies one file out of the app's private data over run-as (debuggable builds only)" Command="{Binding PullAppDataFileCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding AppDataSummary}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Panel}">
@@ -1257,41 +1405,67 @@
         <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Logs}">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="50" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="110" />
           </Grid.RowDefinitions>
           <DockPanel>
             <StackPanel>
               <TextBlock Text="Logs" Style="{StaticResource SectionTitle}" />
-              <TextBlock Text="Live Android logcat · external Appium files · crashes/ANRs · session events" Foreground="{StaticResource MutedBrush}" />
+              <TextBlock Text="Live logcat · crash/ANR quick view · bookmarks · 10 second window · Appium import" Foreground="{StaticResource MutedBrush}" />
             </StackPanel>
             <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Text="{Binding DeviceContext}" />
           </DockPanel>
-          <Grid Row="1" Margin="0,8">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="150" />
-              <ColumnDefinition Width="125" />
-              <ColumnDefinition Width="280" />
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <ComboBox ToolTip="Source" ItemsSource="{Binding LogSources}" SelectedItem="{Binding SelectedLogSource}" />
-            <ComboBox Grid.Column="1" Margin="6,0" ToolTip="Priority" ItemsSource="{Binding LogPriorities}" SelectedItem="{Binding SelectedLogPriority}" />
-            <TextBox Grid.Column="2" ToolTip="Search visible logs" Text="{Binding LogSearchText, UpdateSourceTrigger=PropertyChanged}" />
-            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="8,0">
-              <CheckBox Content="Regex" VerticalAlignment="Center" IsChecked="{Binding LogRegexEnabled}" />
-              <CheckBox Content="Auto-scroll" VerticalAlignment="Center" Margin="10,0" IsChecked="{Binding IsLogAutoScroll}" />
-            </StackPanel>
-            <TextBlock Grid.Column="4" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="10,0" Text="{Binding LogFilterStatus}" />
-            <StackPanel Grid.Column="5" Orientation="Horizontal">
-              <Button Content="Pause / Resume" Command="{Binding ToggleLogPauseCommand}" />
-              <Button Content="Import Appium" Command="{Binding ImportAppiumLogCommand}" />
-              <Button Content="Save" Command="{Binding SaveLogsCommand}" />
-              <Button Content="Clear" Command="{Binding ClearLogViewCommand}" />
-            </StackPanel>
-          </Grid>
+          <StackPanel Grid.Row="1" Margin="0,8">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="125" />
+                <ColumnDefinition Width="230" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <ComboBox ToolTip="Source" ItemsSource="{Binding LogSources}" SelectedItem="{Binding SelectedLogSource}" />
+              <ComboBox Grid.Column="1" Margin="6,0" ToolTip="Priority" ItemsSource="{Binding LogPriorities}" SelectedItem="{Binding SelectedLogPriority}" />
+              <TextBox Grid.Column="2" ToolTip="Search visible logs" Text="{Binding LogSearchText, UpdateSourceTrigger=PropertyChanged}" />
+              <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="8,0">
+                <CheckBox Content="Regex" VerticalAlignment="Center" IsChecked="{Binding LogRegexEnabled}" />
+                <CheckBox Content="Crash / ANR only" VerticalAlignment="Center" Margin="10,0" IsChecked="{Binding LogCrashOnly}" ToolTip="Keeps only fatal exceptions and ANR events, so the important row is easy to find." />
+                <CheckBox Content="Bookmarked only" VerticalAlignment="Center" IsChecked="{Binding LogBookmarksOnly}" ToolTip="Shows only the rows you bookmarked." />
+                <CheckBox Content="Auto-scroll" VerticalAlignment="Center" Margin="10,0" IsChecked="{Binding IsLogAutoScroll}" />
+              </StackPanel>
+              <TextBlock Grid.Column="4" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="10,0" Text="{Binding LogFilterStatus}" TextTrimming="CharacterEllipsis" />
+              <StackPanel Grid.Column="5" Orientation="Horizontal">
+                <Button Content="Bookmark" ToolTip="Bookmark or un-bookmark the selected row" Command="{Binding ToggleLogBookmarkCommand}" />
+                <Button Content="10 s before event" ToolTip="Shows the 10 seconds of logs before the selected row. Use it on a crash or a spike." Command="{Binding ShowWindowBeforeSelectedCommand}" />
+                <Button Content="Pause / Resume" Command="{Binding ToggleLogPauseCommand}" />
+                <Button Content="Import Appium" Command="{Binding ImportAppiumLogCommand}" />
+                <Button Content="Save" Command="{Binding SaveLogsCommand}" />
+                <Button Content="Clear" Command="{Binding ClearLogViewCommand}" />
+              </StackPanel>
+            </Grid>
+            <Grid Margin="0,7,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="210" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="190" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBox ToolTip="Type a name for the current filter combination, then press Save filter" Text="{Binding NewLogFilterName, UpdateSourceTrigger=PropertyChanged}" />
+              <Button Grid.Column="1" Content="Save filter" Margin="6,0,0,0" Command="{Binding SaveLogFilterCommand}" />
+              <ComboBox Grid.Column="2" Margin="10,0,0,0" ToolTip="Saved filters" ItemsSource="{Binding SavedLogFilters}" SelectedItem="{Binding SelectedSavedLogFilter}" DisplayMemberPath="Name" />
+              <Button Grid.Column="3" Content="Apply" Margin="6,0,0,0" Command="{Binding ApplySavedLogFilterCommand}" />
+              <Button Grid.Column="4" Content="Delete" Margin="6,0,0,0" Command="{Binding DeleteSavedLogFilterCommand}" />
+              <StackPanel Grid.Column="5" Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Foreground="{StaticResource MutedBrush}" Text="{Binding LogWindowSummary}" TextTrimming="CharacterEllipsis" ToolTip="{Binding LogWindowSummary}" />
+                <Button Content="Clear time window" Margin="8,0,0,0" Padding="9,3" Command="{Binding ClearLogWindowCommand}" />
+                <Button Content="Clear bookmarks" Margin="6,0,0,0" Padding="9,3" Command="{Binding ClearLogBookmarksCommand}" />
+              </StackPanel>
+            </Grid>
+          </StackPanel>
           <DataGrid Grid.Row="2" Margin="0,6,0,0" ItemsSource="{Binding LogView}" SelectedItem="{Binding SelectedLogEntry}">
             <DataGrid.Columns>
               <DataGridTextColumn Header="Local time" Width="110" Binding="{Binding LocalTimestamp, StringFormat={}{0:HH:mm:ss.fff}}" />
@@ -2026,9 +2200,111 @@
             </StackPanel>
           </ScrollViewer>
         </Grid>
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Help}">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="1180" Margin="0,0,18,0">
+              <DockPanel Margin="0,0,0,14">
+                <StackPanel>
+                  <TextBlock Text="Help" Style="{StaticResource SectionTitle}" />
+                  <TextBlock Text="Everything below works from one selected device and one selected app." Foreground="{StaticResource MutedBrush}" />
+                </StackPanel>
+                <Button DockPanel.Dock="Right" Content="Open complete HTML guide" Style="{StaticResource PrimaryActionButton}" Command="{Binding OpenUserGuideCommand}" ToolTip="Opens the local guide in your browser" />
+              </DockPanel>
+
+              <Border Style="{StaticResource Panel}" Padding="20" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="Start in 3 steps" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,10" />
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition /><ColumnDefinition Width="18" /><ColumnDefinition /><ColumnDefinition Width="18" /><ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                      <Border Width="30" Height="30" CornerRadius="15" Background="#12343D" HorizontalAlignment="Left" Margin="0,0,0,8">
+                        <TextBlock Text="1" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <TextBlock Text="Connect an Android device" FontWeight="SemiBold" />
+                      <TextBlock Text="Enable Developer options and USB debugging, plug it in, then accept the prompt on the phone." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <Border Width="30" Height="30" CornerRadius="15" Background="#12343D" HorizontalAlignment="Left" Margin="0,0,0,8">
+                        <TextBlock Text="2" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <TextBlock Text="Select it at the top" FontWeight="SemiBold" />
+                      <TextBlock Text="Choose the device in the first selector. Use the second selector to choose the app you want to inspect." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                      <Border Width="30" Height="30" CornerRadius="15" Background="#12343D" HorizontalAlignment="Left" Margin="0,0,0,8">
+                        <TextBlock Text="3" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      </Border>
+                      <TextBlock Text="Reproduce the problem" FontWeight="SemiBold" />
+                      <TextBlock Text="Press Mark Event at the exact moment it happens, then export the session from the top bar." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+              </Border>
+
+              <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition /><ColumnDefinition Width="12" /><ColumnDefinition /><ColumnDefinition Width="12" /><ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                  <Border Style="{StaticResource Panel}" Padding="18">
+                    <StackPanel>
+                      <TextBlock Text="Find your way around" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
+                      <TextBlock Text="Overview — live cards and processes" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Developer Tools — reports and APK analysis" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Wireless — pair and manage Wi-Fi devices" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Performance — stored sessions and A/B comparison" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                  <Border Style="{StaticResource Panel}" Padding="18">
+                    <StackPanel>
+                      <TextBlock Text="Capture evidence" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
+                      <TextBlock Text="Logs — filter live logcat without losing rows" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Media — screenshots and recordings with context" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Alerts — automatic CPU, memory and network warnings" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Export Session — JSON, CSV or a complete ZIP" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="4">
+                  <Border Style="{StaticResource Panel}" Padding="18">
+                    <StackPanel>
+                      <TextBlock Text="Work directly on the device" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
+                      <TextBlock Text="File Explorer — copy files in both directions" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="ADB Shell — run a command only when you click Run" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Automation — repeat taps, swipes and text input" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                      <TextBlock Text="Settings — ADB path, storage, safety and diagnostics" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Grid>
+
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition /><ColumnDefinition Width="12" /><ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Panel}" Padding="18">
+                  <StackPanel>
+                    <TextBlock Text="When a value shows N/A" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock Text="N/A and — mean the device did not expose that counter. Android versions, vendors and app permissions decide what is available; the app never invents a value." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="18">
+                  <StackPanel>
+                    <TextBlock Text="Safe by default" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock Text="Destructive actions always ask for confirmation with the exact device or package. Sessions, media and reports stay on this computer; standard monitoring does not use root or cloud telemetry." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
       </Grid>
     </Grid>
-    <Border Grid.Column="1" Grid.Row="1" Background="#10171D" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="12,5">
+    <Border Grid.Column="1" Grid.Row="1" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,6">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />

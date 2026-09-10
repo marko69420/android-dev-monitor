@@ -38,4 +38,35 @@ public sealed class BugReportAnalyzerTests
         }
         finally { if (File.Exists(path)) File.Delete(path); }
     }
+
+    [Fact]
+    public async Task Analyzer_reads_multiple_high_signal_zip_sources()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"adm-test-{Guid.NewGuid():N}.zip");
+        try
+        {
+            using (ZipArchive archive = ZipFile.Open(path, ZipArchiveMode.Create))
+            {
+                await WriteEntryAsync(archive, "bugreport-device.txt", "ANR in com.example");
+                await WriteEntryAsync(archive, "FS/data/misc/tombstones/tombstone_00", "Fatal signal 11");
+                await WriteEntryAsync(archive, "FS/data/system/dropbox/system_app_strictmode.txt", "StrictMode policy violation");
+            }
+
+            BugReportAnalysis result = await BugReportAnalyzer.AnalyzeAsync(path, CancellationToken.None);
+            Assert.Equal(3, result.FilesScanned);
+            Assert.Equal(1, result.AnrCount);
+            Assert.Equal(1, result.CrashCount);
+            Assert.Equal(1, result.StrictModeCount);
+            Assert.Contains(result.Findings, finding => finding.Text.Contains("tombstone_00", StringComparison.Ordinal));
+            Assert.Contains("3 files", result.Source, StringComparison.Ordinal);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
+    private static async Task WriteEntryAsync(ZipArchive archive, string name, string text)
+    {
+        ZipArchiveEntry entry = archive.CreateEntry(name);
+        await using StreamWriter writer = new(entry.Open());
+        await writer.WriteLineAsync(text);
+    }
 }
