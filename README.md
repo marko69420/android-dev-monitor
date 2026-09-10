@@ -1,16 +1,14 @@
 # Android Dev Monitor
 
+[![Download Android Dev Monitor v2.5.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.5.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip)
+
+**Ready-to-run Windows app:** [download the ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. No installer or .NET SDK required.
+
 **A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
 
 **Version 2.5.0** · Windows desktop app · Physical Android devices and local emulators
 
 ![Android Dev Monitor v2.0.0 monitoring YouTube and opening live logs](docs/images/android-dev-monitor-demo.gif)
-
-## [Download for Windows](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip)
-
-[![Download Android Dev Monitor v2.5.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.5.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip)
-
-No installer and no .NET SDK required: download the ZIP, extract it, and run `AndroidDevMonitor.exe`.
 
 1. Enable **Developer options → USB debugging** on the Android device, or start a local emulator.
 2. Connect the device and accept its USB-debugging prompt.
