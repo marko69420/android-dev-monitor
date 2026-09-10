@@ -10,6 +10,8 @@
 
 **Version 2.6.0** · Windows desktop app · Physical Android devices and local emulators
 
+**Project page:** [marko69420.github.io/android-dev-monitor](https://marko69420.github.io/android-dev-monitor/) — download, feature overview, screens, and documentation links.
+
 ![Android Dev Monitor v2.0.0 monitoring YouTube and opening live logs](docs/images/android-dev-monitor-demo.gif)
 
 ## Quick start
