@@ -1,20 +1,30 @@
 # Android Dev Monitor
 
-[![Download Android Dev Monitor v2.5.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.5.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip)
+[![Download Android Dev Monitor v2.6.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.6.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.0/AndroidDevMonitor-v2.6.0-win-x64.zip)
+[![Windows 10 / 11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#prerequisites)
+[![License MIT](https://img.shields.io/badge/License-MIT-59D35F?style=for-the-badge)](LICENSE)
 
-**Ready-to-run Windows app:** [download the ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.5.0/AndroidDevMonitor-v2.5.0-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. No installer or .NET SDK required.
+**Ready to run:** [download the v2.6.0 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.0/AndroidDevMonitor-v2.6.0-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
 
 **A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
 
-**Version 2.5.0** · Windows desktop app · Physical Android devices and local emulators
+**Version 2.6.0** · Windows desktop app · Physical Android devices and local emulators
 
 ![Android Dev Monitor v2.0.0 monitoring YouTube and opening live logs](docs/images/android-dev-monitor-demo.gif)
 
-1. Enable **Developer options → USB debugging** on the Android device, or start a local emulator.
-2. Connect the device and accept its USB-debugging prompt.
-3. Open Android Dev Monitor and select the detected device.
+## Quick start
 
-![Android Dev Monitor v2.0.0 dashboard and process table](docs/images/android-dev-monitor-overview.png)
+1. Enable **Developer options → USB debugging** on the Android device, start a local emulator, or connect wirelessly from the **Wireless** page.
+2. Connect the device and accept its USB-debugging prompt.
+3. Open Android Dev Monitor, choose the device in the top bar, and select the app you want to watch.
+
+No device at hand? Launch with `--demo` to explore every workspace with deterministic sample data.
+
+## Screenshots
+
+![Android Dev Monitor v2.6.0 overview with live device cards, charts, and the process table](docs/images/android-dev-monitor-v26-overview.png)
+
+![Logs workspace with crash filters and the refreshed dark theme](docs/images/android-dev-monitor-v26-logs.png)
 
 > [!NOTE]
 > Android Dev Monitor is an early preview. Core monitoring, sessions, exports, media capture, logs, file transfer, shell, and automation are implemented, but metric availability depends on the Android version, device vendor, and app permissions.
@@ -40,7 +50,9 @@ It is designed for:
 - **Start/Stop for the process table:** freeze the current values and row order to inspect a busy list, then resume with the latest measurements.
 - **A refreshed dark interface:** maximized startup, compact tabs, readable tooltips, and matching dark scrollbars.
 
-## What's new since v2.5.0
+## What's new in v2.6.0
+
+Everything below landed together in **v2.6.0**, the largest update so far; the complete v2.5.0 feature set is kept intact.
 
 - **Refreshed dark design:** dark check boxes with an accent check, gradient panel surfaces, taller sidebar rows with a gradient selection highlight, accent focus on text fields, and unified toolbar and status bars.
 
@@ -150,6 +162,27 @@ Local data is under `%LOCALAPPDATA%\AndroidDevMonitor`: SQLite database, diagnos
 - **Recording:** `screenrecord` support varies by build. Recordings open in the Windows player; the Media page does not decode video thumbnails in-process.
 
 See [metric definitions](docs/METRICS.md), [ADB limitations](docs/ADB_LIMITATIONS.md), and [product notes](docs/PRODUCT_NOTES.md) for more detail.
+
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [User guide (HTML)](docs/USER_GUIDE.html) | Croatian dark-themed walkthrough of every workspace; ships inside the app and opens from **Help** |
+| [Architecture](docs/ARCHITECTURE.md) | Project layout, session lifecycle, and threading model |
+| [Metrics](docs/METRICS.md) | How each card is measured and what it can miss |
+| [UI behavior](docs/UI_BEHAVIOR.md) | Navigation, selectors, states, and refresh targets |
+| [ADB limitations](docs/ADB_LIMITATIONS.md) | Device- and vendor-dependent behavior |
+| [Implementation plan](docs/IMPLEMENTATION_PLAN.md) | Scope, phases, and acceptance strategy |
+
+## Older releases
+
+<details>
+<summary>v2.5.0 and v2.0.0 release notes</summary>
+
+- **[v2.5.0](https://github.com/marko69420/android-dev-monitor/releases/tag/v2.5.0)** — Wireless Device Center (mDNS discovery, secure pairing, connect/disconnect, latency checks, ADB Wi-Fi 2.0 detection), Developer Lab reports, App & Device Lab, session comparison, bug report analyzer, build comparison, AVD lifecycle, and the background scenario.
+- **[v2.0.0](https://github.com/marko69420/android-dev-monitor/releases/tag/v2.0.0)** — A/B app monitoring, readable app selectors, emulator GPU monitoring, split disk charts, a clearer process table, freeze/resume for the process list, and a refreshed dark interface.
+
+</details>
 
 ## License
 
