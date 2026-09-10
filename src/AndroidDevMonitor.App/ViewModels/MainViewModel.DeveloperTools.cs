@@ -69,6 +69,12 @@ public partial class MainViewModel
 
     public string DeveloperLabDirectory => Path.Combine(DataDirectory, "DeveloperLab");
 
+    partial void OnSelectedDeveloperToolChanged(DeveloperToolRow? value)
+    {
+        if (!DeveloperLabIsRunning && value is not null)
+            DeveloperLabStatus = $"{value.Name} ready · results stay on this PC.";
+    }
+
     [RelayCommand]
     private async Task RefreshWirelessAsync()
     {

@@ -22,6 +22,20 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Margin" Value="0,0,0,12" />
       </Style>
+      <Style x:Key="WorkspaceTabButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Padding" Value="14,5" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+        <Setter Property="Background" Value="#101920" />
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+      </Style>
+      <Style x:Key="PrimaryActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="#12343D" />
+        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+        <Setter Property="Foreground" Value="#E8FCFF" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+      </Style>
       <Style x:Key="{x:Type DataGrid}" TargetType="{x:Type DataGrid}">
         <Setter Property="Background" Value="#00FFFFFF" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
@@ -52,6 +66,28 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="8,5" />
         <Setter Property="Foreground" Value="#D7E0E5" />
+      </Style>
+      <Style x:Key="StandardDataGridRow" TargetType="DataGridRow">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="#D7E0E5" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Style.Triggers>
+          <Trigger Property="IsMouseOver" Value="True">
+            <Setter Property="Background" Value="#18262E" />
+          </Trigger>
+          <Trigger Property="IsSelected" Value="True">
+            <Setter Property="Background" Value="#123D49" />
+            <Setter Property="Foreground" Value="#F2FDFF" />
+          </Trigger>
+        </Style.Triggers>
+      </Style>
+      <Style x:Key="StandardDataGridCell" TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+        <Style.Triggers>
+          <Trigger Property="IsSelected" Value="True">
+            <Setter Property="Background" Value="#123D49" />
+            <Setter Property="Foreground" Value="#F2FDFF" />
+          </Trigger>
+        </Style.Triggers>
       </Style>
       <Style x:Key="ProcessTabButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
         <Setter Property="FontSize" Value="12"/><Setter Property="Height" Value="30"/>
@@ -313,10 +349,11 @@
             <TextBlock Text="{Binding ApplicationVersion, StringFormat=v{0}}" Foreground="{StaticResource MutedBrush}" FontSize="11" />
           </StackPanel>
         </StackPanel>
-        <ItemsControl Grid.Row="1" Margin="8,6" ItemsSource="{Binding NavigationItems}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Button HorizontalContentAlignment="Left" Width="210" Margin="0,2" Padding="13,10" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="8,6">
+          <ItemsControl ItemsSource="{Binding NavigationItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button HorizontalContentAlignment="Left" Width="210" Margin="0,2" Padding="13,8" Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                 <Button.Background>
                   <MultiBinding Converter="{StaticResource PageSelectionBrush}">
                     <Binding />
@@ -327,10 +364,11 @@
                   <TextBlock Width="27" VerticalAlignment="Center" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="15" Foreground="{StaticResource AccentBrush}" Text="{Binding Converter={StaticResource NavigationIcon}}" />
                   <TextBlock VerticalAlignment="Center" Text="{Binding}" />
                 </StackPanel>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
         <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="16">
           <StackPanel Orientation="Horizontal">
             <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" Margin="0,0,8,0" />
@@ -738,17 +776,20 @@
           </Border>
         </Grid>
 
-        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Developer Lab}">
+        <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=Developer Tools}">
           <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
           <DockPanel Margin="0,0,0,12">
             <StackPanel>
-              <TextBlock Text="Developer Lab" Style="{StaticResource SectionTitle}"/>
-              <TextBlock Text="Performance traces, startup, memory, packages, background work, bug reports and stress testing" Foreground="{StaticResource MutedBrush}"/>
+              <TextBlock Text="Developer Tools" Style="{StaticResource SectionTitle}" Margin="0,0,0,5"/>
+              <StackPanel Orientation="Horizontal">
+                <Button Content="Diagnostics &amp; profiling" Style="{StaticResource WorkspaceTabButton}" BorderBrush="{StaticResource AccentBrush}" Foreground="{StaticResource AccentBrush}"/>
+                <Button Content="App &amp; device controls" Style="{StaticResource WorkspaceTabButton}" Command="{Binding NavigateCommand}" CommandParameter="App &amp; Device Lab"/>
+              </StackPanel>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
               <Button Content="Open results" Command="{Binding OpenDeveloperLabDirectoryCommand}"/>
               <Button Content="Cancel" Command="{Binding CancelDeveloperToolCommand}" IsEnabled="{Binding DeveloperLabIsRunning}"/>
-              <Button Content="Run selected tool" Command="{Binding RunDeveloperToolCommand}"/>
+              <Button Content="Run selected tool" Style="{StaticResource PrimaryActionButton}" Command="{Binding RunDeveloperToolCommand}"/>
             </StackPanel>
           </DockPanel>
           <Grid Grid.Row="1">
@@ -756,7 +797,7 @@
             <Border Style="{StaticResource Panel}" Padding="0">
               <Grid>
                 <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                <DataGrid ItemsSource="{Binding DeveloperTools}" SelectedItem="{Binding SelectedDeveloperTool}">
+                <DataGrid ItemsSource="{Binding DeveloperTools}" SelectedItem="{Binding SelectedDeveloperTool}" RowStyle="{StaticResource StandardDataGridRow}" CellStyle="{StaticResource StandardDataGridCell}">
                   <DataGrid.Columns>
                     <DataGridTextColumn Header="Tool" Width="165" Binding="{Binding Name}"/>
                     <DataGridTextColumn Header="Category" Width="90" Binding="{Binding Category}"/>
@@ -794,15 +835,16 @@
 
         <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=App &amp; Device Lab}">
           <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-          <DockPanel Margin="0,0,0,12">
-            <StackPanel>
-              <TextBlock Text="App &amp; Device Lab" Style="{StaticResource SectionTitle}"/>
-              <TextBlock Text="Permissions, instrumentation tests, deep links, ports, emulator controls and mirroring" Foreground="{StaticResource MutedBrush}"/>
+          <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="Developer Tools" Style="{StaticResource SectionTitle}" Margin="0,0,0,5"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Diagnostics &amp; profiling" Style="{StaticResource WorkspaceTabButton}" Command="{Binding NavigateCommand}" CommandParameter="Developer Tools"/>
+              <Button Content="App &amp; device controls" Style="{StaticResource WorkspaceTabButton}" BorderBrush="{StaticResource AccentBrush}" Foreground="{StaticResource AccentBrush}"/>
+              <Button Content="Build device matrix" Style="{StaticResource PrimaryActionButton}" Command="{Binding BuildMultiDeviceMatrixCommand}" Height="34" Padding="14,5" Margin="4,0,0,0"/>
             </StackPanel>
-            <Button DockPanel.Dock="Right" Content="Build device matrix" Command="{Binding BuildMultiDeviceMatrixCommand}"/>
-          </DockPanel>
+          </StackPanel>
           <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="1.05*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="1.05*"/><ColumnDefinition Width="10"/><ColumnDefinition Width="1.35*"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="350"/><ColumnDefinition Width="10"/><ColumnDefinition Width="350"/><ColumnDefinition Width="10"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel>
                 <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
@@ -863,14 +905,14 @@
                       <Button Content="Vol −" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_DOWN"/>
                     </WrapPanel>
                     <Button Content="Start device mirroring with scrcpy" Command="{Binding StartDeviceMirroringCommand}" Margin="0,8,0,0"/>
-                    <DockPanel Margin="0,8,0,0">
-                      <Button DockPanel.Dock="Right" Content="Run background test" Command="{Binding RunBackgroundScenarioCommand}"/>
+                    <StackPanel Margin="0,8,0,0">
                       <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Background wait" VerticalAlignment="Center"/>
                         <TextBox Width="55" Margin="7,0" Text="{Binding BackgroundTestSeconds}" ToolTip="5–300 seconds"/>
                         <TextBlock Text="seconds" VerticalAlignment="Center"/>
                       </StackPanel>
-                    </DockPanel>
+                      <Button Content="Run background test" Command="{Binding RunBackgroundScenarioCommand}" Margin="0,7,0,0" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
                   </StackPanel>
                 </Border>
                 <Border Style="{StaticResource Panel}" Margin="0,0,0,10">
@@ -921,9 +963,10 @@
             </ScrollViewer>
             <Border Grid.Column="4" Style="{StaticResource Panel}">
               <Grid>
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                <TextBlock Text="{Binding DeviceLabStatus}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                <TextBox Grid.Row="1" Text="{Binding DeviceLabOutput}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <TextBlock Text="Activity" FontWeight="SemiBold" FontSize="17"/>
+                <TextBlock Grid.Row="1" Text="{Binding DeviceLabStatus}" Foreground="{StaticResource AccentBrush}" TextWrapping="Wrap" Margin="0,4,0,10"/>
+                <TextBox Grid.Row="2" Text="{Binding DeviceLabOutput}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="Consolas" FontSize="11" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
               </Grid>
             </Border>
           </Grid>
