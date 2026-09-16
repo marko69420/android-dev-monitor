@@ -8,7 +8,7 @@
             <LinearGradientBrush x:Key="PanelGradientBrush" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#17222B" Offset="0"/><GradientStop Color="#131B22" Offset="1"/></LinearGradientBrush>
             <Style TargetType="Control"><Setter Property="FontFamily" Value="Segoe UI"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/></Style>
             <Style TargetType="Button"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="12,7"/><Setter Property="Margin" Value="3"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="border" Property="Background" Value="#1C2A32"/><Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentBrush}"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".42"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
-            <Style TargetType="TextBox"><Setter Property="Background" Value="#111A20"/><Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="Padding" Value="9,6"/><Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/><Style.Triggers><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="#3D5666"/></Trigger></Style.Triggers></Style>
+            <Style TargetType="TextBox"><Setter Property="Background" Value="#111A20"/><Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="Padding" Value="9,6"/><Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/><Setter Property="VerticalContentAlignment" Value="Center"/><Style.Triggers><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="#3D5666"/></Trigger><Trigger Property="AcceptsReturn" Value="True"><Setter Property="VerticalContentAlignment" Value="Top"/></Trigger></Style.Triggers></Style>
             <Style TargetType="ComboBox">
                 <Setter Property="Background" Value="#111A20"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/><Setter Property="Padding" Value="8,5"/>
                 <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox">
@@ -39,6 +39,36 @@
                     </ControlTemplate>
                 </Setter.Value></Setter>
             </Style>
+      <Style x:Key="ProcessScrollThumb" TargetType="Thumb">
+        <Setter Property="Background" Value="#3A505F"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Thumb">
+          <Border Background="{TemplateBinding Background}" CornerRadius="4" Margin="2"/>
+        </ControlTemplate></Setter.Value></Setter>
+        <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#607D8E"/></Trigger></Style.Triggers>
+      </Style>
+      <Style x:Key="ProcessScrollPage" TargetType="RepeatButton">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate></Setter.Value></Setter>
+      </Style>
+      <Style x:Key="ProcessScrollBar" TargetType="ScrollBar">
+        <Setter Property="Width" Value="12"/><Setter Property="Background" Value="#111B22"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
+          <Border Background="{TemplateBinding Background}">
+            <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" ViewportSize="{TemplateBinding ViewportSize}" Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" IsDirectionReversed="True">
+              <Track.DecreaseRepeatButton><RepeatButton x:Name="PageBack" Command="ScrollBar.PageUpCommand" Style="{StaticResource ProcessScrollPage}"/></Track.DecreaseRepeatButton>
+              <Track.Thumb><Thumb Style="{StaticResource ProcessScrollThumb}"/></Track.Thumb>
+              <Track.IncreaseRepeatButton><RepeatButton x:Name="PageForward" Command="ScrollBar.PageDownCommand" Style="{StaticResource ProcessScrollPage}"/></Track.IncreaseRepeatButton>
+            </Track>
+          </Border>
+          <ControlTemplate.Triggers><Trigger Property="Orientation" Value="Horizontal">
+            <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+            <Setter TargetName="PageBack" Property="Command" Value="ScrollBar.PageLeftCommand"/>
+            <Setter TargetName="PageForward" Property="Command" Value="ScrollBar.PageRightCommand"/>
+          </Trigger></ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+        <Style.Triggers><Trigger Property="Orientation" Value="Horizontal"><Setter Property="Width" Value="Auto"/><Setter Property="Height" Value="12"/></Trigger></Style.Triggers>
+      </Style>
+      <Style TargetType="ScrollBar" BasedOn="{StaticResource ProcessScrollBar}"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

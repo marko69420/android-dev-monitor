@@ -598,24 +598,24 @@ public partial class MainViewModel
 
     private static string[] ParseDnsServers(IEnumerable<string>? lines) =>
         (lines ?? [])
-        .SelectMany(line => Regex.Matches(line, @"(?<address>(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]{3,})")
-            .Select(match => match.Groups["address"].Value))
+        .Select(line => Regex.Match(line, @"^\[(?:net\.)?[^\]]*dns\d*\]:\s*\[(?<value>[^\]]*)\]$", RegexOptions.IgnoreCase))
+        .Where(match => match.Success)
+        .SelectMany(match => ParseDnsAddresses(match.Groups["value"].Value))
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToArray();
 
-    private static string[] ParseConnectivityDnsServers(IEnumerable<string>? lines)
-    {
-        string text = string.Join('\n', lines ?? []);
-        Match dns = Regex.Match(text, @"DnsAddresses:\s*\[(?<addresses>[^\]]+)\]");
-        return dns.Success
-            ? Regex.Matches(
-                    dns.Groups["addresses"].Value,
-                    @"(?<address>(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F:]{3,})")
-                .Select(match => match.Groups["address"].Value)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray()
-            : [];
-    }
+    private static string[] ParseDnsAddresses(string value) =>
+        Regex.Split(value, @"[\s,;/]+")
+        .Where(token => token.Contains(':') || Regex.IsMatch(token, @"^(?:\d{1,3}\.){3}\d{1,3}$"))
+        .Where(token => System.Net.IPAddress.TryParse(token, out _))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    private static string[] ParseConnectivityDnsServers(IEnumerable<string>? lines) =>
+        Regex.Matches(string.Join('\n', lines ?? []), @"DnsAddresses:\s*\[(?<addresses>[^\]]*)\]")
+        .SelectMany(match => ParseDnsAddresses(match.Groups["addresses"].Value))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
 
     private static IReadOnlyList<NetworkSocketRow> ParseNetworkSockets(
         string output,

@@ -22,6 +22,36 @@ public partial class MainViewModel
 
     public ObservableCollection<SavedLogFilter> SavedLogFilters { get; } = [];
 
+    public IReadOnlyList<SavedLogFilter> DefaultLogFilters { get; } = new SavedLogFilter[]
+    {
+        new("All logs", "", false, "All", "All", false, false),
+        new("Device logs", "", false, "All", "logcat", false, false),
+        new("Errors", "", false, "Error", "All", false, false),
+        new("Warnings", "", false, "Warning", "All", false, false),
+        new("Crashes / ANRs", "", false, "All", "All", true, false),
+        new("Bookmarks", "", false, "All", "All", false, true)
+    };
+
+    [RelayCommand]
+    private void ApplyDefaultLogFilter(SavedLogFilter? filter)
+    {
+        if (filter is null) return;
+        ClearLogWindow();
+        ApplyLogFilter(filter);
+        LogFilterStatus = $"{filter.Name} · {LogView.Cast<object>().Count()} visible";
+    }
+
+    private void ApplyLogFilter(SavedLogFilter filter)
+    {
+        LogRegexEnabled = filter.Regex;
+        LogSearchText = filter.SearchText;
+        SelectedLogPriority = filter.Priority;
+        SelectedLogSource = filter.Source;
+        LogCrashOnly = filter.CrashOnly;
+        LogBookmarksOnly = filter.BookmarksOnly;
+        RefreshLogFilter();
+    }
+
     public int BookmarkedLogCount => _bookmarkedLogs.Count;
 
     public string LogWindowSummary => LogWindowFrom is DateTimeOffset from && LogWindowTo is DateTimeOffset to
@@ -153,13 +183,7 @@ public partial class MainViewModel
             return;
         }
 
-        LogSearchText = filter.SearchText;
-        LogRegexEnabled = filter.Regex;
-        SelectedLogPriority = filter.Priority;
-        SelectedLogSource = filter.Source;
-        LogCrashOnly = filter.CrashOnly;
-        LogBookmarksOnly = filter.BookmarksOnly;
-        RefreshLogFilter();
+        ApplyLogFilter(filter);
         LogFilterStatus = $"Saved filter '{filter.Name}' applied";
     }
 

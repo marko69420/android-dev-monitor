@@ -1,14 +1,14 @@
 # Android Dev Monitor
 
-[![Download Android Dev Monitor v2.6.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.6.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.0/AndroidDevMonitor-v2.6.0-win-x64.zip)
+[![Download Android Dev Monitor v2.6.1 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.6.1-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.1/AndroidDevMonitor-v2.6.1-win-x64.zip)
 [![Windows 10 / 11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#prerequisites)
 [![License MIT](https://img.shields.io/badge/License-MIT-59D35F?style=for-the-badge)](LICENSE)
 
-**Ready to run:** [download the v2.6.0 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.0/AndroidDevMonitor-v2.6.0-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
+**Ready to run:** [download the v2.6.1 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.1/AndroidDevMonitor-v2.6.1-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
 
 **A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
 
-**Version 2.6.0** · Windows desktop app · Physical Android devices and local emulators
+**Version 2.6.1** · Windows desktop app · Physical Android devices and local emulators
 
 **Project page:** [marko69420.github.io/android-dev-monitor](https://marko69420.github.io/android-dev-monitor/) — download, feature overview, screens, and documentation links.
 
@@ -41,6 +41,13 @@ It is designed for:
 - QA teams capturing reproducible performance sessions alongside logs and screenshots.
 - Indie developers who want a lightweight Windows dashboard around common ADB workflows.
 - Technical users reporting evidence-backed performance bugs to app teams.
+
+## What's new in v2.6.1
+
+- **Cleaner device overview:** discovered devices and emulators now use responsive cards with clearer system, display, processor, memory, storage, and status details.
+- **Faster log inspection:** one-click presets for all logs, device logs, errors, warnings, crashes/ANRs, and bookmarks, plus a more compact wrapping toolbar.
+- **Improved workspace layout:** better selection contrast, centered controls, responsive File Explorer actions, clearer file/folder labels, and consistent dark scrollbars.
+- **More reliable network details:** DNS parsing now validates IPv4 and IPv6 addresses and handles multiple connectivity sections without false matches.
 
 ## What's new in v2.0.0
 
