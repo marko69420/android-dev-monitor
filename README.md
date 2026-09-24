@@ -12,6 +12,8 @@
 
 **Project page:** [marko69420.github.io/android-dev-monitor](https://marko69420.github.io/android-dev-monitor/) — download, feature overview, screens, and documentation links.
 
+**Product roadmap:** [v3 UX and implementation plan](docs/PRODUCT_ROADMAP_v3.md) — current-state review, prioritized phases, and visual concepts.
+
 ![Android Dev Monitor v2.0.0 monitoring YouTube and opening live logs](docs/images/android-dev-monitor-demo.gif)
 
 ## Quick start
