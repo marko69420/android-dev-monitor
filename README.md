@@ -1,14 +1,14 @@
 # Android Dev Monitor
 
-[![Download Android Dev Monitor v2.8.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.8.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.0/AndroidDevMonitor-v2.8.0-win-x64.zip)
+[![Download Android Dev Monitor v2.8.1 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.8.1-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.1/AndroidDevMonitor-v2.8.1-win-x64.zip)
 [![Windows 10 / 11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#prerequisites)
 [![License MIT](https://img.shields.io/badge/License-MIT-59D35F?style=for-the-badge)](LICENSE)
 
-**Ready to run:** [download the v2.8.0 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.0/AndroidDevMonitor-v2.8.0-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
+**Ready to run:** [download the v2.8.1 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.1/AndroidDevMonitor-v2.8.1-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
 
 **A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
 
-**Version 2.8.0** · Windows desktop app · Physical Android devices and local emulators
+**Version 2.8.1** · Windows desktop app · Physical Android devices and local emulators
 
 **Project page:** [marko69420.github.io/android-dev-monitor](https://marko69420.github.io/android-dev-monitor/) — download, feature overview, screens, and documentation links.
 
@@ -41,6 +41,10 @@ It is designed for:
 - QA teams capturing reproducible performance sessions alongside logs and screenshots.
 - Indie developers who want a lightweight Windows dashboard around common ADB workflows.
 - Technical users reporting evidence-backed performance bugs to app teams.
+
+## What's new in v2.8.1
+
+- **No error when closing the app:** v2.8.0 showed "Cannot set Visibility… while a Window is closing" on exit. The window now closes cleanly after saving the session.
 
 ## What's new in v2.8.0
 

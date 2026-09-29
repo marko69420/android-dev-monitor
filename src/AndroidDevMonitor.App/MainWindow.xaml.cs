@@ -99,6 +99,8 @@ public partial class MainWindow : Window
         try { await viewModel.DisposeAsync(); }
         catch (Exception ex) { Log.Error(ex, "Shutdown cleanup failed"); }
         _shutdownComplete = true;
-        Close();
+        // DisposeAsync can finish synchronously (Microsoft.Data.Sqlite does its I/O synchronously), which would put
+        // this call inside the Closing event that is still running; WPF throws if Close() is called there.
+        _ = Dispatcher.BeginInvoke(new Action(Close));
     }
 }
