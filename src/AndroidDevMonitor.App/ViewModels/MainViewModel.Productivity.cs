@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using AndroidDevMonitor.Adb.Parsers;
 using AndroidDevMonitor.Core.Analysis;
 using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -262,7 +263,7 @@ public partial class MainViewModel
 
         string target = relative.Length == 0 ? "." : relative;
         AdbCommandResult result = await _adb.ExecuteAsync(device.Serial,
-            ["shell", "run-as", package, "ls", "-la", target], TimeSpan.FromSeconds(30), CancellationToken.None);
+            ["shell", $"run-as {package} ls -la -- {AndroidParsers.ShellQuote(target)}"], TimeSpan.FromSeconds(30), CancellationToken.None);
         if (!result.Success)
         {
             AppDataSummary = "Listing failed: " + CleanError(result) + "\nrun-as works only for debuggable builds.";

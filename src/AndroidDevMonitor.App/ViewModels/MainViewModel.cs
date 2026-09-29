@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
+using AndroidDevMonitor.Adb.Parsers;
 using AndroidDevMonitor.App.Services;
 using AndroidDevMonitor.Core.Collections;
 using AndroidDevMonitor.Core.Configuration;
@@ -1152,7 +1153,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
         string path = CombineRemote(RemotePath, NewRemoteFolderName.Trim());
-        AdbCommandResult result = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "mkdir", "--", path], TimeSpan.FromSeconds(20), CancellationToken.None);
+        AdbCommandResult result = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "mkdir -- " + AndroidParsers.ShellQuote(path)], TimeSpan.FromSeconds(20), CancellationToken.None);
         StatusMessage = result.Success ? "Created " + path : "Create folder failed: " + result.StandardError.Trim();
         if (result.Success)
         {
@@ -1169,7 +1170,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
         string destination = CombineRemote(RemotePath, RemoteRenameText.Trim());
-        AdbCommandResult result = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "mv", "--", SelectedRemoteFile.FullPath, destination], TimeSpan.FromSeconds(30), CancellationToken.None);
+        AdbCommandResult result = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "mv -- " + AndroidParsers.ShellQuote(SelectedRemoteFile.FullPath) + " " + AndroidParsers.ShellQuote(destination)], TimeSpan.FromSeconds(30), CancellationToken.None);
         StatusMessage = result.Success ? "Renamed to " + RemoteRenameText.Trim() : "Rename failed: " + result.StandardError.Trim();
         if (result.Success)
         {
@@ -1188,7 +1189,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         if (_dialogs.Confirm("Delete device item", $"Device: {SelectedDevice.FriendlyName}\nSerial: {SelectedDevice.Serial}\nPath: {entry.FullPath}\n\nThis permanently deletes the selected {(entry.IsDirectory ? "folder and its contents" : "file")}."))
         {
             string removeFlags = entry.IsDirectory ? "-rf" : "-f";
-            AdbCommandResult result = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "rm", removeFlags, "--", entry.FullPath], TimeSpan.FromMinutes(1), CancellationToken.None);
+            AdbCommandResult result = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", $"rm {removeFlags} -- {AndroidParsers.ShellQuote(entry.FullPath)}"], TimeSpan.FromMinutes(1), CancellationToken.None);
             StatusMessage = result.Success ? "Deleted " + entry.Name : "Delete failed: " + result.StandardError.Trim();
             if (result.Success)
             {
@@ -1213,25 +1214,18 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             StatusMessage = IsDemo ? "Remote file browsing is disabled in demo mode" : "Select a device";
             return;
         }
-        AdbCommandResult listing = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "ls", "-la", "--", RemotePath], TimeSpan.FromSeconds(15), CancellationToken.None);
+        // The trailing slash makes ls follow symlinked folders such as /sdcard instead of listing the link itself.
+        string directory = RemotePath == "/" ? "/" : RemotePath.TrimEnd('/') + "/";
+        AdbCommandResult listing = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "date +%z; ls -la -- " + AndroidParsers.ShellQuote(directory)], TimeSpan.FromSeconds(15), CancellationToken.None);
         if (!listing.Success)
         {
             StatusMessage = "Remote path inaccessible: " + listing.StandardError.Trim();
             return;
         }
-        foreach (string line in listing.StandardOutput.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        TimeSpan deviceOffset = AndroidParsers.ParseUtcOffset(listing.StandardOutput) ?? TimeZoneInfo.Local.GetUtcOffset(DateTime.Now);
+        foreach (FileEntry entry in AndroidParsers.ParseLsLong(listing.StandardOutput, directory, deviceOffset))
         {
-            Match match = Regex.Match(line, @"^(?<kind>[d-])\S*\s+\d+\s+\S+\s+\S+\s+(?<size>\d+)\s+\S+\s+\S+\s+\S+\s+(?<name>.+)$");
-            if (!match.Success)
-            {
-                continue;
-            }
-            string name = match.Groups["name"].Value;
-            if (name is not ("." or ".."))
-            {
-                long? size = long.TryParse(match.Groups["size"].Value, out long bytes) ? bytes : null;
-                RemoteFiles.Add(new FileEntry(name, RemotePath.TrimEnd('/') + "/" + name, match.Groups["kind"].Value == "d", size, null));
-            }
+            RemoteFiles.Add(entry);
         }
         StatusMessage = $"Loaded {RemoteFiles.Count} entries from {RemotePath}";
     }
@@ -1904,7 +1898,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             AdbCommandResult activities = await _adb.ExecuteAsync(device.Serial, ["shell", "dumpsys", "activity", "activities"], TimeSpan.FromSeconds(10), token);
             if (activities.Success)
             {
-                foreground = AndroidDevMonitor.Adb.Parsers.ForegroundParser.Parse(activities.StandardOutput);
+                foreground = ForegroundParser.Parse(activities.StandardOutput);
             }
         }
         string[]? installed = null;

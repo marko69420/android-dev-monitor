@@ -141,6 +141,45 @@ public sealed class AndroidParserTests
         Assert.Equal(67890, counters.Value.Tx);
     }
     [Fact]
+    public void Ls_long_listing_keeps_single_word_and_spaced_names_with_device_time()
+    {
+        const string output = "total 40\r\n" +
+            "drwxrws--- 12 u0_a123 media_rw 4096 2026-09-25 22:09 .\n" +
+            "drwx--x--x  4 root    sdcard_rw 4096 2026-09-01 08:00 ..\n" +
+            "drwxrws---  2 u0_a123 media_rw 4096 2026-09-25 22:09 Download\n" +
+            "drwxrws---  2 u0_a123 media_rw 4096 2026-09-24 10:15 My Games\n" +
+            "-rw-rw----  1 u0_a123 media_rw 1536 2026-09-17 15:28 notes v2.txt\n" +
+            "lrwxrwxrwx  1 root    root        21 2026-01-01 00:00 sdcard -> /storage/self/primary\n";
+        var entries = AndroidParsers.ParseLsLong(output, "/sdcard/", TimeSpan.FromHours(2));
+        Assert.Equal(["Download", "My Games", "notes v2.txt", "sdcard"], entries.Select(entry => entry.Name));
+        Assert.Equal("/sdcard/My Games", entries[1].FullPath);
+        Assert.True(entries[0].IsDirectory);
+        Assert.Null(entries[0].Size);
+        Assert.False(entries[2].IsDirectory);
+        Assert.Equal(1536, entries[2].Size);
+        Assert.Equal(new DateTimeOffset(2026, 9, 17, 13, 28, 0, TimeSpan.Zero), entries[2].ModifiedUtc);
+        Assert.True(entries[3].IsDirectory);
+    }
+
+    [Fact]
+    public void Ls_long_listing_builds_paths_under_root() =>
+        Assert.Equal("/system", AndroidParsers.ParseLsLong("drwxr-xr-x 14 root root 4096 2026-01-01 00:00 system\n", "/", TimeSpan.Zero)[0].FullPath);
+
+    [Theory]
+    [InlineData("+0200\n", 120)]
+    [InlineData("-0530", -330)]
+    [InlineData("+0000\r\n", 0)]
+    public void Utc_offset_parses_date_z_output(string output, int minutes) =>
+        Assert.Equal(TimeSpan.FromMinutes(minutes), AndroidParsers.ParseUtcOffset(output));
+
+    [Fact]
+    public void Utc_offset_is_missing_for_unexpected_output() => Assert.Null(AndroidParsers.ParseUtcOffset("date: unknown option"));
+
+    [Fact]
+    public void Shell_quote_keeps_spaces_and_neutralizes_quotes() =>
+        Assert.Equal("'/sdcard/My Games/it'\\''s $(x)'", AndroidParsers.ShellQuote("/sdcard/My Games/it's $(x)"));
+
+    [Fact]
     public void Net_dev_totals_exclude_loopback_and_unrelated_lines()
     {
         const string output = "MemTotal: 100 kB\r\n" +

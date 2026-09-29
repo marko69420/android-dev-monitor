@@ -26,6 +26,9 @@ public static partial class AndroidParsers
     private static partial Regex DetailRegex();
     [GeneratedRegex(@"^\s*(?<name>[^\s:]+):(?<fields>(?:\s*\d+){16})\s*$", RegexOptions.Multiline)]
     private static partial Regex NetDevLineRegex();
+    // toybox `ls -la`: mode, links, owner, group, size, date (yyyy-MM-dd), time (HH:mm), name.
+    [GeneratedRegex(@"^(?<kind>[dl-])\S*\s+\d+\s+\S+\s+\S+\s+(?<size>\d+)\s+(?<date>\d{4}-\d{2}-\d{2})\s+(?<time>\d{2}:\d{2})\s(?<name>.+)$")]
+    private static partial Regex LsLongLineRegex();
 
     public static IReadOnlyList<AndroidDevice> ParseDevices(string output)
     {
@@ -210,6 +213,51 @@ public static partial class AndroidParsers
 
     public static IReadOnlyDictionary<string, string> ParseBattery(string output) => output.Replace("\r", "").Split('\n')
         .Select(line => line.Split(':', 2, StringSplitOptions.TrimEntries)).Where(p => p.Length == 2).ToDictionary(p => p[0], p => p[1], StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Parses toybox <c>ls -la</c> output for one directory. Timestamps are device-local, so the device's
+    /// UTC offset (from <c>date +%z</c>) turns them into real instants. Symlinks are listed as folders
+    /// because the common ones (sdcard, storage/self) point at directories.
+    /// </summary>
+    public static IReadOnlyList<FileEntry> ParseLsLong(string output, string directory, TimeSpan deviceUtcOffset)
+    {
+        string prefix = directory == "/" ? "/" : directory.TrimEnd('/') + "/";
+        List<FileEntry> entries = [];
+        foreach (string line in output.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            Match match = LsLongLineRegex().Match(line);
+            if (!match.Success) continue;
+            string kind = match.Groups["kind"].Value;
+            string name = match.Groups["name"].Value;
+            if (kind == "l")
+            {
+                int arrow = name.IndexOf(" -> ", StringComparison.Ordinal);
+                if (arrow > 0) name = name[..arrow];
+            }
+            if (name is "." or "..") continue;
+            DateTimeOffset? modified = DateTime.TryParseExact($"{match.Groups["date"].Value} {match.Groups["time"].Value}", "yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local)
+                ? new DateTimeOffset(local, deviceUtcOffset)
+                : null;
+            long? size = kind == "-" && long.TryParse(match.Groups["size"].Value, CultureInfo.InvariantCulture, out long bytes) ? bytes : null;
+            entries.Add(new FileEntry(name, prefix + name, kind != "-", size, modified));
+        }
+        return entries;
+    }
+
+    /// <summary>Parses <c>date +%z</c> output such as +0200 or -0530.</summary>
+    public static TimeSpan? ParseUtcOffset(string output)
+    {
+        Match match = Regex.Match(output, @"^(?<sign>[+-])(?<hours>\d{2})(?<minutes>\d{2})\s*$", RegexOptions.Multiline);
+        if (!match.Success) return null;
+        TimeSpan offset = new(int.Parse(match.Groups["hours"].Value, CultureInfo.InvariantCulture), int.Parse(match.Groups["minutes"].Value, CultureInfo.InvariantCulture), 0);
+        return match.Groups["sign"].Value == "-" ? -offset : offset;
+    }
+
+    /// <summary>
+    /// Quotes one argument for the device shell. <c>adb shell</c> joins its arguments with spaces and the device
+    /// shell splits them again, so any path with spaces or shell characters must be quoted.
+    /// </summary>
+    public static string ShellQuote(string value) => "'" + value.Replace("'", "'\\''") + "'";
 
     public static StorageInfo? ParseDf(string output)
     {
