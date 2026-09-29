@@ -1736,8 +1736,8 @@
         <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=ADB Shell}">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="44" />
-            <RowDefinition Height="48" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <DockPanel>
@@ -1757,10 +1757,10 @@
               <ColumnDefinition Width="*" />
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <ComboBox ItemsSource="{Binding ShellPresets}" SelectedItem="{Binding SelectedShellPreset}" />
-            <Button Grid.Column="1" Content="Use preset" Command="{Binding ApplyShellPresetCommand}" />
-            <TextBlock Grid.Column="2" Text="Safe presets only fill the input; they do not execute." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0" />
-            <StackPanel Grid.Column="3" Orientation="Horizontal">
+            <ComboBox ItemsSource="{Binding ShellPresets}" SelectedItem="{Binding SelectedShellPreset}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="Use preset" Command="{Binding ApplyShellPresetCommand}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="Safe presets only fill the input; they do not execute." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0" TextTrimming="CharacterEllipsis" />
+            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
               <Button Content="↑ History" Command="{Binding PreviousShellCommandCommand}" />
               <Button Content="↓ History" Command="{Binding NextShellCommandCommand}" />
               <Button Content="Clear output" Command="{Binding ClearShellOutputCommand}" />
@@ -1773,7 +1773,7 @@
               <ColumnDefinition Width="90" />
               <ColumnDefinition Width="90" />
             </Grid.ColumnDefinitions>
-            <TextBox FontFamily="Consolas" Text="{Binding ShellCommand, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox FontFamily="Consolas" Text="{Binding ShellCommand, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" Margin="0,3,3,3" />
             <Button Grid.Column="1" Content="Run" Command="{Binding RunShellCommand}" />
             <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelShellCommand}" />
           </Grid>
