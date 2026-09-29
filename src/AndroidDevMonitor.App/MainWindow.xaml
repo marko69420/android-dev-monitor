@@ -3,6 +3,7 @@
     <ResourceDictionary>
       <conv:EqualityToVisibilityConverter x:Key="PageVisible" />
       <conv:NullToTextConverter x:Key="NullText" />
+      <conv:DurationTextConverter x:Key="DurationText" />
       <conv:MediaThumbnailConverter x:Key="MediaThumbnail" />
       <conv:PageSelectionBrushConverter x:Key="PageSelectionBrush" />
       <conv:ProcessSelectionConverter x:Key="ProcessSelection" />
@@ -131,6 +132,18 @@
       </Style>
       <Style x:Key="ProcessNumber" TargetType="TextBlock" BasedOn="{StaticResource ProcessText}">
         <Setter Property="TextAlignment" Value="Right"/>
+      </Style>
+      <!-- Cell padding is 8 and header padding is 10; the 2px margins line cell text up with its header. -->
+      <Style x:Key="TableText" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Margin" Value="2,0,0,0"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      </Style>
+      <Style x:Key="TableNumber" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Margin" Value="0,0,2,0"/>
+        <Setter Property="TextAlignment" Value="Right"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      </Style>
+      <Style x:Key="TableNumberHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+        <Setter Property="HorizontalContentAlignment" Value="Right"/>
       </Style>
       <Style x:Key="ProcessCommand" TargetType="TextBlock" BasedOn="{StaticResource ProcessText}">
         <Setter Property="FontSize" Value="12"/><Setter Property="Opacity" Value=".72"/>
@@ -1314,11 +1327,7 @@
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <DockPanel>
-            <StackPanel>
-              <TextBlock Text="Performance sessions" Style="{StaticResource SectionTitle}" />
-              <TextBlock Text="Full locally stored sessions · live Overview charts remain fixed to the last 10 minutes" Foreground="{StaticResource MutedBrush}" />
-            </StackPanel>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
               <Button Content="Refresh" Command="{Binding RefreshCommand}" />
               <Button Content="Export JSON" Command="{Binding ExportStoredSessionCommand}" CommandParameter="JSON" />
               <Button Content="Export CSV" Command="{Binding ExportStoredSessionCommand}" CommandParameter="CSV" />
@@ -1326,21 +1335,25 @@
               <Button Content="Open exports" Command="{Binding OpenSessionExportFolderCommand}" />
               <Button Content="Delete session" Foreground="#FF8B87" Command="{Binding DeleteStoredSessionCommand}" />
             </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+              <TextBlock Text="Performance sessions" Style="{StaticResource SectionTitle}" />
+              <TextBlock Text="Full locally stored sessions · live Overview charts remain fixed to the last 10 minutes" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+            </StackPanel>
           </DockPanel>
           <DataGrid Grid.Row="1" Margin="0,12,0,10" ItemsSource="{Binding StoredSessions}" SelectedItem="{Binding SelectedStoredSession}">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="Started" Width="145" Binding="{Binding StartedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
-              <DataGridTextColumn Header="Duration" Width="95" Binding="{Binding Duration}" />
-              <DataGridTextColumn Header="Device" Width="155" Binding="{Binding Device.FriendlyName}" />
-              <DataGridTextColumn Header="Android" Width="135" Binding="{Binding Device.VersionLine}" />
-              <DataGridTextColumn Header="Package" Width="190" Binding="{Binding CurrentPackage, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="Alerts" Width="60" Binding="{Binding AlertCount}" />
-              <DataGridTextColumn Header="Markers" Width="65" Binding="{Binding MarkerCount}" />
-              <DataGridTextColumn Header="Avg FPS" Width="70" Binding="{Binding AverageFps, StringFormat={}{0:N1}, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="P95 frame" Width="80" Binding="{Binding FrameTimeP95Ms, StringFormat={}{0:N1} ms, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="Peak memory" Width="95" Binding="{Binding PeakMemoryBytes, Converter={StaticResource NullText}}" />
-              <DataGridTextColumn Header="Peak CPU" Width="75" Binding="{Binding PeakCpuPercent, StringFormat={}{0:N1}%, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="Export" Width="*" Binding="{Binding ExportStatus}" />
+              <DataGridTextColumn Header="Started" Width="160" ElementStyle="{StaticResource TableText}" Binding="{Binding StartedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+              <DataGridTextColumn Header="Duration" Width="110" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding Duration, Converter={StaticResource DurationText}}" />
+              <DataGridTextColumn Header="Device" Width="*" MinWidth="150" ElementStyle="{StaticResource TableText}" Binding="{Binding Device.FriendlyName}" />
+              <DataGridTextColumn Header="Android" Width="150" ElementStyle="{StaticResource TableText}" Binding="{Binding Device.VersionLine}" />
+              <DataGridTextColumn Header="Package" Width="1.4*" MinWidth="170" ElementStyle="{StaticResource TableText}" Binding="{Binding CurrentPackage, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Alerts" Width="70" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding AlertCount}" />
+              <DataGridTextColumn Header="Markers" Width="85" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding MarkerCount}" />
+              <DataGridTextColumn Header="Avg FPS" Width="85" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding AverageFps, StringFormat={}{0:N1}, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="P95 frame" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding FrameTimeP95Ms, StringFormat={}{0:N1} ms, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Peak memory" Width="120" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding PeakMemoryBytes, Converter={StaticResource NullText}}" />
+              <DataGridTextColumn Header="Peak CPU" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding PeakCpuPercent, StringFormat={}{0:N1}%, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Export" Width="*" MinWidth="120" ElementStyle="{StaticResource TableText}" Binding="{Binding ExportStatus}" />
             </DataGrid.Columns>
           </DataGrid>
           <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">

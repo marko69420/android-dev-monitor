@@ -89,7 +89,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     [ObservableProperty] private string _selectedMediaSort = "Newest";
     [ObservableProperty] private string _mediaLayout = "Gallery";
     [ObservableProperty] private string _mediaFilterStatus = "Local media library";
-    [ObservableProperty] private MediaItem? _selectedMediaItem;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(OpenSelectedMediaCommand), nameof(CopyMediaPathCommand), nameof(RenameMediaCommand), nameof(SaveMediaMetadataCommand), nameof(DeleteMediaCommand))]
+    private MediaItem? _selectedMediaItem;
     [ObservableProperty] private string _mediaRenameText = "";
     [ObservableProperty] private string _mediaNote = "";
     [ObservableProperty] private SessionMarker? _selectedMediaMarker;
@@ -585,10 +587,16 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    [RelayCommand]
+    private bool HasSelectedMedia() => SelectedMediaItem is not null;
+
+    [RelayCommand(CanExecute = nameof(HasSelectedMedia))]
     private void OpenSelectedMedia()
     {
-        if (SelectedMediaItem is null || !File.Exists(SelectedMediaItem.LocalPath))
+        if (SelectedMediaItem is null)
+        {
+            return;
+        }
+        if (!File.Exists(SelectedMediaItem.LocalPath))
         {
             _dialogs.Notify("The selected media file no longer exists.", error: true);
             return;
@@ -619,7 +627,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(HasSelectedMedia))]
     private void CopyMediaPath()
     {
         if (SelectedMediaItem is not null)
@@ -628,7 +636,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(HasSelectedMedia))]
     private async Task RenameMediaAsync()
     {
         if (SelectedMediaItem is null || string.IsNullOrWhiteSpace(MediaRenameText))
@@ -647,7 +655,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(HasSelectedMedia))]
     private async Task SaveMediaMetadataAsync()
     {
         if (SelectedMediaItem is null)
@@ -673,7 +681,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(HasSelectedMedia))]
     private async Task DeleteMediaAsync()
     {
         if (SelectedMediaItem is null)
