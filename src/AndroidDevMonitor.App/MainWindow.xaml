@@ -4,6 +4,9 @@
       <conv:EqualityToVisibilityConverter x:Key="PageVisible" />
       <conv:NullToTextConverter x:Key="NullText" />
       <conv:DurationTextConverter x:Key="DurationText" />
+      <conv:LocalTimestampConverter x:Key="LocalTimestamp" />
+      <conv:PathTailConverter x:Key="PathTail" />
+      <conv:NullToTextConverter x:Key="BlankWhenNull" MissingText="" />
       <conv:MediaThumbnailConverter x:Key="MediaThumbnail" />
       <conv:PageSelectionBrushConverter x:Key="PageSelectionBrush" />
       <conv:ProcessSelectionConverter x:Key="ProcessSelection" />
@@ -1555,7 +1558,7 @@
                 </Grid.RowDefinitions>
                 <DockPanel LastChildFill="False">
                   <TextBlock Text="Windows" FontSize="16" FontWeight="SemiBold" />
-                  <TextBlock Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="300" ToolTip="{Binding LocalPath}" Text="{Binding LocalPath}" />
+                  <TextBlock Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="300" ToolTip="{Binding LocalPath}" Text="{Binding LocalPath, Converter={StaticResource PathTail}}" />
                 </DockPanel>
                 <WrapPanel Grid.Row="1" Margin="0,5">
                   <Button Content="←" Command="{Binding LocalBackCommand}" />
@@ -1567,10 +1570,10 @@
                 </WrapPanel>
                 <DataGrid Grid.Row="2" Margin="0,5,0,0" ItemsSource="{Binding LocalFileView}" SelectedItem="{Binding SelectedLocalFile}">
                   <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" ElementStyle="{StaticResource TableText}" Binding="{Binding Name}" />
                     <DataGridTemplateColumn Header="Type" Width="65"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="File"/><Setter Property="Foreground" Value="{StaticResource MutedBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsDirectory}" Value="True"><Setter Property="Text" Value="Folder"/><Setter Property="Foreground" Value="{StaticResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Size" Width="90" Binding="{Binding Size, Converter={StaticResource NullText}}" />
-                    <DataGridTextColumn Header="Modified" Width="130" Binding="{Binding ModifiedUtc, StringFormat={}{0:g}}" />
+                    <DataGridTextColumn Header="Size" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding Size, Converter={StaticResource BlankWhenNull}}" />
+                    <DataGridTextColumn Header="Modified" Width="150" ElementStyle="{StaticResource TableText}" Binding="{Binding ModifiedUtc, Converter={StaticResource LocalTimestamp}}" />
                   </DataGrid.Columns>
                 </DataGrid>
               </Grid>
@@ -1585,7 +1588,7 @@
                 </Grid.RowDefinitions>
                 <DockPanel LastChildFill="False">
                   <TextBlock Text="Android device" FontSize="16" FontWeight="SemiBold" />
-                  <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="280" TextTrimming="CharacterEllipsis" ToolTip="{Binding RemotePath}" Text="{Binding RemotePath}" />
+                  <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="280" TextTrimming="CharacterEllipsis" ToolTip="{Binding RemotePath}" Text="{Binding RemotePath, Converter={StaticResource PathTail}}" />
                 </DockPanel>
                 <WrapPanel Grid.Row="1" Margin="0,6">
                   <Button Content="←" Command="{Binding RemoteBackCommand}" />
@@ -1604,10 +1607,10 @@
                 </WrapPanel>
                 <DataGrid Grid.Row="3" Margin="0,5,0,0" ItemsSource="{Binding RemoteFileView}" SelectedItem="{Binding SelectedRemoteFile}">
                   <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" ElementStyle="{StaticResource TableText}" Binding="{Binding Name}" />
                     <DataGridTemplateColumn Header="Type" Width="65"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="File"/><Setter Property="Foreground" Value="{StaticResource MutedBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsDirectory}" Value="True"><Setter Property="Text" Value="Folder"/><Setter Property="Foreground" Value="{StaticResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Size" Width="90" Binding="{Binding Size, Converter={StaticResource NullText}}" />
-                    <DataGridTextColumn Header="Modified" Width="130" Binding="{Binding ModifiedUtc, StringFormat={}{0:g}}" />
+                    <DataGridTextColumn Header="Size" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding Size, Converter={StaticResource BlankWhenNull}}" />
+                    <DataGridTextColumn Header="Modified" Width="150" ElementStyle="{StaticResource TableText}" Binding="{Binding ModifiedUtc, Converter={StaticResource LocalTimestamp}}" />
                   </DataGrid.Columns>
                 </DataGrid>
               </Grid>

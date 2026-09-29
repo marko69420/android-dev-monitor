@@ -34,6 +34,32 @@ public sealed class DurationTextConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
 }
 
+/// <summary>Shows a stored UTC timestamp in the PC's local time zone with a culture-neutral layout.</summary>
+public sealed class LocalTimestampConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        DateTimeOffset timestamp => timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+        DateTime timestamp => timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+        _ => ""
+    };
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+/// <summary>Keeps the last few folders of a long path (…\Documents\My Games) so the current location stays visible.</summary>
+public sealed class PathTailConverter : IValueConverter
+{
+    public int Segments { get; set; } = 3;
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not string path) return "";
+        char separator = path.Contains('\\') ? '\\' : '/';
+        string[] parts = path.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length <= Segments ? path : "…" + separator + string.Join(separator, parts[^Segments..]);
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
 public sealed class PageSelectionBrushConverter : IMultiValueConverter
 {
     private static readonly Brush SelectedBrush = new LinearGradientBrush(Color.FromRgb(32, 78, 90), Color.FromRgb(19, 33, 41), 0);
