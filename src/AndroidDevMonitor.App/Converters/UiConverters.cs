@@ -22,6 +22,44 @@ public sealed class NullToTextConverter : IValueConverter
     private static string Format(long bytes) { string[] units = ["B", "KB", "MB", "GB"]; var n = (double)bytes; var i = 0; while (n >= 1024 && i < units.Length - 1) { n /= 1024; i++; } return $"{n:N1} {units[i]}"; }
 }
 
+/// <summary>Shows a session length as 05:07:12, or 12d 16:50:01 once it passes a day, without fractional seconds.</summary>
+public sealed class DurationTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        TimeSpan { TotalDays: >= 1 } span => $"{(int)span.TotalDays}d {span:hh\\:mm\\:ss}",
+        TimeSpan span => span.ToString(@"hh\:mm\:ss", culture),
+        _ => "N/A"
+    };
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+/// <summary>Shows a stored UTC timestamp in the PC's local time zone with a culture-neutral layout.</summary>
+public sealed class LocalTimestampConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value switch
+    {
+        DateTimeOffset timestamp => timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+        DateTime timestamp => timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
+        _ => ""
+    };
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
+/// <summary>Keeps the last few folders of a long path (…\Documents\My Games) so the current location stays visible.</summary>
+public sealed class PathTailConverter : IValueConverter
+{
+    public int Segments { get; set; } = 3;
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not string path) return "";
+        char separator = path.Contains('\\') ? '\\' : '/';
+        string[] parts = path.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length <= Segments ? path : "…" + separator + string.Join(separator, parts[^Segments..]);
+    }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
+}
+
 public sealed class PageSelectionBrushConverter : IMultiValueConverter
 {
     private static readonly Brush SelectedBrush = new LinearGradientBrush(Color.FromRgb(32, 78, 90), Color.FromRgb(19, 33, 41), 0);

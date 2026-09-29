@@ -5,11 +5,15 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using AndroidDevMonitor.App.ViewModels;
+using Serilog;
 
 namespace AndroidDevMonitor.App;
 
 public partial class MainWindow : Window
 {
+    private bool _shutdownStarted;
+    private bool _shutdownComplete;
+
     public MainWindow(MainViewModel viewModel) { InitializeComponent(); DataContext = viewModel; }
 
     private async void OnLaunchApplicationMouseUp(object sender, MouseButtonEventArgs e)
@@ -80,9 +84,21 @@ public partial class MainWindow : Window
         await viewModel.LaunchSelectedCommand.ExecuteAsync(null);
     }
 
-    protected override void OnClosing(CancelEventArgs e)
+    /// <summary>
+    /// Holds the window open until the view model has stopped recording and saved the session.
+    /// WPF does not wait for asynchronous work started from Application.OnExit, so that work has to finish here.
+    /// </summary>
+    protected override async void OnClosing(CancelEventArgs e)
     {
-        if (DataContext is MainViewModel viewModel && !viewModel.CanClose()) e.Cancel = true;
+        if (_shutdownComplete) { base.OnClosing(e); return; }
+        e.Cancel = true;
+        if (_shutdownStarted || DataContext is not MainViewModel viewModel || !viewModel.CanClose()) { base.OnClosing(e); return; }
+        _shutdownStarted = true;
         base.OnClosing(e);
+        IsEnabled = false;
+        try { await viewModel.DisposeAsync(); }
+        catch (Exception ex) { Log.Error(ex, "Shutdown cleanup failed"); }
+        _shutdownComplete = true;
+        Close();
     }
 }

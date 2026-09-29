@@ -42,6 +42,15 @@ It is designed for:
 - Indie developers who want a lightweight Windows dashboard around common ADB workflows.
 - Technical users reporting evidence-backed performance bugs to app teams.
 
+## Coming in the next release
+
+These fixes are on `main` but not yet in the v2.6.1 download. Build from source to try them now.
+
+- **No lost recordings on exit:** closing the window now waits until an active screen recording is pulled and the session is saved.
+- **Crashes are logged:** unexpected errors are written to `%LOCALAPPDATA%\AndroidDevMonitor\Logs` and shown in a message instead of closing the app silently.
+- **Accurate device network totals:** loopback traffic (`lo`), such as ADB port forwarding, is no longer counted as device RX/TX.
+- **Easier to build:** any .NET 10 SDK works now, not only 10.0.301, and the repository no longer stores the 66 MB executable.
+
 ## What's new in v2.6.1
 
 - **Cleaner device overview:** discovered devices and emulators now use responsive cards with clearer system, display, processor, memory, storage, and status details.
@@ -121,7 +130,7 @@ The **Name** column uses descriptions such as *Disk journal* and *App installer*
 - Windows 10/11 x64.
 - Optional for live mode: Android SDK Platform Tools. The app resolves a configured path, `ANDROID_SDK_ROOT`, `ANDROID_HOME`, then `PATH`.
 
-The downloadable Windows build is self-contained and does not require .NET. Building from source requires the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) matching `global.json`.
+The downloadable Windows build is self-contained and does not require .NET. Building from source requires any [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (10.0.100 or newer; see `global.json`).
 
 The app still opens without ADB; use `--demo` to explore it with sample data. Unauthorized devices require accepting the Android USB-debugging prompt. Unavailable measurements appear as `—` in the process table or `N/A` in other views.
 
@@ -150,7 +159,7 @@ Or run `powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1`.
 
 ## Data and troubleshooting
 
-Local data is under `%LOCALAPPDATA%\AndroidDevMonitor`: SQLite database, diagnostics, media, demo media, sessions, and exports. If ADB is missing, install Platform Tools or set `ANDROID_SDK_ROOT`/`ANDROID_HOME`. If a device is `unauthorized`, accept its debugging prompt. `offline` usually requires reconnecting the device; Refresh performs discovery/collection refresh only and never restarts ADB or a target.
+Local data is under `%LOCALAPPDATA%\AndroidDevMonitor`: SQLite database, diagnostics, media, demo media, sessions, and exports. Application logs, including unexpected errors, are in its `Logs` folder; attach the latest file when reporting a bug. If ADB is missing, install Platform Tools or set `ANDROID_SDK_ROOT`/`ANDROID_HOME`. If a device is `unauthorized`, accept its debugging prompt. `offline` usually requires reconnecting the device; Refresh performs discovery/collection refresh only and never restarts ADB or a target.
 
 ## Project structure
 

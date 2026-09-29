@@ -154,6 +154,20 @@
         Wireless debugging is supported through pairing and connect flows. Some counters depend on Android version,
         vendor policy, or device permissions — the interface reports unavailable data instead of fabricating it.
       </p>
+      <p class="sub">
+        Something went wrong? Application logs are in <code>%LOCALAPPDATA%\AndroidDevMonitor\Logs</code>; attach the latest file
+        to a <a href="https://github.com/marko69420/android-dev-monitor/issues/new/choose">bug report</a>.
+      </p>
+    </section>
+
+    <section id="next">
+      <h2>Coming in the next release</h2>
+      <p class="sub">These fixes are on <code>main</code> but not yet in the v2.6.1 download. <a href="https://github.com/marko69420/android-dev-monitor/blob/main/README.md#build-and-run">Build from source</a> to try them now.</p>
+      <div class="grid">
+        <div class="card"><h3>No lost recordings on exit</h3><p>Closing the window waits until an active screen recording is pulled and the session is saved.</p></div>
+        <div class="card"><h3>Crashes are logged</h3><p>Unexpected errors go to <code>%LOCALAPPDATA%\AndroidDevMonitor\Logs</code> and a message instead of a silent exit.</p></div>
+        <div class="card"><h3>Accurate network totals</h3><p>Loopback traffic, such as ADB port forwarding, no longer counts as device RX/TX.</p></div>
+      </div>
     </section>
 
     <section>
@@ -169,6 +183,7 @@
       <table>
         <tr><th>Document</th><th>What it covers</th></tr>
         <tr><td><a href="USER_GUIDE.html">User guide</a></td><td>Step-by-step instructions for every workspace, in Croatian.</td></tr>
+        <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/RELEASE_NOTES_v2.6.1.md">Release notes</a></td><td>What changed in v2.6.1; earlier notes sit next to it in <code>docs/</code>.</td></tr>
         <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/ARCHITECTURE.md">Architecture</a></td><td>Projects, composition root, session handling, and ADB execution model.</td></tr>
         <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/METRICS.md">Metrics</a></td><td>How each metric is collected and what it means.</td></tr>
         <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/ADB_LIMITATIONS.md">ADB limitations</a></td><td>Which counters need specific Android versions, permissions, or vendor support.</td></tr>

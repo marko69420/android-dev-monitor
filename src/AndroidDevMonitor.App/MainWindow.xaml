@@ -3,6 +3,10 @@
     <ResourceDictionary>
       <conv:EqualityToVisibilityConverter x:Key="PageVisible" />
       <conv:NullToTextConverter x:Key="NullText" />
+      <conv:DurationTextConverter x:Key="DurationText" />
+      <conv:LocalTimestampConverter x:Key="LocalTimestamp" />
+      <conv:PathTailConverter x:Key="PathTail" />
+      <conv:NullToTextConverter x:Key="BlankWhenNull" MissingText="" />
       <conv:MediaThumbnailConverter x:Key="MediaThumbnail" />
       <conv:PageSelectionBrushConverter x:Key="PageSelectionBrush" />
       <conv:ProcessSelectionConverter x:Key="ProcessSelection" />
@@ -131,6 +135,18 @@
       </Style>
       <Style x:Key="ProcessNumber" TargetType="TextBlock" BasedOn="{StaticResource ProcessText}">
         <Setter Property="TextAlignment" Value="Right"/>
+      </Style>
+      <!-- Cell padding is 8 and header padding is 10; the 2px margins line cell text up with its header. -->
+      <Style x:Key="TableText" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Margin" Value="2,0,0,0"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      </Style>
+      <Style x:Key="TableNumber" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Margin" Value="0,0,2,0"/>
+        <Setter Property="TextAlignment" Value="Right"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      </Style>
+      <Style x:Key="TableNumberHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+        <Setter Property="HorizontalContentAlignment" Value="Right"/>
       </Style>
       <Style x:Key="ProcessCommand" TargetType="TextBlock" BasedOn="{StaticResource ProcessText}">
         <Setter Property="FontSize" Value="12"/><Setter Property="Opacity" Value=".72"/>
@@ -1314,11 +1330,7 @@
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <DockPanel>
-            <StackPanel>
-              <TextBlock Text="Performance sessions" Style="{StaticResource SectionTitle}" />
-              <TextBlock Text="Full locally stored sessions · live Overview charts remain fixed to the last 10 minutes" Foreground="{StaticResource MutedBrush}" />
-            </StackPanel>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
               <Button Content="Refresh" Command="{Binding RefreshCommand}" />
               <Button Content="Export JSON" Command="{Binding ExportStoredSessionCommand}" CommandParameter="JSON" />
               <Button Content="Export CSV" Command="{Binding ExportStoredSessionCommand}" CommandParameter="CSV" />
@@ -1326,21 +1338,25 @@
               <Button Content="Open exports" Command="{Binding OpenSessionExportFolderCommand}" />
               <Button Content="Delete session" Foreground="#FF8B87" Command="{Binding DeleteStoredSessionCommand}" />
             </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+              <TextBlock Text="Performance sessions" Style="{StaticResource SectionTitle}" />
+              <TextBlock Text="Full locally stored sessions · live Overview charts remain fixed to the last 10 minutes" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+            </StackPanel>
           </DockPanel>
           <DataGrid Grid.Row="1" Margin="0,12,0,10" ItemsSource="{Binding StoredSessions}" SelectedItem="{Binding SelectedStoredSession}">
             <DataGrid.Columns>
-              <DataGridTextColumn Header="Started" Width="145" Binding="{Binding StartedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
-              <DataGridTextColumn Header="Duration" Width="95" Binding="{Binding Duration}" />
-              <DataGridTextColumn Header="Device" Width="155" Binding="{Binding Device.FriendlyName}" />
-              <DataGridTextColumn Header="Android" Width="135" Binding="{Binding Device.VersionLine}" />
-              <DataGridTextColumn Header="Package" Width="190" Binding="{Binding CurrentPackage, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="Alerts" Width="60" Binding="{Binding AlertCount}" />
-              <DataGridTextColumn Header="Markers" Width="65" Binding="{Binding MarkerCount}" />
-              <DataGridTextColumn Header="Avg FPS" Width="70" Binding="{Binding AverageFps, StringFormat={}{0:N1}, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="P95 frame" Width="80" Binding="{Binding FrameTimeP95Ms, StringFormat={}{0:N1} ms, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="Peak memory" Width="95" Binding="{Binding PeakMemoryBytes, Converter={StaticResource NullText}}" />
-              <DataGridTextColumn Header="Peak CPU" Width="75" Binding="{Binding PeakCpuPercent, StringFormat={}{0:N1}%, TargetNullValue=N/A}" />
-              <DataGridTextColumn Header="Export" Width="*" Binding="{Binding ExportStatus}" />
+              <DataGridTextColumn Header="Started" Width="160" ElementStyle="{StaticResource TableText}" Binding="{Binding StartedUtc, StringFormat={}{0:yyyy-MM-dd HH:mm:ss}}" />
+              <DataGridTextColumn Header="Duration" Width="110" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding Duration, Converter={StaticResource DurationText}}" />
+              <DataGridTextColumn Header="Device" Width="*" MinWidth="150" ElementStyle="{StaticResource TableText}" Binding="{Binding Device.FriendlyName}" />
+              <DataGridTextColumn Header="Android" Width="150" ElementStyle="{StaticResource TableText}" Binding="{Binding Device.VersionLine}" />
+              <DataGridTextColumn Header="Package" Width="1.4*" MinWidth="170" ElementStyle="{StaticResource TableText}" Binding="{Binding CurrentPackage, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Alerts" Width="70" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding AlertCount}" />
+              <DataGridTextColumn Header="Markers" Width="85" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding MarkerCount}" />
+              <DataGridTextColumn Header="Avg FPS" Width="85" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding AverageFps, StringFormat={}{0:N1}, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="P95 frame" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding FrameTimeP95Ms, StringFormat={}{0:N1} ms, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Peak memory" Width="120" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding PeakMemoryBytes, Converter={StaticResource NullText}}" />
+              <DataGridTextColumn Header="Peak CPU" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding PeakCpuPercent, StringFormat={}{0:N1}%, TargetNullValue=N/A}" />
+              <DataGridTextColumn Header="Export" Width="*" MinWidth="120" ElementStyle="{StaticResource TableText}" Binding="{Binding ExportStatus}" />
             </DataGrid.Columns>
           </DataGrid>
           <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
@@ -1542,7 +1558,7 @@
                 </Grid.RowDefinitions>
                 <DockPanel LastChildFill="False">
                   <TextBlock Text="Windows" FontSize="16" FontWeight="SemiBold" />
-                  <TextBlock Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="300" ToolTip="{Binding LocalPath}" Text="{Binding LocalPath}" />
+                  <TextBlock Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="300" ToolTip="{Binding LocalPath}" Text="{Binding LocalPath, Converter={StaticResource PathTail}}" />
                 </DockPanel>
                 <WrapPanel Grid.Row="1" Margin="0,5">
                   <Button Content="←" Command="{Binding LocalBackCommand}" />
@@ -1554,10 +1570,10 @@
                 </WrapPanel>
                 <DataGrid Grid.Row="2" Margin="0,5,0,0" ItemsSource="{Binding LocalFileView}" SelectedItem="{Binding SelectedLocalFile}">
                   <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" ElementStyle="{StaticResource TableText}" Binding="{Binding Name}" />
                     <DataGridTemplateColumn Header="Type" Width="65"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="File"/><Setter Property="Foreground" Value="{StaticResource MutedBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsDirectory}" Value="True"><Setter Property="Text" Value="Folder"/><Setter Property="Foreground" Value="{StaticResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Size" Width="90" Binding="{Binding Size, Converter={StaticResource NullText}}" />
-                    <DataGridTextColumn Header="Modified" Width="130" Binding="{Binding ModifiedUtc, StringFormat={}{0:g}}" />
+                    <DataGridTextColumn Header="Size" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding Size, Converter={StaticResource BlankWhenNull}}" />
+                    <DataGridTextColumn Header="Modified" Width="150" ElementStyle="{StaticResource TableText}" Binding="{Binding ModifiedUtc, Converter={StaticResource LocalTimestamp}}" />
                   </DataGrid.Columns>
                 </DataGrid>
               </Grid>
@@ -1572,7 +1588,7 @@
                 </Grid.RowDefinitions>
                 <DockPanel LastChildFill="False">
                   <TextBlock Text="Android device" FontSize="16" FontWeight="SemiBold" />
-                  <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="280" TextTrimming="CharacterEllipsis" ToolTip="{Binding RemotePath}" Text="{Binding RemotePath}" />
+                  <TextBlock Foreground="{StaticResource AccentBrush}" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="280" TextTrimming="CharacterEllipsis" ToolTip="{Binding RemotePath}" Text="{Binding RemotePath, Converter={StaticResource PathTail}}" />
                 </DockPanel>
                 <WrapPanel Grid.Row="1" Margin="0,6">
                   <Button Content="←" Command="{Binding RemoteBackCommand}" />
@@ -1591,10 +1607,10 @@
                 </WrapPanel>
                 <DataGrid Grid.Row="3" Margin="0,5,0,0" ItemsSource="{Binding RemoteFileView}" SelectedItem="{Binding SelectedRemoteFile}">
                   <DataGrid.Columns>
-                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" ElementStyle="{StaticResource TableText}" Binding="{Binding Name}" />
                     <DataGridTemplateColumn Header="Type" Width="65"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Text" Value="File"/><Setter Property="Foreground" Value="{StaticResource MutedBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsDirectory}" Value="True"><Setter Property="Text" Value="Folder"/><Setter Property="Foreground" Value="{StaticResource AccentBrush}"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Size" Width="90" Binding="{Binding Size, Converter={StaticResource NullText}}" />
-                    <DataGridTextColumn Header="Modified" Width="130" Binding="{Binding ModifiedUtc, StringFormat={}{0:g}}" />
+                    <DataGridTextColumn Header="Size" Width="95" ElementStyle="{StaticResource TableNumber}" HeaderStyle="{StaticResource TableNumberHeader}" Binding="{Binding Size, Converter={StaticResource BlankWhenNull}}" />
+                    <DataGridTextColumn Header="Modified" Width="150" ElementStyle="{StaticResource TableText}" Binding="{Binding ModifiedUtc, Converter={StaticResource LocalTimestamp}}" />
                   </DataGrid.Columns>
                 </DataGrid>
               </Grid>
@@ -1723,8 +1739,8 @@
         <Grid Visibility="{Binding CurrentPage, Converter={StaticResource PageVisible}, ConverterParameter=ADB Shell}">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="44" />
-            <RowDefinition Height="48" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
           </Grid.RowDefinitions>
           <DockPanel>
@@ -1744,10 +1760,10 @@
               <ColumnDefinition Width="*" />
               <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <ComboBox ItemsSource="{Binding ShellPresets}" SelectedItem="{Binding SelectedShellPreset}" />
-            <Button Grid.Column="1" Content="Use preset" Command="{Binding ApplyShellPresetCommand}" />
-            <TextBlock Grid.Column="2" Text="Safe presets only fill the input; they do not execute." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0" />
-            <StackPanel Grid.Column="3" Orientation="Horizontal">
+            <ComboBox ItemsSource="{Binding ShellPresets}" SelectedItem="{Binding SelectedShellPreset}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="Use preset" Command="{Binding ApplyShellPresetCommand}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Text="Safe presets only fill the input; they do not execute." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0" TextTrimming="CharacterEllipsis" />
+            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
               <Button Content="↑ History" Command="{Binding PreviousShellCommandCommand}" />
               <Button Content="↓ History" Command="{Binding NextShellCommandCommand}" />
               <Button Content="Clear output" Command="{Binding ClearShellOutputCommand}" />
@@ -1760,7 +1776,7 @@
               <ColumnDefinition Width="90" />
               <ColumnDefinition Width="90" />
             </Grid.ColumnDefinitions>
-            <TextBox FontFamily="Consolas" Text="{Binding ShellCommand, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox FontFamily="Consolas" Text="{Binding ShellCommand, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" Margin="0,3,3,3" />
             <Button Grid.Column="1" Content="Run" Command="{Binding RunShellCommand}" />
             <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelShellCommand}" />
           </Grid>
