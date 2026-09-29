@@ -141,6 +141,26 @@ public sealed class AndroidParserTests
         Assert.Equal(67890, counters.Value.Tx);
     }
     [Fact]
+    public void Net_dev_totals_exclude_loopback_and_unrelated_lines()
+    {
+        const string output = "MemTotal: 100 kB\r\n" +
+            "Inter-|   Receive                                                |  Transmit\n" +
+            " face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed\n" +
+            "    lo: 5000000   100    0    0    0     0          0         0  5000000   100    0    0    0     0       0          0\n" +
+            " wlan0: 1200      10    0    0    0     0          0         0  300       5      0    0    0     0       0          0\n" +
+            "rmnet0: 800       4     0    0    0     0          0         0  200       2      0    0    0     0       0          0\n" +
+            "Groups:\t3002 3003 9997 20123 50123\n";
+        var totals = AndroidParsers.ParseNetDevTotals(output);
+        Assert.NotNull(totals);
+        Assert.Equal(2000, totals.Value.Rx);
+        Assert.Equal(500, totals.Value.Tx);
+    }
+
+    [Fact]
+    public void Net_dev_totals_are_missing_when_only_loopback_exists() =>
+        Assert.Null(AndroidParsers.ParseNetDevTotals("    lo: 10 1 0 0 0 0 0 0 10 1 0 0 0 0 0 0\n"));
+
+    [Fact]
     public void Multiple_process_stats_are_parsed_by_pid()
     {
         const string stats = "42 (game) R 1 1 1 1 1 1 1 1 1 1 30 20 1 1 1 1 1 1 1000 1 1\n7 (worker thread) S 1 1 1 1 1 1 1 1 1 1 4 3 1 1 1 1 1 1 900 1 1\n";

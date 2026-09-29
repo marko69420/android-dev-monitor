@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Threading;
 using System.IO;
 using AndroidDevMonitor.Adb.Discovery;
 using AndroidDevMonitor.Adb.Execution;
@@ -30,6 +31,9 @@ public partial class App : Application
             retainedFileCountLimit: 14,
             fileSizeLimitBytes: 25L * 1024 * 1024,
             rollOnFileSizeLimit: true).CreateLogger();
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
         var services = new ServiceCollection(); services.AddLogging(b => b.AddSerilog(dispose: true)); services.AddSingleton<IDialogService, DialogService>();
         services.AddSingleton<IAdbExecutor>(sp => new AdbExecutor(sp.GetRequiredService<ILogger<AdbExecutor>>()));
         services.AddSingleton<ISessionStore>(_ => new SqliteSessionStore(data)); services.AddSingleton<ISessionExporter, SessionExporter>();
@@ -41,8 +45,31 @@ public partial class App : Application
         MainViewModel viewModel = _provider.GetRequiredService<MainViewModel>();
         try { await viewModel.InitializeAsync(); viewModel.EnableExtendedLogFilters(); await viewModel.LoadSavedLogFiltersAsync(); } catch (Exception ex) { Log.Error(ex, "Startup failed"); MessageBox.Show(ex.Message, "Android Dev Monitor", MessageBoxButton.OK, MessageBoxImage.Error); }
     }
-    protected override async void OnExit(ExitEventArgs e)
+    protected override void OnExit(ExitEventArgs e)
     {
-        if (_provider?.GetService<MainViewModel>() is { } vm) await vm.DisposeAsync(); if (_provider is not null) await _provider.DisposeAsync(); Log.CloseAndFlush(); base.OnExit(e);
+        // MainWindow.OnClosing has already awaited the view model shutdown; release the remaining services off the UI thread.
+        try { if (_provider is not null) Task.Run(() => _provider.DisposeAsync().AsTask()).Wait(TimeSpan.FromSeconds(5)); }
+        catch (Exception ex) { Log.Error(ex, "Service disposal failed"); }
+        Log.CloseAndFlush();
+        base.OnExit(e);
+    }
+
+    private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        Log.Error(e.Exception, "Unhandled UI exception");
+        e.Handled = true;
+        MessageBox.Show($"An unexpected error occurred and was written to the log:\n\n{e.Exception.Message}", "Android Dev Monitor", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        Log.Error(e.Exception, "Unobserved task exception");
+        e.SetObserved();
+    }
+
+    private static void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        Log.Fatal(e.ExceptionObject as Exception, "Fatal unhandled exception");
+        Log.CloseAndFlush();
     }
 }

@@ -52,6 +52,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	private CancellationTokenSource? _contextCts;
 
+	private bool _disposed;
+
 	private CancellationTokenSource? _automationCts;
 
 	private CancellationTokenSource? _transferCts;
@@ -5550,6 +5552,11 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	public async ValueTask DisposeAsync()
 	{
+		if (_disposed)
+		{
+			return;
+		}
+		_disposed = true;
 		_appCts.Cancel();
 		_contextCts?.Cancel();
 		_automationCts?.Cancel();

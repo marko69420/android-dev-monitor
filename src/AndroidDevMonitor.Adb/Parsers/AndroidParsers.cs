@@ -24,6 +24,8 @@ public static partial class AndroidParsers
     private static partial Regex DeviceLineRegex();
     [GeneratedRegex(@"(?<key>[\w.-]+):(?<value>\S+)")]
     private static partial Regex DetailRegex();
+    [GeneratedRegex(@"^\s*(?<name>[^\s:]+):(?<fields>(?:\s*\d+){16})\s*$", RegexOptions.Multiline)]
+    private static partial Regex NetDevLineRegex();
 
     public static IReadOnlyList<AndroidDevice> ParseDevices(string output)
     {
@@ -161,6 +163,19 @@ public static partial class AndroidParsers
             .TakeLast(2)
             .ToArray();
         return counters.Length == 2 ? (counters[0], counters[1]) : null;
+    }
+    /// <summary>Sums /proc/net/dev byte counters for real interfaces; loopback is excluded because it never leaves the device.</summary>
+    public static (long Rx, long Tx)? ParseNetDevTotals(string output)
+    {
+        long rx = 0, tx = 0; var found = false;
+        foreach (Match line in NetDevLineRegex().Matches(output.Replace("\r", "")))
+        {
+            if (line.Groups["name"].Value == "lo") continue;
+            var fields = line.Groups["fields"].Value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            if (fields.Length != 16 || !long.TryParse(fields[0], CultureInfo.InvariantCulture, out var r) || !long.TryParse(fields[8], CultureInfo.InvariantCulture, out var t)) continue;
+            rx += r; tx += t; found = true;
+        }
+        return found ? (rx, tx) : null;
     }
     public static long? ParseDumpsysPss(string output)
     {

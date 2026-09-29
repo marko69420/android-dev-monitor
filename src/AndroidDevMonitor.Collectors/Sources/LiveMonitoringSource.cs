@@ -46,7 +46,7 @@ public sealed class LiveMonitoringSource(IAdbExecutor adb, IGpuMetricProvider gp
             var procCpu = pid is null ? null : AndroidParsers.ParseProcessStat(ExtractProcessStat(lightweight, pid.Value));
             var memory = AndroidParsers.ParseMemInfo(lightweight);
             var io = AndroidParsers.ParseIo(lightweight);
-            var network = ParseNetwork(lightweight);
+            var network = AndroidParsers.ParseNetDevTotals(lightweight);
             processUid = AndroidParsers.ParseProcessUid(lightweight) ?? processUid;
             var appNetwork = processUid is null ? null : AndroidParsers.ParseUidNetworkCounters(lightweight);
             var rss = AndroidParsers.ParseProcessRss(lightweight);
@@ -250,17 +250,6 @@ public sealed class LiveMonitoringSource(IAdbExecutor adb, IGpuMetricProvider gp
         return (Read("CODE"), Read("DATA"), Read("CACHE"));
     }
     private sealed record ProcessCpuBaseline(ProcCpuStat Device, IReadOnlyDictionary<int, ProcessCpuStat> Processes);
-    private static (long Rx, long Tx)? ParseNetwork(string output)
-    {
-        long rx = 0, tx = 0; var found = false;
-        foreach (var line in output.Split('\n').Where(l => l.Contains(':')))
-        {
-            var parts = Regex.Split(line[(line.IndexOf(':') + 1)..].Trim(), @"\s+");
-            if (parts.Length >= 9 && long.TryParse(parts[0], out var r) && long.TryParse(parts[8], out var t)) { rx += r; tx += t; found = true; }
-        }
-        return found ? (rx, tx) : null;
-    }
-
     private static (string? Interface, string? IpAddress, string? Type) ParseNetworkContext(string output)
     {
         var address = Regex.Match(output, @"^\d+:\s+(?<interface>\S+)\s+inet\s+(?<ip>\d+(?:\.\d+){3})/", RegexOptions.Multiline);
