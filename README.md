@@ -1,14 +1,14 @@
 # Android Dev Monitor
 
-[![Download Android Dev Monitor v2.6.1 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.6.1-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.1/AndroidDevMonitor-v2.6.1-win-x64.zip)
+[![Download Android Dev Monitor v2.8.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.8.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.0/AndroidDevMonitor-v2.8.0-win-x64.zip)
 [![Windows 10 / 11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#prerequisites)
 [![License MIT](https://img.shields.io/badge/License-MIT-59D35F?style=for-the-badge)](LICENSE)
 
-**Ready to run:** [download the v2.6.1 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.6.1/AndroidDevMonitor-v2.6.1-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
+**Ready to run:** [download the v2.8.0 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.0/AndroidDevMonitor-v2.8.0-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
 
 **A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
 
-**Version 2.6.1** · Windows desktop app · Physical Android devices and local emulators
+**Version 2.8.0** · Windows desktop app · Physical Android devices and local emulators
 
 **Project page:** [marko69420.github.io/android-dev-monitor](https://marko69420.github.io/android-dev-monitor/) — download, feature overview, screens, and documentation links.
 
@@ -42,14 +42,15 @@ It is designed for:
 - Indie developers who want a lightweight Windows dashboard around common ADB workflows.
 - Technical users reporting evidence-backed performance bugs to app teams.
 
-## Coming in the next release
+## What's new in v2.8.0
 
-These fixes are on `main` but not yet in the v2.6.1 download. Build from source to try them now.
-
-- **No lost recordings on exit:** closing the window now waits until an active screen recording is pulled and the session is saved.
+- **Android File Explorer works again:** folders such as `Download` and `DCIM` show up, `/sdcard` lists its contents, and device files show their modified date.
+- **Safe paths with spaces:** deleting, renaming or creating `/sdcard/My Games` now acts on exactly that folder (before, a delete could hit `/sdcard/My` and `/sdcard/Games`).
+- **No lost recordings on exit:** closing the window waits until an active screen recording is pulled and the session is saved.
 - **Crashes are logged:** unexpected errors are written to `%LOCALAPPDATA%\AndroidDevMonitor\Logs` and shown in a message instead of closing the app silently.
 - **Accurate device network totals:** loopback traffic (`lo`), such as ADB port forwarding, is no longer counted as device RX/TX.
-- **Easier to build:** any .NET 10 SDK works now, not only 10.0.301, and the repository no longer stores the 66 MB executable.
+- **Cleaner screens:** local-time dates in File Explorer, readable session durations and aligned columns in Performance, unclipped ADB Shell buttons, and Media actions that stay disabled until something is selected.
+- **Easier to build:** any .NET 10 SDK works, the repository no longer stores the executable, and releases are built and published automatically by GitHub Actions.
 
 ## What's new in v2.6.1
 
@@ -195,8 +196,9 @@ See [metric definitions](docs/METRICS.md), [ADB limitations](docs/ADB_LIMITATION
 ## Older releases
 
 <details>
-<summary>v2.5.0 and v2.0.0 release notes</summary>
+<summary>v2.6.1, v2.5.0 and v2.0.0 release notes</summary>
 
+- **[v2.6.1](https://github.com/marko69420/android-dev-monitor/releases/tag/v2.6.1)** — Responsive device cards, one-click log presets, cleaner workspace layout, and more reliable DNS details.
 - **[v2.5.0](https://github.com/marko69420/android-dev-monitor/releases/tag/v2.5.0)** — Wireless Device Center (mDNS discovery, secure pairing, connect/disconnect, latency checks, ADB Wi-Fi 2.0 detection), Developer Lab reports, App & Device Lab, session comparison, bug report analyzer, build comparison, AVD lifecycle, and the background scenario.
 - **[v2.0.0](https://github.com/marko69420/android-dev-monitor/releases/tag/v2.0.0)** — A/B app monitoring, readable app selectors, emulator GPU monitoring, split disk charts, a clearer process table, freeze/resume for the process list, and a refreshed dark interface.
 

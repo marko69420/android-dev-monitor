@@ -1,0 +1,43 @@
+name: Release
+
+# Builds the self-contained Windows package with scripts/build-release.ps1 (restore, build, test, publish)
+# and publishes it as a GitHub release. Run it from the Actions tab, or push a tag such as v2.8.0.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v2.8.0 (docs/RELEASE_NOTES_<tag>.md must exist)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build, test and publish
+        shell: pwsh
+        run: ./scripts/build-release.ps1
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/win-x64/* -DestinationPath "AndroidDevMonitor-$env:TAG-win-x64.zip"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: Android Dev Monitor ${{ env.TAG }}
+          body_path: docs/RELEASE_NOTES_${{ env.TAG }}.md
+          files: AndroidDevMonitor-${{ env.TAG }}-win-x64.zip
