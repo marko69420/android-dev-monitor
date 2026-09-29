@@ -2,7 +2,6 @@
 #pragma warning disable CS8632
 
 using System;
-using System.CodeDom.Compiler;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,7 +23,6 @@ using AndroidDevMonitor.Core.Configuration;
 using AndroidDevMonitor.Core.Models;
 using AndroidDevMonitor.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.ComponentModel.__Internals;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 
@@ -102,323 +100,212 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	private int _shellHistoryIndex = -1;
 
+	[ObservableProperty]
 	private AndroidDevice? _selectedDevice;
 
+	[ObservableProperty]
 	private string? _selectedPackage;
 
+	[ObservableProperty]
 	private string _currentPage = "Overview";
 
+	[ObservableProperty]
 	private string _overviewTab = "Processes";
 
+	[ObservableProperty]
 	private bool _isLive = true;
 
+	[ObservableProperty]
 	private bool _isRecording;
 
+	[ObservableProperty]
 	private string _searchText = "";
 
+	[ObservableProperty]
 	private string _connectionText = "Connecting";
 
+	[ObservableProperty]
 	private string _statusMessage = "Starting…";
 
+	[ObservableProperty]
 	private string _sessionTime = "00:00:00";
 
+	[ObservableProperty]
 	private string _dataAge = "Waiting for data";
 
+	[ObservableProperty]
 	private string _networkContext = "Network context: waiting for data";
 
+	[ObservableProperty]
 	private string _networkTotals = "Session RX N/A · TX N/A";
 
+	[ObservableProperty]
 	private string _storageSummary = "Storage capacity: waiting for data";
 
+	[ObservableProperty]
 	private string _appStorageSummary = "Selected-app size: N/A";
 
+	[ObservableProperty]
 	private string _thermalSummary = "Thermal and battery: waiting for data";
 
+	[ObservableProperty]
 	private string _logSearchText = "";
 
+	[ObservableProperty]
 	private string _selectedLogPriority = "All";
 
+	[ObservableProperty]
 	private string _selectedLogSource = "All";
 
+	[ObservableProperty]
 	private bool _logRegexEnabled;
 
+	[ObservableProperty]
 	private bool _isLogPaused;
 
+	[ObservableProperty]
 	private bool _isLogAutoScroll = true;
 
+	[ObservableProperty]
 	private LogEntry? _selectedLogEntry;
 
+	[ObservableProperty]
 	private string _logFilterStatus = "Live logcat";
 
+	[ObservableProperty]
 	private string _mediaSearchText = "";
 
+	[ObservableProperty]
 	private string _selectedMediaKind = "All";
 
+	[ObservableProperty]
 	private string _selectedMediaDevice = "All";
 
+	[ObservableProperty]
 	private string _selectedMediaPackage = "All";
 
+	[ObservableProperty]
 	private string _selectedMediaSort = "Newest";
 
+	[ObservableProperty]
 	private string _mediaLayout = "Gallery";
 
+	[ObservableProperty]
 	private string _mediaFilterStatus = "Local media library";
 
+	[ObservableProperty]
 	private MediaItem? _selectedMediaItem;
 
+	[ObservableProperty]
 	private string _mediaRenameText = "";
 
+	[ObservableProperty]
 	private string _mediaNote = "";
 
+	[ObservableProperty]
 	private SessionMarker? _selectedMediaMarker;
 
+	[ObservableProperty]
 	private SessionSummary? _selectedStoredSession;
 
+	[ObservableProperty]
 	private MonitoringSession? _loadedStoredSession;
 
+	[ObservableProperty]
 	private string _storedSessionStatus = "Select a stored session";
 
+	[ObservableProperty]
 	private string _storedSessionDetails = "Full-session metrics, markers, alerts, disconnects and package changes appear here.";
 
+	[ObservableProperty]
 	private string _shellCommand = "getprop ro.product.model";
 
+	[ObservableProperty]
 	private string _shellOutput = "Commands run on the globally selected Android instance.";
 
+	[ObservableProperty]
 	private string _selectedShellPreset = "getprop";
 
+	[ObservableProperty]
 	private bool _isShellRunning;
 
+	[ObservableProperty]
 	private string _shellStatus = "Idle";
 
+	[ObservableProperty]
 	private string _automationLog = "Automation actions are bound to the selected serial when started.";
 
+	[ObservableProperty]
 	private string? _selectedApkPath;
 
+	[ObservableProperty]
 	private string _automationCoordinates = "540,960";
 
+	[ObservableProperty]
 	private string _automationText = "Hello Android";
 
+	[ObservableProperty]
 	private int _swipeDurationMs = 350;
 
+	[ObservableProperty]
 	private string _newStepArgument = "";
 
+	[ObservableProperty]
 	private int _newStepDurationMs = 1000;
 
+	[ObservableProperty]
 	private int _automationRepeatCount = 1;
 
+	[ObservableProperty]
 	private bool _automationStopOnFailure = true;
 
+	[ObservableProperty]
 	private bool _isAutomationRunning;
 
+	[ObservableProperty]
 	private bool _isAutomationPaused;
 
+	[ObservableProperty]
 	private string _automationState = "Idle";
 
+	[ObservableProperty]
 	private string _localPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 
+	[ObservableProperty]
 	private string _remotePath = "/sdcard";
 
+	[ObservableProperty]
 	private string _fileSearchText = "";
 
+	[ObservableProperty]
 	private string _newRemoteFolderName = "NewFolder";
 
+	[ObservableProperty]
 	private string _remoteRenameText = "";
 
+	[ObservableProperty]
 	private string _transferStatus = "No active transfer";
 
+	[ObservableProperty]
 	private bool _isTransferRunning;
 
+	[ObservableProperty]
 	private string _selectedRemoteQuickLocation = "/sdcard";
 
+	[ObservableProperty]
 	private ProcessDisplayRow? _selectedProcessRow;
 
+	[ObservableProperty]
 	private FileEntry? _selectedLocalFile;
 
+	[ObservableProperty]
 	private FileEntry? _selectedRemoteFile;
 
+	[ObservableProperty]
 	private AutomationStepKind _selectedStepKind = AutomationStepKind.Wait;
 
+	[ObservableProperty]
 	private AutomationStep? _selectedSequenceStep;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand<string?>? navigateCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand<string?>? selectOverviewTabCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? toggleLiveCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? toggleLogPauseCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? clearLogViewCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? openFullLogsCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? copySelectedLogCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand<ProcessDisplayRow?>? toggleProcessGroupCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? refreshCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? markEventCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? exportSessionCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand<string?>? exportStoredSessionCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? openSessionExportFolderCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? deleteStoredSessionCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? importAppiumLogCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? saveLogsCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? openSelectedMediaCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? openMediaFolderCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? copyMediaPathCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? renameMediaCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? saveMediaMetadataCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? deleteMediaCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? screenshotCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? toggleRecordingCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? runShellCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? cancelShellCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? clearShellOutputCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? applyShellPresetCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? previousShellCommandCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? nextShellCommandCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? saveShellOutputCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? selectApkCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand<string?>? runAutomationCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? browseLocalCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? openSelectedLocalCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? localUpCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? localBackCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? localForwardCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? openLocalFolderCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? openSelectedRemoteCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? remoteUpCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? remoteBackCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? remoteForwardCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? goRemoteQuickLocationCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? createRemoteFolderCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? renameRemoteCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? deleteRemoteCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? cancelTransferCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? refreshFileExplorerCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? pushFileCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? pullFileCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? addSequenceStepCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand<AutomationStep?>? removeSequenceStepCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand<AutomationStep?>? moveSequenceStepUpCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand<AutomationStep?>? moveSequenceStepDownCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? pauseSequenceCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? resumeSequenceCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? stopSequenceCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private AsyncRelayCommand? runSequenceCommand;
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	private RelayCommand? showMoreCommand;
 
 	public bool IsDemo { get; }
 
@@ -454,19 +341,19 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	public ICollectionView LogView { get; }
 
-	public IReadOnlyList<string> LogPriorities { get; } = new global::_003C_003Ez__ReadOnlyArray<string>(new string[5] { "All", "Error", "Warning", "Info", "Debug" });
+	public IReadOnlyList<string> LogPriorities { get; } = ["All", "Error", "Warning", "Info", "Debug"];
 
-	public IReadOnlyList<string> LogSources { get; } = new global::_003C_003Ez__ReadOnlyArray<string>(new string[5] { "All", "logcat", "Appium (external)", "Android Dev Monitor", "Session" });
+	public IReadOnlyList<string> LogSources { get; } = ["All", "logcat", "Appium (external)", "Android Dev Monitor", "Session"];
 
 	public ObservableCollection<MediaItem> MediaItems { get; } = new ObservableCollection<MediaItem>();
 
 	public ICollectionView MediaView { get; }
 
-	public IReadOnlyList<string> MediaKinds { get; } = new global::_003C_003Ez__ReadOnlyArray<string>(new string[3] { "All", "Screenshots", "Recordings" });
+	public IReadOnlyList<string> MediaKinds { get; } = ["All", "Screenshots", "Recordings"];
 
-	public IReadOnlyList<string> MediaSortOptions { get; } = new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "Newest", "Oldest", "Largest", "Smallest" });
+	public IReadOnlyList<string> MediaSortOptions { get; } = ["Newest", "Oldest", "Largest", "Smallest"];
 
-	public IReadOnlyList<string> MediaLayouts { get; } = new global::_003C_003Ez__ReadOnlyArray<string>(new string[2] { "Gallery", "List" });
+	public IReadOnlyList<string> MediaLayouts { get; } = ["Gallery", "List"];
 
 	public ObservableCollection<string> MediaDeviceFilters { get; } = new ObservableCollection<string> { "All" };
 
@@ -482,7 +369,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	public ObservableCollection<string> ShellHistory { get; } = new ObservableCollection<string>();
 
-	public IReadOnlyList<string> ShellPresets { get; } = new global::_003C_003Ez__ReadOnlyArray<string>(new string[8] { "getprop", "dumpsys battery", "dumpsys meminfo", "wm size", "wm density", "df -h", "pm list packages", "ps -A" });
+	public IReadOnlyList<string> ShellPresets { get; } = ["getprop", "dumpsys battery", "dumpsys meminfo", "wm size", "wm density", "df -h", "pm list packages", "ps -A"];
 
 	public ObservableCollection<FileEntry> LocalFiles { get; } = new ObservableCollection<FileEntry>();
 
@@ -492,7 +379,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
 	public ICollectionView RemoteFileView { get; }
 
-	public IReadOnlyList<string> RemoteQuickLocations { get; } = new global::_003C_003Ez__ReadOnlyArray<string>(new string[8] { "/sdcard", "/sdcard/Download", "/sdcard/DCIM", "/sdcard/Pictures", "/sdcard/Movies", "/sdcard/Documents", "/sdcard/Android/data", "/data/local/tmp" });
+	public IReadOnlyList<string> RemoteQuickLocations { get; } = ["/sdcard", "/sdcard/Download", "/sdcard/DCIM", "/sdcard/Pictures", "/sdcard/Movies", "/sdcard/Documents", "/sdcard/Android/data", "/data/local/tmp"];
 
 	public ObservableCollection<AutomationStep> SequenceSteps { get; } = new ObservableCollection<AutomationStep>();
 
@@ -627,1622 +514,6 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public AndroidDevice? SelectedDevice
-	{
-		get
-		{
-			return _selectedDevice;
-		}
-		set
-		{
-			if (!EqualityComparer<AndroidDevice>.Default.Equals(_selectedDevice, value))
-			{
-				AndroidDevice selectedDevice = _selectedDevice;
-				OnPropertyChanging(nameof(SelectedDevice));
-				_selectedDevice = value;
-				OnSelectedDeviceChanged(selectedDevice, value);
-				OnPropertyChanged(nameof(SelectedDevice));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string? SelectedPackage
-	{
-		get
-		{
-			return _selectedPackage;
-		}
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedPackage, value))
-			{
-				string selectedPackage = _selectedPackage;
-				OnPropertyChanging(nameof(SelectedPackage));
-				_selectedPackage = value;
-				OnSelectedPackageChanged(selectedPackage, value);
-				OnPropertyChanged(nameof(SelectedPackage));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string CurrentPage
-	{
-		get
-		{
-			return _currentPage;
-		}
-		[MemberNotNull("_currentPage")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_currentPage, value))
-			{
-				OnPropertyChanging(nameof(CurrentPage));
-				_currentPage = value;
-				OnPropertyChanged(nameof(CurrentPage));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string OverviewTab
-	{
-		get
-		{
-			return _overviewTab;
-		}
-		[MemberNotNull("_overviewTab")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_overviewTab, value))
-			{
-				OnPropertyChanging(nameof(OverviewTab));
-				_overviewTab = value;
-				OnPropertyChanged(nameof(OverviewTab));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsLive
-	{
-		get
-		{
-			return _isLive;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isLive, value))
-			{
-				OnPropertyChanging(nameof(IsLive));
-				_isLive = value;
-				OnIsLiveChanged(value);
-				OnPropertyChanged(nameof(IsLive));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsRecording
-	{
-		get
-		{
-			return _isRecording;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isRecording, value))
-			{
-				OnPropertyChanging(nameof(IsRecording));
-				_isRecording = value;
-				OnIsRecordingChanged(value);
-				OnPropertyChanged(nameof(IsRecording));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SearchText
-	{
-		get
-		{
-			return _searchText;
-		}
-		[MemberNotNull("_searchText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_searchText, value))
-			{
-				OnPropertyChanging(nameof(SearchText));
-				_searchText = value;
-				OnSearchTextChanged(value);
-				OnPropertyChanged(nameof(SearchText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string ConnectionText
-	{
-		get
-		{
-			return _connectionText;
-		}
-		[MemberNotNull("_connectionText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_connectionText, value))
-			{
-				OnPropertyChanging(nameof(ConnectionText));
-				_connectionText = value;
-				OnPropertyChanged(nameof(ConnectionText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string StatusMessage
-	{
-		get
-		{
-			return _statusMessage;
-		}
-		[MemberNotNull("_statusMessage")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_statusMessage, value))
-			{
-				OnPropertyChanging(nameof(StatusMessage));
-				_statusMessage = value;
-				OnPropertyChanged(nameof(StatusMessage));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SessionTime
-	{
-		get
-		{
-			return _sessionTime;
-		}
-		[MemberNotNull("_sessionTime")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_sessionTime, value))
-			{
-				OnPropertyChanging(nameof(SessionTime));
-				_sessionTime = value;
-				OnSessionTimeChanged(value);
-				OnPropertyChanged(nameof(SessionTime));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string DataAge
-	{
-		get
-		{
-			return _dataAge;
-		}
-		[MemberNotNull("_dataAge")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_dataAge, value))
-			{
-				OnPropertyChanging(nameof(DataAge));
-				_dataAge = value;
-				OnPropertyChanged(nameof(DataAge));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string NetworkContext
-	{
-		get
-		{
-			return _networkContext;
-		}
-		[MemberNotNull("_networkContext")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_networkContext, value))
-			{
-				OnPropertyChanging(nameof(NetworkContext));
-				_networkContext = value;
-				OnPropertyChanged(nameof(NetworkContext));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string NetworkTotals
-	{
-		get
-		{
-			return _networkTotals;
-		}
-		[MemberNotNull("_networkTotals")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_networkTotals, value))
-			{
-				OnPropertyChanging(nameof(NetworkTotals));
-				_networkTotals = value;
-				OnPropertyChanged(nameof(NetworkTotals));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string StorageSummary
-	{
-		get
-		{
-			return _storageSummary;
-		}
-		[MemberNotNull("_storageSummary")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_storageSummary, value))
-			{
-				OnPropertyChanging(nameof(StorageSummary));
-				_storageSummary = value;
-				OnPropertyChanged(nameof(StorageSummary));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string AppStorageSummary
-	{
-		get
-		{
-			return _appStorageSummary;
-		}
-		[MemberNotNull("_appStorageSummary")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_appStorageSummary, value))
-			{
-				OnPropertyChanging(nameof(AppStorageSummary));
-				_appStorageSummary = value;
-				OnPropertyChanged(nameof(AppStorageSummary));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string ThermalSummary
-	{
-		get
-		{
-			return _thermalSummary;
-		}
-		[MemberNotNull("_thermalSummary")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_thermalSummary, value))
-			{
-				OnPropertyChanging(nameof(ThermalSummary));
-				_thermalSummary = value;
-				OnPropertyChanged(nameof(ThermalSummary));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string LogSearchText
-	{
-		get
-		{
-			return _logSearchText;
-		}
-		[MemberNotNull("_logSearchText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_logSearchText, value))
-			{
-				OnPropertyChanging(nameof(LogSearchText));
-				_logSearchText = value;
-				OnLogSearchTextChanged(value);
-				OnPropertyChanged(nameof(LogSearchText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedLogPriority
-	{
-		get
-		{
-			return _selectedLogPriority;
-		}
-		[MemberNotNull("_selectedLogPriority")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedLogPriority, value))
-			{
-				OnPropertyChanging(nameof(SelectedLogPriority));
-				_selectedLogPriority = value;
-				OnSelectedLogPriorityChanged(value);
-				OnPropertyChanged(nameof(SelectedLogPriority));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedLogSource
-	{
-		get
-		{
-			return _selectedLogSource;
-		}
-		[MemberNotNull("_selectedLogSource")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedLogSource, value))
-			{
-				OnPropertyChanging(nameof(SelectedLogSource));
-				_selectedLogSource = value;
-				OnSelectedLogSourceChanged(value);
-				OnPropertyChanged(nameof(SelectedLogSource));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool LogRegexEnabled
-	{
-		get
-		{
-			return _logRegexEnabled;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_logRegexEnabled, value))
-			{
-				OnPropertyChanging(nameof(LogRegexEnabled));
-				_logRegexEnabled = value;
-				OnLogRegexEnabledChanged(value);
-				OnPropertyChanged(nameof(LogRegexEnabled));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsLogPaused
-	{
-		get
-		{
-			return _isLogPaused;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isLogPaused, value))
-			{
-				OnPropertyChanging(nameof(IsLogPaused));
-				_isLogPaused = value;
-				OnPropertyChanged(nameof(IsLogPaused));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsLogAutoScroll
-	{
-		get
-		{
-			return _isLogAutoScroll;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isLogAutoScroll, value))
-			{
-				OnPropertyChanging(nameof(IsLogAutoScroll));
-				_isLogAutoScroll = value;
-				OnPropertyChanged(nameof(IsLogAutoScroll));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public LogEntry? SelectedLogEntry
-	{
-		get
-		{
-			return _selectedLogEntry;
-		}
-		set
-		{
-			if (!EqualityComparer<LogEntry>.Default.Equals(_selectedLogEntry, value))
-			{
-				OnPropertyChanging(nameof(SelectedLogEntry));
-				_selectedLogEntry = value;
-				OnPropertyChanged(nameof(SelectedLogEntry));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string LogFilterStatus
-	{
-		get
-		{
-			return _logFilterStatus;
-		}
-		[MemberNotNull("_logFilterStatus")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_logFilterStatus, value))
-			{
-				OnPropertyChanging(nameof(LogFilterStatus));
-				_logFilterStatus = value;
-				OnPropertyChanged(nameof(LogFilterStatus));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string MediaSearchText
-	{
-		get
-		{
-			return _mediaSearchText;
-		}
-		[MemberNotNull("_mediaSearchText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_mediaSearchText, value))
-			{
-				OnPropertyChanging(nameof(MediaSearchText));
-				_mediaSearchText = value;
-				OnMediaSearchTextChanged(value);
-				OnPropertyChanged(nameof(MediaSearchText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedMediaKind
-	{
-		get
-		{
-			return _selectedMediaKind;
-		}
-		[MemberNotNull("_selectedMediaKind")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedMediaKind, value))
-			{
-				OnPropertyChanging(nameof(SelectedMediaKind));
-				_selectedMediaKind = value;
-				OnSelectedMediaKindChanged(value);
-				OnPropertyChanged(nameof(SelectedMediaKind));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedMediaDevice
-	{
-		get
-		{
-			return _selectedMediaDevice;
-		}
-		[MemberNotNull("_selectedMediaDevice")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedMediaDevice, value))
-			{
-				OnPropertyChanging(nameof(SelectedMediaDevice));
-				_selectedMediaDevice = value;
-				OnSelectedMediaDeviceChanged(value);
-				OnPropertyChanged(nameof(SelectedMediaDevice));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedMediaPackage
-	{
-		get
-		{
-			return _selectedMediaPackage;
-		}
-		[MemberNotNull("_selectedMediaPackage")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedMediaPackage, value))
-			{
-				OnPropertyChanging(nameof(SelectedMediaPackage));
-				_selectedMediaPackage = value;
-				OnSelectedMediaPackageChanged(value);
-				OnPropertyChanged(nameof(SelectedMediaPackage));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedMediaSort
-	{
-		get
-		{
-			return _selectedMediaSort;
-		}
-		[MemberNotNull("_selectedMediaSort")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedMediaSort, value))
-			{
-				OnPropertyChanging(nameof(SelectedMediaSort));
-				_selectedMediaSort = value;
-				OnSelectedMediaSortChanged(value);
-				OnPropertyChanged(nameof(SelectedMediaSort));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string MediaLayout
-	{
-		get
-		{
-			return _mediaLayout;
-		}
-		[MemberNotNull("_mediaLayout")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_mediaLayout, value))
-			{
-				OnPropertyChanging(nameof(MediaLayout));
-				_mediaLayout = value;
-				OnPropertyChanged(nameof(MediaLayout));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string MediaFilterStatus
-	{
-		get
-		{
-			return _mediaFilterStatus;
-		}
-		[MemberNotNull("_mediaFilterStatus")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_mediaFilterStatus, value))
-			{
-				OnPropertyChanging(nameof(MediaFilterStatus));
-				_mediaFilterStatus = value;
-				OnPropertyChanged(nameof(MediaFilterStatus));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public MediaItem? SelectedMediaItem
-	{
-		get
-		{
-			return _selectedMediaItem;
-		}
-		set
-		{
-			if (!EqualityComparer<MediaItem>.Default.Equals(_selectedMediaItem, value))
-			{
-				OnPropertyChanging(nameof(SelectedMediaItem));
-				_selectedMediaItem = value;
-				OnSelectedMediaItemChanged(value);
-				OnPropertyChanged(nameof(SelectedMediaItem));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string MediaRenameText
-	{
-		get
-		{
-			return _mediaRenameText;
-		}
-		[MemberNotNull("_mediaRenameText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_mediaRenameText, value))
-			{
-				OnPropertyChanging(nameof(MediaRenameText));
-				_mediaRenameText = value;
-				OnPropertyChanged(nameof(MediaRenameText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string MediaNote
-	{
-		get
-		{
-			return _mediaNote;
-		}
-		[MemberNotNull("_mediaNote")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_mediaNote, value))
-			{
-				OnPropertyChanging(nameof(MediaNote));
-				_mediaNote = value;
-				OnPropertyChanged(nameof(MediaNote));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public SessionMarker? SelectedMediaMarker
-	{
-		get
-		{
-			return _selectedMediaMarker;
-		}
-		set
-		{
-			if (!EqualityComparer<SessionMarker>.Default.Equals(_selectedMediaMarker, value))
-			{
-				OnPropertyChanging(nameof(SelectedMediaMarker));
-				_selectedMediaMarker = value;
-				OnPropertyChanged(nameof(SelectedMediaMarker));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public SessionSummary? SelectedStoredSession
-	{
-		get
-		{
-			return _selectedStoredSession;
-		}
-		set
-		{
-			if (!EqualityComparer<SessionSummary>.Default.Equals(_selectedStoredSession, value))
-			{
-				OnPropertyChanging(nameof(SelectedStoredSession));
-				_selectedStoredSession = value;
-				OnSelectedStoredSessionChanged(value);
-				OnPropertyChanged(nameof(SelectedStoredSession));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public MonitoringSession? LoadedStoredSession
-	{
-		get
-		{
-			return _loadedStoredSession;
-		}
-		set
-		{
-			if (!EqualityComparer<MonitoringSession>.Default.Equals(_loadedStoredSession, value))
-			{
-				OnPropertyChanging(nameof(LoadedStoredSession));
-				_loadedStoredSession = value;
-				OnPropertyChanged(nameof(LoadedStoredSession));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string StoredSessionStatus
-	{
-		get
-		{
-			return _storedSessionStatus;
-		}
-		[MemberNotNull("_storedSessionStatus")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_storedSessionStatus, value))
-			{
-				OnPropertyChanging(nameof(StoredSessionStatus));
-				_storedSessionStatus = value;
-				OnPropertyChanged(nameof(StoredSessionStatus));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string StoredSessionDetails
-	{
-		get
-		{
-			return _storedSessionDetails;
-		}
-		[MemberNotNull("_storedSessionDetails")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_storedSessionDetails, value))
-			{
-				OnPropertyChanging(nameof(StoredSessionDetails));
-				_storedSessionDetails = value;
-				OnPropertyChanged(nameof(StoredSessionDetails));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string ShellCommand
-	{
-		get
-		{
-			return _shellCommand;
-		}
-		[MemberNotNull("_shellCommand")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_shellCommand, value))
-			{
-				OnPropertyChanging(nameof(ShellCommand));
-				_shellCommand = value;
-				OnPropertyChanged(nameof(ShellCommand));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string ShellOutput
-	{
-		get
-		{
-			return _shellOutput;
-		}
-		[MemberNotNull("_shellOutput")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_shellOutput, value))
-			{
-				OnPropertyChanging(nameof(ShellOutput));
-				_shellOutput = value;
-				OnPropertyChanged(nameof(ShellOutput));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedShellPreset
-	{
-		get
-		{
-			return _selectedShellPreset;
-		}
-		[MemberNotNull("_selectedShellPreset")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedShellPreset, value))
-			{
-				OnPropertyChanging(nameof(SelectedShellPreset));
-				_selectedShellPreset = value;
-				OnPropertyChanged(nameof(SelectedShellPreset));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsShellRunning
-	{
-		get
-		{
-			return _isShellRunning;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isShellRunning, value))
-			{
-				OnPropertyChanging(nameof(IsShellRunning));
-				_isShellRunning = value;
-				OnPropertyChanged(nameof(IsShellRunning));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string ShellStatus
-	{
-		get
-		{
-			return _shellStatus;
-		}
-		[MemberNotNull("_shellStatus")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_shellStatus, value))
-			{
-				OnPropertyChanging(nameof(ShellStatus));
-				_shellStatus = value;
-				OnPropertyChanged(nameof(ShellStatus));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string AutomationLog
-	{
-		get
-		{
-			return _automationLog;
-		}
-		[MemberNotNull("_automationLog")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_automationLog, value))
-			{
-				OnPropertyChanging(nameof(AutomationLog));
-				_automationLog = value;
-				OnPropertyChanged(nameof(AutomationLog));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string? SelectedApkPath
-	{
-		get
-		{
-			return _selectedApkPath;
-		}
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedApkPath, value))
-			{
-				OnPropertyChanging(nameof(SelectedApkPath));
-				_selectedApkPath = value;
-				OnSelectedApkPathChanged(value);
-				OnPropertyChanged(nameof(SelectedApkPath));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string AutomationCoordinates
-	{
-		get
-		{
-			return _automationCoordinates;
-		}
-		[MemberNotNull("_automationCoordinates")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_automationCoordinates, value))
-			{
-				OnPropertyChanging(nameof(AutomationCoordinates));
-				_automationCoordinates = value;
-				OnPropertyChanged(nameof(AutomationCoordinates));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string AutomationText
-	{
-		get
-		{
-			return _automationText;
-		}
-		[MemberNotNull("_automationText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_automationText, value))
-			{
-				OnPropertyChanging(nameof(AutomationText));
-				_automationText = value;
-				OnPropertyChanged(nameof(AutomationText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public int SwipeDurationMs
-	{
-		get
-		{
-			return _swipeDurationMs;
-		}
-		set
-		{
-			if (!EqualityComparer<int>.Default.Equals(_swipeDurationMs, value))
-			{
-				OnPropertyChanging(nameof(SwipeDurationMs));
-				_swipeDurationMs = value;
-				OnPropertyChanged(nameof(SwipeDurationMs));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string NewStepArgument
-	{
-		get
-		{
-			return _newStepArgument;
-		}
-		[MemberNotNull("_newStepArgument")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_newStepArgument, value))
-			{
-				OnPropertyChanging(nameof(NewStepArgument));
-				_newStepArgument = value;
-				OnPropertyChanged(nameof(NewStepArgument));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public int NewStepDurationMs
-	{
-		get
-		{
-			return _newStepDurationMs;
-		}
-		set
-		{
-			if (!EqualityComparer<int>.Default.Equals(_newStepDurationMs, value))
-			{
-				OnPropertyChanging(nameof(NewStepDurationMs));
-				_newStepDurationMs = value;
-				OnPropertyChanged(nameof(NewStepDurationMs));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public int AutomationRepeatCount
-	{
-		get
-		{
-			return _automationRepeatCount;
-		}
-		set
-		{
-			if (!EqualityComparer<int>.Default.Equals(_automationRepeatCount, value))
-			{
-				OnPropertyChanging(nameof(AutomationRepeatCount));
-				_automationRepeatCount = value;
-				OnPropertyChanged(nameof(AutomationRepeatCount));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool AutomationStopOnFailure
-	{
-		get
-		{
-			return _automationStopOnFailure;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_automationStopOnFailure, value))
-			{
-				OnPropertyChanging(nameof(AutomationStopOnFailure));
-				_automationStopOnFailure = value;
-				OnPropertyChanged(nameof(AutomationStopOnFailure));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsAutomationRunning
-	{
-		get
-		{
-			return _isAutomationRunning;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isAutomationRunning, value))
-			{
-				OnPropertyChanging(nameof(IsAutomationRunning));
-				_isAutomationRunning = value;
-				OnPropertyChanged(nameof(IsAutomationRunning));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsAutomationPaused
-	{
-		get
-		{
-			return _isAutomationPaused;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isAutomationPaused, value))
-			{
-				OnPropertyChanging(nameof(IsAutomationPaused));
-				_isAutomationPaused = value;
-				OnPropertyChanged(nameof(IsAutomationPaused));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string AutomationState
-	{
-		get
-		{
-			return _automationState;
-		}
-		[MemberNotNull("_automationState")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_automationState, value))
-			{
-				OnPropertyChanging(nameof(AutomationState));
-				_automationState = value;
-				OnPropertyChanged(nameof(AutomationState));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string LocalPath
-	{
-		get
-		{
-			return _localPath;
-		}
-		[MemberNotNull("_localPath")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_localPath, value))
-			{
-				OnPropertyChanging(nameof(LocalPath));
-				_localPath = value;
-				OnPropertyChanged(nameof(LocalPath));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string RemotePath
-	{
-		get
-		{
-			return _remotePath;
-		}
-		[MemberNotNull("_remotePath")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_remotePath, value))
-			{
-				OnPropertyChanging(nameof(RemotePath));
-				_remotePath = value;
-				OnPropertyChanged(nameof(RemotePath));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string FileSearchText
-	{
-		get
-		{
-			return _fileSearchText;
-		}
-		[MemberNotNull("_fileSearchText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_fileSearchText, value))
-			{
-				OnPropertyChanging(nameof(FileSearchText));
-				_fileSearchText = value;
-				OnFileSearchTextChanged(value);
-				OnPropertyChanged(nameof(FileSearchText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string NewRemoteFolderName
-	{
-		get
-		{
-			return _newRemoteFolderName;
-		}
-		[MemberNotNull("_newRemoteFolderName")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_newRemoteFolderName, value))
-			{
-				OnPropertyChanging(nameof(NewRemoteFolderName));
-				_newRemoteFolderName = value;
-				OnPropertyChanged(nameof(NewRemoteFolderName));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string RemoteRenameText
-	{
-		get
-		{
-			return _remoteRenameText;
-		}
-		[MemberNotNull("_remoteRenameText")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_remoteRenameText, value))
-			{
-				OnPropertyChanging(nameof(RemoteRenameText));
-				_remoteRenameText = value;
-				OnPropertyChanged(nameof(RemoteRenameText));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string TransferStatus
-	{
-		get
-		{
-			return _transferStatus;
-		}
-		[MemberNotNull("_transferStatus")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_transferStatus, value))
-			{
-				OnPropertyChanging(nameof(TransferStatus));
-				_transferStatus = value;
-				OnPropertyChanged(nameof(TransferStatus));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public bool IsTransferRunning
-	{
-		get
-		{
-			return _isTransferRunning;
-		}
-		set
-		{
-			if (!EqualityComparer<bool>.Default.Equals(_isTransferRunning, value))
-			{
-				OnPropertyChanging(nameof(IsTransferRunning));
-				_isTransferRunning = value;
-				OnPropertyChanged(nameof(IsTransferRunning));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public string SelectedRemoteQuickLocation
-	{
-		get
-		{
-			return _selectedRemoteQuickLocation;
-		}
-		[MemberNotNull("_selectedRemoteQuickLocation")]
-		set
-		{
-			if (!EqualityComparer<string>.Default.Equals(_selectedRemoteQuickLocation, value))
-			{
-				OnPropertyChanging(nameof(SelectedRemoteQuickLocation));
-				_selectedRemoteQuickLocation = value;
-				OnPropertyChanged(nameof(SelectedRemoteQuickLocation));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public ProcessDisplayRow? SelectedProcessRow
-	{
-		get
-		{
-			return _selectedProcessRow;
-		}
-		set
-		{
-			if (!EqualityComparer<ProcessDisplayRow>.Default.Equals(_selectedProcessRow, value))
-			{
-				OnPropertyChanging(nameof(SelectedProcessRow));
-				_selectedProcessRow = value;
-				OnPropertyChanged(nameof(SelectedProcessRow));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public FileEntry? SelectedLocalFile
-	{
-		get
-		{
-			return _selectedLocalFile;
-		}
-		set
-		{
-			if (!EqualityComparer<FileEntry>.Default.Equals(_selectedLocalFile, value))
-			{
-				OnPropertyChanging(nameof(SelectedLocalFile));
-				_selectedLocalFile = value;
-				OnPropertyChanged(nameof(SelectedLocalFile));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public FileEntry? SelectedRemoteFile
-	{
-		get
-		{
-			return _selectedRemoteFile;
-		}
-		set
-		{
-			if (!EqualityComparer<FileEntry>.Default.Equals(_selectedRemoteFile, value))
-			{
-				OnPropertyChanging(nameof(SelectedRemoteFile));
-				_selectedRemoteFile = value;
-				OnSelectedRemoteFileChanged(value);
-				OnPropertyChanged(nameof(SelectedRemoteFile));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public AutomationStepKind SelectedStepKind
-	{
-		get
-		{
-			return _selectedStepKind;
-		}
-		set
-		{
-			if (!EqualityComparer<AutomationStepKind>.Default.Equals(_selectedStepKind, value))
-			{
-				OnPropertyChanging(nameof(SelectedStepKind));
-				_selectedStepKind = value;
-				OnPropertyChanged(nameof(SelectedStepKind));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public AutomationStep? SelectedSequenceStep
-	{
-		get
-		{
-			return _selectedSequenceStep;
-		}
-		set
-		{
-			if (!EqualityComparer<AutomationStep>.Default.Equals(_selectedSequenceStep, value))
-			{
-				OnPropertyChanging(nameof(SelectedSequenceStep));
-				_selectedSequenceStep = value;
-				OnPropertyChanged(nameof(SelectedSequenceStep));
-			}
-		}
-	}
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand<string?> NavigateCommand => navigateCommand ?? (navigateCommand = new RelayCommand<string>(Navigate));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand<string?> SelectOverviewTabCommand => selectOverviewTabCommand ?? (selectOverviewTabCommand = new RelayCommand<string>(SelectOverviewTab));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand ToggleLiveCommand => toggleLiveCommand ?? (toggleLiveCommand = new RelayCommand(ToggleLive));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand ToggleLogPauseCommand => toggleLogPauseCommand ?? (toggleLogPauseCommand = new RelayCommand(ToggleLogPause));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand ClearLogViewCommand => clearLogViewCommand ?? (clearLogViewCommand = new RelayCommand(ClearLogView));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand OpenFullLogsCommand => openFullLogsCommand ?? (openFullLogsCommand = new RelayCommand(OpenFullLogs));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand CopySelectedLogCommand => copySelectedLogCommand ?? (copySelectedLogCommand = new RelayCommand(CopySelectedLog));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand<ProcessDisplayRow?> ToggleProcessGroupCommand => toggleProcessGroupCommand ?? (toggleProcessGroupCommand = new RelayCommand<ProcessDisplayRow>(ToggleProcessGroup));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RefreshCommand => refreshCommand ?? (refreshCommand = new AsyncRelayCommand(RefreshAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand MarkEventCommand => markEventCommand ?? (markEventCommand = new RelayCommand(MarkEvent));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand ExportSessionCommand => exportSessionCommand ?? (exportSessionCommand = new AsyncRelayCommand(ExportSessionAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand<string?> ExportStoredSessionCommand => exportStoredSessionCommand ?? (exportStoredSessionCommand = new AsyncRelayCommand<string>(ExportStoredSessionAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand OpenSessionExportFolderCommand => openSessionExportFolderCommand ?? (openSessionExportFolderCommand = new RelayCommand(OpenSessionExportFolder));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand DeleteStoredSessionCommand => deleteStoredSessionCommand ?? (deleteStoredSessionCommand = new AsyncRelayCommand(DeleteStoredSessionAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand ImportAppiumLogCommand => importAppiumLogCommand ?? (importAppiumLogCommand = new AsyncRelayCommand(ImportAppiumLogAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand SaveLogsCommand => saveLogsCommand ?? (saveLogsCommand = new AsyncRelayCommand(SaveLogsAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand OpenSelectedMediaCommand => openSelectedMediaCommand ?? (openSelectedMediaCommand = new RelayCommand(OpenSelectedMedia));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand OpenMediaFolderCommand => openMediaFolderCommand ?? (openMediaFolderCommand = new RelayCommand(OpenMediaFolder));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand CopyMediaPathCommand => copyMediaPathCommand ?? (copyMediaPathCommand = new RelayCommand(CopyMediaPath));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RenameMediaCommand => renameMediaCommand ?? (renameMediaCommand = new AsyncRelayCommand(RenameMediaAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand SaveMediaMetadataCommand => saveMediaMetadataCommand ?? (saveMediaMetadataCommand = new AsyncRelayCommand(SaveMediaMetadataAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand DeleteMediaCommand => deleteMediaCommand ?? (deleteMediaCommand = new AsyncRelayCommand(DeleteMediaAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand ScreenshotCommand => screenshotCommand ?? (screenshotCommand = new AsyncRelayCommand(ScreenshotAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand ToggleRecordingCommand => toggleRecordingCommand ?? (toggleRecordingCommand = new AsyncRelayCommand(ToggleRecordingAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RunShellCommand => runShellCommand ?? (runShellCommand = new AsyncRelayCommand(RunShellAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand CancelShellCommand => cancelShellCommand ?? (cancelShellCommand = new RelayCommand(CancelShell));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand ClearShellOutputCommand => clearShellOutputCommand ?? (clearShellOutputCommand = new RelayCommand(ClearShellOutput));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand ApplyShellPresetCommand => applyShellPresetCommand ?? (applyShellPresetCommand = new RelayCommand(ApplyShellPreset));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand PreviousShellCommandCommand => previousShellCommandCommand ?? (previousShellCommandCommand = new RelayCommand(PreviousShellCommand));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand NextShellCommandCommand => nextShellCommandCommand ?? (nextShellCommandCommand = new RelayCommand(NextShellCommand));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand SaveShellOutputCommand => saveShellOutputCommand ?? (saveShellOutputCommand = new AsyncRelayCommand(SaveShellOutputAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand SelectApkCommand => selectApkCommand ?? (selectApkCommand = new RelayCommand(SelectApk));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand<string?> RunAutomationCommand => runAutomationCommand ?? (runAutomationCommand = new AsyncRelayCommand<string>(RunAutomationAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand BrowseLocalCommand => browseLocalCommand ?? (browseLocalCommand = new RelayCommand(BrowseLocal));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand OpenSelectedLocalCommand => openSelectedLocalCommand ?? (openSelectedLocalCommand = new RelayCommand(OpenSelectedLocal));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand LocalUpCommand => localUpCommand ?? (localUpCommand = new RelayCommand(LocalUp));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand LocalBackCommand => localBackCommand ?? (localBackCommand = new RelayCommand(LocalBack));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand LocalForwardCommand => localForwardCommand ?? (localForwardCommand = new RelayCommand(LocalForward));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand OpenLocalFolderCommand => openLocalFolderCommand ?? (openLocalFolderCommand = new RelayCommand(OpenLocalFolder));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand OpenSelectedRemoteCommand => openSelectedRemoteCommand ?? (openSelectedRemoteCommand = new AsyncRelayCommand(OpenSelectedRemoteAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RemoteUpCommand => remoteUpCommand ?? (remoteUpCommand = new AsyncRelayCommand(RemoteUpAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RemoteBackCommand => remoteBackCommand ?? (remoteBackCommand = new AsyncRelayCommand(RemoteBackAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RemoteForwardCommand => remoteForwardCommand ?? (remoteForwardCommand = new AsyncRelayCommand(RemoteForwardAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand GoRemoteQuickLocationCommand => goRemoteQuickLocationCommand ?? (goRemoteQuickLocationCommand = new AsyncRelayCommand(GoRemoteQuickLocationAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand CreateRemoteFolderCommand => createRemoteFolderCommand ?? (createRemoteFolderCommand = new AsyncRelayCommand(CreateRemoteFolderAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RenameRemoteCommand => renameRemoteCommand ?? (renameRemoteCommand = new AsyncRelayCommand(RenameRemoteAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand DeleteRemoteCommand => deleteRemoteCommand ?? (deleteRemoteCommand = new AsyncRelayCommand(DeleteRemoteAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand CancelTransferCommand => cancelTransferCommand ?? (cancelTransferCommand = new RelayCommand(CancelTransfer));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RefreshFileExplorerCommand => refreshFileExplorerCommand ?? (refreshFileExplorerCommand = new AsyncRelayCommand(RefreshFileExplorerAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand PushFileCommand => pushFileCommand ?? (pushFileCommand = new AsyncRelayCommand(PushFileAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand PullFileCommand => pullFileCommand ?? (pullFileCommand = new AsyncRelayCommand(PullFileAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand AddSequenceStepCommand => addSequenceStepCommand ?? (addSequenceStepCommand = new RelayCommand(AddSequenceStep));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand<AutomationStep?> RemoveSequenceStepCommand => removeSequenceStepCommand ?? (removeSequenceStepCommand = new RelayCommand<AutomationStep>(RemoveSequenceStep));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand<AutomationStep?> MoveSequenceStepUpCommand => moveSequenceStepUpCommand ?? (moveSequenceStepUpCommand = new RelayCommand<AutomationStep>(MoveSequenceStepUp));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand<AutomationStep?> MoveSequenceStepDownCommand => moveSequenceStepDownCommand ?? (moveSequenceStepDownCommand = new RelayCommand<AutomationStep>(MoveSequenceStepDown));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand PauseSequenceCommand => pauseSequenceCommand ?? (pauseSequenceCommand = new RelayCommand(PauseSequence));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand ResumeSequenceCommand => resumeSequenceCommand ?? (resumeSequenceCommand = new RelayCommand(ResumeSequence));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand StopSequenceCommand => stopSequenceCommand ?? (stopSequenceCommand = new RelayCommand(StopSequence));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IAsyncRelayCommand RunSequenceCommand => runSequenceCommand ?? (runSequenceCommand = new AsyncRelayCommand(RunSequenceAsync));
-
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.RelayCommandGenerator", "8.4.0.0")]
-	[ExcludeFromCodeCoverage]
-	public IRelayCommand ShowMoreCommand => showMoreCommand ?? (showMoreCommand = new RelayCommand(ShowMore));
-
 	public MainViewModel(IDeviceDiscoveryService devicesService, IMonitoringSource monitoring, ISessionStore sessions, IMediaService media, ISessionExporter exporter, IAdbExecutor adb, IDialogService dialogs, bool isDemo)
 	{
 		_devicesService = devicesService;
@@ -2253,18 +524,10 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		_adb = adb;
 		_dialogs = dialogs;
 		IsDemo = isDemo;
-		NavigationItems = new global::_003C_003Ez__ReadOnlyArray<string>(new string[14]
-		{
-			"Overview", "Instances", "Wireless", "Developer Tools", "Media", "Performance", "Logs", "File Explorer", "Network", "ADB Shell", "Automation", "Alerts",
-			"Settings", "Help"
-		});
+		NavigationItems = ["Overview", "Instances", "Wireless", "Developer Tools", "Media", "Performance", "Logs", "File Explorer", "Network", "ADB Shell", "Automation", "Alerts", "Settings", "Help"];
 		if (isDemo) { TrackedPackages.Add("com.company.mygame"); SelectedPackage = TrackedPackages[0]; }
-		PerformanceCharts = new global::_003C_003Ez__ReadOnlyArray<LiveChartViewModel>(new LiveChartViewModel[11]
-		{
-			CpuChart, DeviceMemoryChart, AppMemoryChart, FpsChart, FrameTimeChart, JankChart, DiskChart, NetworkChart, AppNetworkChart, ThermalChart,
-			GpuChart
-		});
-		StoredSessionCharts = new global::_003C_003Ez__ReadOnlyArray<LiveChartViewModel>(new LiveChartViewModel[6] { StoredCpuChart, StoredMemoryChart, StoredFpsFrameChart, StoredDiskChart, StoredNetworkChart, StoredThermalChart });
+		PerformanceCharts = [CpuChart, DeviceMemoryChart, AppMemoryChart, FpsChart, FrameTimeChart, JankChart, DiskChart, NetworkChart, AppNetworkChart, ThermalChart, GpuChart];
+		StoredSessionCharts = [StoredCpuChart, StoredMemoryChart, StoredFpsFrameChart, StoredDiskChart, StoredNetworkChart, StoredThermalChart];
 		LogView = CollectionViewSource.GetDefaultView(Logs);
 		LogView.Filter = FilterLog;
 		MediaView = CollectionViewSource.GetDefaultView(MediaItems);
@@ -2302,6 +565,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		_ = DiscoveryLoopAsync(_appCts.Token);
 	}
 
+	[RelayCommand]
 	private void Navigate(string? page)
 	{
 		if (!string.IsNullOrWhiteSpace(page))
@@ -2326,6 +590,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void SelectOverviewTab(string? tab)
 	{
 		if (!string.IsNullOrWhiteSpace(tab))
@@ -2334,28 +599,33 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void ToggleLive()
 	{
 		IsLive = !IsLive;
 	}
 
+	[RelayCommand]
 	private void ToggleLogPause()
 	{
 		IsLogPaused = !IsLogPaused;
 		LogFilterStatus = (IsLogPaused ? "Log view paused" : "Live logcat");
 	}
 
+	[RelayCommand]
 	private void ClearLogView()
 	{
 		Logs.Clear();
 		LogFilterStatus = "Local log view cleared";
 	}
 
+	[RelayCommand]
 	private void OpenFullLogs()
 	{
 		CurrentPage = "Logs";
 	}
 
+	[RelayCommand]
 	private void CopySelectedLog()
 	{
 		if ((object)SelectedLogEntry != null)
@@ -2364,6 +634,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void ToggleProcessGroup(ProcessDisplayRow? row)
 	{
 		if ((object)row != null && row.CanExpand)
@@ -2376,6 +647,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task RefreshAsync()
 	{
 		if (CurrentPage == "Instances")
@@ -2409,6 +681,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void MarkEvent()
 	{
 		if (_session == null || (object)SelectedDevice == null)
@@ -2435,6 +708,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		StatusMessage = "Marker added: " + sessionMarker.Name;
 	}
 
+	[RelayCommand]
 	private async Task ExportSessionAsync()
 	{
 		if (_session == null)
@@ -2454,6 +728,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task ExportStoredSessionAsync(string? format)
 	{
 		if ((object)SelectedStoredSession == null)
@@ -2485,6 +760,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void OpenSessionExportFolder()
 	{
 		string text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Android Dev Monitor", "Exports");
@@ -2495,6 +771,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		});
 	}
 
+	[RelayCommand]
 	private async Task DeleteStoredSessionAsync()
 	{
 		if ((object)SelectedStoredSession != null)
@@ -2513,6 +790,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task ImportAppiumLogAsync()
 	{
 		OpenFileDialog picker = new OpenFileDialog
@@ -2547,6 +825,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task SaveLogsAsync()
 	{
 		SaveFileDialog saveFileDialog = new SaveFileDialog
@@ -2564,6 +843,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void OpenSelectedMedia()
 	{
 		if ((object)SelectedMediaItem == null || !File.Exists(SelectedMediaItem.LocalPath))
@@ -2577,6 +857,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		});
 	}
 
+	[RelayCommand]
 	private void OpenMediaFolder()
 	{
 		string text = SelectedMediaItem?.LocalPath;
@@ -2596,6 +877,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void CopyMediaPath()
 	{
 		if ((object)SelectedMediaItem != null)
@@ -2604,6 +886,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task RenameMediaAsync()
 	{
 		if ((object)SelectedMediaItem == null || string.IsNullOrWhiteSpace(MediaRenameText))
@@ -2622,6 +905,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task SaveMediaMetadataAsync()
 	{
 		if ((object)SelectedMediaItem == null)
@@ -2647,6 +931,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task DeleteMediaAsync()
 	{
 		if ((object)SelectedMediaItem == null)
@@ -2673,6 +958,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task ScreenshotAsync()
 	{
 		if ((object)SelectedDevice == null)
@@ -2691,6 +977,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task ToggleRecordingAsync()
 	{
 		if ((object)SelectedDevice == null)
@@ -2732,6 +1019,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task RunShellAsync()
 	{
 		if ((object)SelectedDevice == null || string.IsNullOrWhiteSpace(ShellCommand) || IsDemo || IsShellRunning)
@@ -2756,7 +1044,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		ShellStatus = "Running on " + target.Serial;
 		try
 		{
-			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(target.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "sh", "-c", command }), TimeSpan.FromSeconds(30L), _shellCts.Token);
+			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(target.Serial, ["shell", "sh", "-c", command], TimeSpan.FromSeconds(30L), _shellCts.Token);
 			TrackAdbCommand(adbCommandResult);
 			ShellOutput = $"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}] {target.FriendlyName} ({target.Serial})\n$ {command}\nExit: {adbCommandResult.ExitCode?.ToString() ?? "N/A"} · {adbCommandResult.Duration.TotalMilliseconds:N0} ms{(adbCommandResult.TimedOut ? " · TIMEOUT" : "")}{(adbCommandResult.Cancelled ? " · CANCELLED" : "")}\n\n{adbCommandResult.StandardOutput}{(string.IsNullOrWhiteSpace(adbCommandResult.StandardError) ? "" : ("\nSTDERR:\n" + adbCommandResult.StandardError))}";
 			ShellStatus = (adbCommandResult.Success ? "Completed" : (adbCommandResult.Cancelled ? "Cancelled" : (adbCommandResult.TimedOut ? "Timed out" : ("Failed · exit " + (adbCommandResult.ExitCode?.ToString() ?? "N/A")))));
@@ -2771,17 +1059,20 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void CancelShell()
 	{
 		_shellCts?.Cancel();
 	}
 
+	[RelayCommand]
 	private void ClearShellOutput()
 	{
 		ShellOutput = "";
 		ShellStatus = "Local output cleared";
 	}
 
+	[RelayCommand]
 	private void ApplyShellPreset()
 	{
 		if (!string.IsNullOrWhiteSpace(SelectedShellPreset))
@@ -2790,6 +1081,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void PreviousShellCommand()
 	{
 		if (ShellHistory.Count != 0)
@@ -2799,6 +1091,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void NextShellCommand()
 	{
 		if (ShellHistory.Count != 0)
@@ -2808,6 +1101,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task SaveShellOutputAsync()
 	{
 		SaveFileDialog picker = new SaveFileDialog
@@ -2823,6 +1117,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void SelectApk()
 	{
 		OpenFileDialog openFileDialog = new OpenFileDialog
@@ -2837,6 +1132,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task RunAutomationAsync(string? action)
 	{
 		if ((object)SelectedDevice != null && !string.IsNullOrWhiteSpace(action))
@@ -2922,8 +1218,8 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			{
 				return AutomationFailure("Restart requires a selected package.");
 			}
-			AdbCommandResult stop = await _adb.ExecuteAsync(serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "am", "force-stop", package }), TimeSpan.FromSeconds(20L), token);
-			AdbCommandResult adbCommandResult3 = await _adb.ExecuteAsync(serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[7] { "shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1" }), TimeSpan.FromSeconds(30L), token);
+			AdbCommandResult stop = await _adb.ExecuteAsync(serial, ["shell", "am", "force-stop", package], TimeSpan.FromSeconds(20L), token);
+			AdbCommandResult adbCommandResult3 = await _adb.ExecuteAsync(serial, ["shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"], TimeSpan.FromSeconds(30L), token);
 			AppendAutomationResult(action, target, package, stop, $"Force stop exit {stop.ExitCode}\nLaunch exit {adbCommandResult3.ExitCode}\n{adbCommandResult3.StandardOutput}\n{adbCommandResult3.StandardError}");
 			return stop.Success && adbCommandResult3.Success;
 		}
@@ -2932,23 +1228,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			(int, int) tuple3 = ParseCoordinates(argument ?? AutomationCoordinates, target);
 			int x = tuple3.Item1;
 			int y = tuple3.Item2;
-			AdbCommandResult stop = await _adb.ExecuteAsync(serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[5]
-			{
-				"shell",
-				"input",
-				"tap",
-				x.ToString(CultureInfo.InvariantCulture),
-				y.ToString(CultureInfo.InvariantCulture)
-			}), TimeSpan.FromSeconds(15L), token);
+			AdbCommandResult stop = await _adb.ExecuteAsync(serial, ["shell", "input", "tap", x.ToString(CultureInfo.InvariantCulture), y.ToString(CultureInfo.InvariantCulture)], TimeSpan.FromSeconds(15L), token);
 			await Task.Delay(90, token);
-			AdbCommandResult adbCommandResult2 = await _adb.ExecuteAsync(serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[5]
-			{
-				"shell",
-				"input",
-				"tap",
-				x.ToString(CultureInfo.InvariantCulture),
-				y.ToString(CultureInfo.InvariantCulture)
-			}), TimeSpan.FromSeconds(15L), token);
+			AdbCommandResult adbCommandResult2 = await _adb.ExecuteAsync(serial, ["shell", "input", "tap", x.ToString(CultureInfo.InvariantCulture), y.ToString(CultureInfo.InvariantCulture)], TimeSpan.FromSeconds(15L), token);
 			AppendAutomationResult(action, target, package, adbCommandResult2, $"First tap exit {stop.ExitCode}\nSecond tap exit {adbCommandResult2.ExitCode}");
 			return stop.Success && adbCommandResult2.Success;
 		}
@@ -2969,79 +1251,56 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			case "Install APK":
 				if (!string.IsNullOrWhiteSpace(apkPath) && File.Exists(apkPath))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[3] { "install", "-r", apkPath });
+					readOnlyList = ["install", "-r", apkPath];
 					break;
 				}
 				goto default;
 			case "Launch":
 				if (!string.IsNullOrWhiteSpace(package))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[7] { "shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1" });
+					readOnlyList = ["shell", "monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"];
 					break;
 				}
 				goto default;
 			case "Force Stop":
 				if (!string.IsNullOrWhiteSpace(package))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "am", "force-stop", package });
+					readOnlyList = ["shell", "am", "force-stop", package];
 					break;
 				}
 				goto default;
 			case "Clear Data":
 				if (!string.IsNullOrWhiteSpace(package))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "pm", "clear", package });
+					readOnlyList = ["shell", "pm", "clear", package];
 					break;
 				}
 				goto default;
 			case "Uninstall":
 				if (!string.IsNullOrWhiteSpace(package))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[2] { "uninstall", package });
+					readOnlyList = ["uninstall", package];
 					break;
 				}
 				goto default;
 			case "App Info":
 				if (!string.IsNullOrWhiteSpace(package))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[7]
-					{
-						"shell",
-						"am",
-						"start",
-						"-a",
-						"android.settings.APPLICATION_DETAILS_SETTINGS",
-						"-d",
-						"package:" + package
-					});
+					readOnlyList = ["shell", "am", "start", "-a", "android.settings.APPLICATION_DETAILS_SETTINGS", "-d", "package:" + package];
 					break;
 				}
 				goto default;
 			case "Grant Permission":
 				if (!string.IsNullOrWhiteSpace(package) && !string.IsNullOrWhiteSpace(argument ?? AutomationText))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[5]
-					{
-						"shell",
-						"pm",
-						"grant",
-						package,
-						(argument ?? AutomationText).Trim()
-					});
+					readOnlyList = ["shell", "pm", "grant", package, (argument ?? AutomationText).Trim()];
 					break;
 				}
 				goto default;
 			case "Revoke Permission":
 				if (!string.IsNullOrWhiteSpace(package) && !string.IsNullOrWhiteSpace(argument ?? AutomationText))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[5]
-					{
-						"shell",
-						"pm",
-						"revoke",
-						package,
-						(argument ?? AutomationText).Trim()
-					});
+					readOnlyList = ["shell", "pm", "revoke", package, (argument ?? AutomationText).Trim()];
 					break;
 				}
 				goto default;
@@ -3076,17 +1335,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 				readOnlyList = Tap(item, item2);
 				break;
 			case "Long Press":
-				readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[8]
-				{
-					"shell",
-					"input",
-					"swipe",
-					item.ToString(CultureInfo.InvariantCulture),
-					item2.ToString(CultureInfo.InvariantCulture),
-					item.ToString(CultureInfo.InvariantCulture),
-					item2.ToString(CultureInfo.InvariantCulture),
-					"800"
-				});
+				readOnlyList = ["shell", "input", "swipe", item.ToString(CultureInfo.InvariantCulture), item2.ToString(CultureInfo.InvariantCulture), item.ToString(CultureInfo.InvariantCulture), item2.ToString(CultureInfo.InvariantCulture), "800"];
 				break;
 			case "Swipe Up":
 				readOnlyList = Swipe(item, Math.Min(item4 - 1, item2 + num2), item, Math.Max(0, item2 - num2), durationMs);
@@ -3103,27 +1352,21 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			case "Send Text":
 				if (!string.IsNullOrWhiteSpace(argument ?? AutomationText))
 				{
-					readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[4]
-					{
-						"shell",
-						"input",
-						"text",
-						EscapeAndroidInputText(argument ?? AutomationText)
-					});
+					readOnlyList = ["shell", "input", "text", EscapeAndroidInputText(argument ?? AutomationText)];
 					break;
 				}
 				goto default;
 			case "Portrait":
-				readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[6] { "shell", "settings", "put", "system", "user_rotation", "0" });
+				readOnlyList = ["shell", "settings", "put", "system", "user_rotation", "0"];
 				break;
 			case "Landscape Left":
-				readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[6] { "shell", "settings", "put", "system", "user_rotation", "1" });
+				readOnlyList = ["shell", "settings", "put", "system", "user_rotation", "1"];
 				break;
 			case "Landscape Right":
-				readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[6] { "shell", "settings", "put", "system", "user_rotation", "3" });
+				readOnlyList = ["shell", "settings", "put", "system", "user_rotation", "3"];
 				break;
 			case "Auto Rotation":
-				readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[6] { "shell", "settings", "put", "system", "accelerometer_rotation", "1" });
+				readOnlyList = ["shell", "settings", "put", "system", "accelerometer_rotation", "1"];
 				break;
 			default:
 				readOnlyList = Array.Empty<string>();
@@ -3147,7 +1390,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			}
 			if (flag)
 			{
-				await _adb.ExecuteAsync(serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[6] { "shell", "settings", "put", "system", "accelerometer_rotation", "0" }), TimeSpan.FromSeconds(15L), token);
+				await _adb.ExecuteAsync(serial, ["shell", "settings", "put", "system", "accelerometer_rotation", "0"], TimeSpan.FromSeconds(15L), token);
 			}
 			TimeSpan timeout = ((action == "Install APK") ? TimeSpan.FromMinutes(5L) : TimeSpan.FromSeconds(30L));
 			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(serial, args, timeout, token);
@@ -3157,35 +1400,19 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 		static IReadOnlyList<string> KeyEvent(string code)
 		{
-			return new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "input", "keyevent", code });
+			return ["shell", "input", "keyevent", code];
 		}
 		static IReadOnlyList<string> Swipe(int num3, int num4, int num5, int num6, string text2)
 		{
-			return new global::_003C_003Ez__ReadOnlyArray<string>(new string[8]
-			{
-				"shell",
-				"input",
-				"swipe",
-				num3.ToString(CultureInfo.InvariantCulture),
-				num4.ToString(CultureInfo.InvariantCulture),
-				num5.ToString(CultureInfo.InvariantCulture),
-				num6.ToString(CultureInfo.InvariantCulture),
-				text2
-			});
+			return ["shell", "input", "swipe", num3.ToString(CultureInfo.InvariantCulture), num4.ToString(CultureInfo.InvariantCulture), num5.ToString(CultureInfo.InvariantCulture), num6.ToString(CultureInfo.InvariantCulture), text2];
 		}
 		static IReadOnlyList<string> Tap(int num3, int num4)
 		{
-			return new global::_003C_003Ez__ReadOnlyArray<string>(new string[5]
-			{
-				"shell",
-				"input",
-				"tap",
-				num3.ToString(CultureInfo.InvariantCulture),
-				num4.ToString(CultureInfo.InvariantCulture)
-			});
+			return ["shell", "input", "tap", num3.ToString(CultureInfo.InvariantCulture), num4.ToString(CultureInfo.InvariantCulture)];
 		}
 	}
 
+	[RelayCommand]
 	private void BrowseLocal()
 	{
 		OpenFolderDialog openFolderDialog = new OpenFolderDialog
@@ -3199,6 +1426,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void OpenSelectedLocal()
 	{
 		FileEntry? selectedLocalFile = SelectedLocalFile;
@@ -3208,6 +1436,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void LocalUp()
 	{
 		string text = Directory.GetParent(LocalPath)?.FullName;
@@ -3217,6 +1446,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void LocalBack()
 	{
 		if (_localBackHistory.Count != 0)
@@ -3226,6 +1456,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void LocalForward()
 	{
 		if (_localForwardHistory.Count != 0)
@@ -3235,6 +1466,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void OpenLocalFolder()
 	{
 		if (Directory.Exists(LocalPath))
@@ -3247,6 +1479,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task OpenSelectedRemoteAsync()
 	{
 		if (SelectedRemoteFile?.IsDirectory ?? false)
@@ -3255,6 +1488,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task RemoteUpAsync()
 	{
 		string text = RemotePath.TrimEnd('/');
@@ -3262,6 +1496,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		await NavigateRemotePathAsync((num <= 0) ? "/" : text.Substring(0, num), recordHistory: true);
 	}
 
+	[RelayCommand]
 	private async Task RemoteBackAsync()
 	{
 		if (_remoteBackHistory.Count != 0)
@@ -3271,6 +1506,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task RemoteForwardAsync()
 	{
 		if (_remoteForwardHistory.Count != 0)
@@ -3280,11 +1516,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task GoRemoteQuickLocationAsync()
 	{
 		await NavigateRemotePathAsync(SelectedRemoteQuickLocation, recordHistory: true);
 	}
 
+	[RelayCommand]
 	private async Task CreateRemoteFolderAsync()
 	{
 		if ((object)SelectedDevice == null || IsDemo || !IsSafeRemoteName(NewRemoteFolderName))
@@ -3293,7 +1531,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			return;
 		}
 		string path = CombineRemote(RemotePath, NewRemoteFolderName.Trim());
-		AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(SelectedDevice.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "mkdir", "--", path }), TimeSpan.FromSeconds(20L), CancellationToken.None);
+		AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "mkdir", "--", path], TimeSpan.FromSeconds(20L), CancellationToken.None);
 		StatusMessage = (adbCommandResult.Success ? ("Created " + path) : ("Create folder failed: " + adbCommandResult.StandardError.Trim()));
 		if (adbCommandResult.Success)
 		{
@@ -3301,6 +1539,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task RenameRemoteAsync()
 	{
 		if ((object)SelectedDevice == null || (object)SelectedRemoteFile == null || IsDemo || !IsSafeRemoteName(RemoteRenameText))
@@ -3309,7 +1548,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			return;
 		}
 		string text = CombineRemote(RemotePath, RemoteRenameText.Trim());
-		AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(SelectedDevice.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[5] { "shell", "mv", "--", SelectedRemoteFile.FullPath, text }), TimeSpan.FromSeconds(30L), CancellationToken.None);
+		AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "mv", "--", SelectedRemoteFile.FullPath, text], TimeSpan.FromSeconds(30L), CancellationToken.None);
 		StatusMessage = (adbCommandResult.Success ? ("Renamed to " + RemoteRenameText.Trim()) : ("Rename failed: " + adbCommandResult.StandardError.Trim()));
 		if (adbCommandResult.Success)
 		{
@@ -3317,6 +1556,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task DeleteRemoteAsync()
 	{
 		if ((object)SelectedDevice == null || (object)SelectedRemoteFile == null || IsDemo)
@@ -3331,12 +1571,12 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			IReadOnlyList<string> arguments;
 			if (!entry.IsDirectory)
 			{
-				IReadOnlyList<string> readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[5] { "shell", "rm", "-f", "--", entry.FullPath });
+				IReadOnlyList<string> readOnlyList = ["shell", "rm", "-f", "--", entry.FullPath];
 				arguments = readOnlyList;
 			}
 			else
 			{
-				IReadOnlyList<string> readOnlyList = new global::_003C_003Ez__ReadOnlyArray<string>(new string[5] { "shell", "rm", "-rf", "--", entry.FullPath });
+				IReadOnlyList<string> readOnlyList = ["shell", "rm", "-rf", "--", entry.FullPath];
 				arguments = readOnlyList;
 			}
 			AdbCommandResult adbCommandResult = await adb.ExecuteAsync(serial, arguments, TimeSpan.FromMinutes(1L), CancellationToken.None);
@@ -3348,11 +1588,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void CancelTransfer()
 	{
 		_transferCts?.Cancel();
 	}
 
+	[RelayCommand]
 	private async Task RefreshFileExplorerAsync()
 	{
 		LoadLocalFiles();
@@ -3362,7 +1604,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			StatusMessage = (IsDemo ? "Remote file browsing is disabled in demo mode" : "Select a device");
 			return;
 		}
-		AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(SelectedDevice.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[5] { "shell", "ls", "-la", "--", RemotePath }), TimeSpan.FromSeconds(15L), CancellationToken.None);
+		AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", "ls", "-la", "--", RemotePath], TimeSpan.FromSeconds(15L), CancellationToken.None);
 		if (!adbCommandResult.Success)
 		{
 			StatusMessage = "Remote path inaccessible: " + adbCommandResult.StandardError.Trim();
@@ -3384,6 +1626,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		StatusMessage = $"Loaded {RemoteFiles.Count} entries from {RemotePath}";
 	}
 
+	[RelayCommand]
 	private async Task PushFileAsync()
 	{
 		if ((object)SelectedDevice == null || (object)SelectedLocalFile == null || SelectedLocalFile.IsDirectory || IsDemo)
@@ -3399,7 +1642,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		TransferStatus = $"Pushing {file.Name} to {target.Serial}…";
 		try
 		{
-			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(target.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[3] { "push", file.FullPath, text }), TimeSpan.FromMinutes(5L), _transferCts.Token);
+			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(target.Serial, ["push", file.FullPath, text], TimeSpan.FromMinutes(5L), _transferCts.Token);
 			TransferStatus = (adbCommandResult.Success ? ("Push complete · " + file.Name) : (adbCommandResult.Cancelled ? "Push cancelled" : ("Push failed · " + adbCommandResult.StandardError.Trim())));
 			StatusMessage = TransferStatus;
 			if (adbCommandResult.Success && SelectedDevice?.Serial == target.Serial)
@@ -3423,6 +1666,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private async Task PullFileAsync()
 	{
 		if ((object)SelectedDevice == null || (object)SelectedRemoteFile == null || SelectedRemoteFile.IsDirectory || IsDemo)
@@ -3438,7 +1682,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		TransferStatus = $"Pulling {file.Name} from {selectedDevice.Serial}…";
 		try
 		{
-			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(selectedDevice.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[3] { "pull", file.FullPath, localPath }), TimeSpan.FromMinutes(5L), _transferCts.Token);
+			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(selectedDevice.Serial, ["pull", file.FullPath, localPath], TimeSpan.FromMinutes(5L), _transferCts.Token);
 			TransferStatus = (adbCommandResult.Success ? ("Pull complete · " + file.Name) : (adbCommandResult.Cancelled ? "Pull cancelled" : ("Pull failed · " + adbCommandResult.StandardError.Trim())));
 			StatusMessage = TransferStatus;
 			if (adbCommandResult.Success)
@@ -3462,12 +1706,14 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void AddSequenceStep()
 	{
 		TimeSpan? duration = ((SelectedStepKind == AutomationStepKind.Wait) ? new TimeSpan?(TimeSpan.FromMilliseconds(Math.Clamp(NewStepDurationMs, 0, 300000))) : ((TimeSpan?)null));
 		SequenceSteps.Add(new AutomationStep(Guid.NewGuid(), SelectedStepKind, StepDisplayName(SelectedStepKind), string.IsNullOrWhiteSpace(NewStepArgument) ? null : NewStepArgument.Trim(), duration, SelectedStepKind == AutomationStepKind.ClearData));
 	}
 
+	[RelayCommand]
 	private void RemoveSequenceStep(AutomationStep? step)
 	{
 		if ((object)step != null)
@@ -3476,6 +1722,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void MoveSequenceStepUp(AutomationStep? step)
 	{
 		if ((object)step != null)
@@ -3488,6 +1735,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void MoveSequenceStepDown(AutomationStep? step)
 	{
 		if ((object)step != null)
@@ -3500,6 +1748,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void PauseSequence()
 	{
 		if (IsAutomationRunning)
@@ -3509,6 +1758,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void ResumeSequence()
 	{
 		if (IsAutomationRunning)
@@ -3518,11 +1768,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
+	[RelayCommand]
 	private void StopSequence()
 	{
 		_automationCts?.Cancel();
 	}
 
+	[RelayCommand]
 	private async Task RunSequenceAsync()
 	{
 		if ((object)SelectedDevice == null || SequenceSteps.Count == 0 || IsAutomationRunning)
@@ -3659,7 +1911,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			DateTimeOffset deadline = DateTimeOffset.UtcNow + (step.Duration ?? TimeSpan.FromSeconds(30L));
 			while (DateTimeOffset.UtcNow < deadline)
 			{
-				AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(target.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "dumpsys", "activity", "activities" }), TimeSpan.FromSeconds(10L), token);
+				AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(target.Serial, ["shell", "dumpsys", "activity", "activities"], TimeSpan.FromSeconds(10L), token);
 				if (!string.IsNullOrWhiteSpace(expected) && adbCommandResult.StandardOutput.Contains(expected, StringComparison.Ordinal))
 				{
 					AppendAutomationLog("Foreground package detected: " + expected);
@@ -3676,7 +1928,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 			{
 				return AutomationFailure("Check process requires a package.");
 			}
-			AdbCommandResult adbCommandResult2 = await _adb.ExecuteAsync(target.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[3] { "shell", "pidof", expected }), TimeSpan.FromSeconds(15L), token);
+			AdbCommandResult adbCommandResult2 = await _adb.ExecuteAsync(target.Serial, ["shell", "pidof", expected], TimeSpan.FromSeconds(15L), token);
 			AppendAutomationResult("Check Process", target, expected, adbCommandResult2);
 			return adbCommandResult2.Success && !string.IsNullOrWhiteSpace(adbCommandResult2.StandardOutput);
 		}
@@ -3793,6 +2045,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		return Regex.Replace(kind.ToString(), "([a-z])([A-Z])", "$1 $2");
 	}
 
+	[RelayCommand]
 	private void ShowMore()
 	{
 		_dialogs.Notify($"Device: {DeviceContext}\nADB: {AdbPathDisplay}\nMedia: {_media.MediaDirectory}\nSession: {_session?.Id.ToString() ?? "None"}");
@@ -4060,7 +2313,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		string foreground = IsDemo ? ordered.FirstOrDefault(p => p.PackageName != null)?.PackageName : null;
 		if (!IsDemo)
 		{
-			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(device.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[4] { "shell", "dumpsys", "activity", "activities" }), TimeSpan.FromSeconds(10L), token);
+			AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(device.Serial, ["shell", "dumpsys", "activity", "activities"], TimeSpan.FromSeconds(10L), token);
 			if (adbCommandResult.Success)
 			{
 				foreground = AndroidDevMonitor.Adb.Parsers.ForegroundParser.Parse(adbCommandResult.StandardOutput);
@@ -4889,15 +3142,11 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 				AdbCommandResult? logcatResult = null;
 				if (IsDemo)
 				{
-					source = new global::_003C_003Ez__ReadOnlyArray<string>(new string[2]
-					{
-						$"07-20 12:00:{DateTimeOffset.Now.Second:00}.000 13432 13432 I MyGame: Render loop stable on {device.Serial}",
-						$"07-20 12:00:{DateTimeOffset.Now.Second:00}.100 13432 13455 D Unity: frame submitted"
-					});
+					source = [$"07-20 12:00:{DateTimeOffset.Now.Second:00}.000 13432 13432 I MyGame: Render loop stable on {device.Serial}", $"07-20 12:00:{DateTimeOffset.Now.Second:00}.100 13432 13455 D Unity: frame submitted"];
 				}
 				else
 				{
-					AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(device.Serial, new global::_003C_003Ez__ReadOnlyArray<string>(new string[8] { "logcat", "-d", "-b", "main,system,crash,events,radio", "-v", "threadtime", "-t", "100" }), TimeSpan.FromSeconds(10L), token);
+					AdbCommandResult adbCommandResult = await _adb.ExecuteAsync(device.Serial, ["logcat", "-d", "-b", "main,system,crash,events,radio", "-v", "threadtime", "-t", "100"], TimeSpan.FromSeconds(10L), token);
 					logcatResult = adbCommandResult;
 					source = (adbCommandResult.Success ? ((IEnumerable<string>)adbCommandResult.StandardOutput.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries)) : ((IEnumerable<string>)Array.Empty<string>()));
 				}
@@ -5595,8 +3844,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		_discoveryGate.Dispose();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedDeviceChanged(AndroidDevice? oldValue, AndroidDevice? newValue)
+	partial void OnSelectedDeviceChanged(AndroidDevice? oldValue, AndroidDevice? newValue)
 	{
 		OnPropertyChanged("DeviceContext");
 		OnPropertyChanged(nameof(BottomDeviceContext));
@@ -5611,8 +3859,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedPackageChanged(string? oldValue, string? newValue)
+	partial void OnSelectedPackageChanged(string? oldValue, string? newValue)
 	{
 		_selectedPackageObservedRunning = false;
 		ResolveAlert("AppExited");
@@ -5627,8 +3874,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		}
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnIsLiveChanged(bool value)
+	partial void OnIsLiveChanged(bool value)
 	{
 		OnPropertyChanged("LiveLabel");
 		OnPropertyChanged(nameof(CollectionState));
@@ -5650,81 +3896,68 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		_sessions.SaveSessionAsync(_session, CancellationToken.None);
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnIsRecordingChanged(bool value)
+	partial void OnIsRecordingChanged(bool value)
 	{
 		OnPropertyChanged("RecordingLabel");
 		OnPropertyChanged(nameof(RecordingState));
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSearchTextChanged(string value)
+	partial void OnSearchTextChanged(string value)
 	{
 		ApplyProcessFilter();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSessionTimeChanged(string value)
+	partial void OnSessionTimeChanged(string value)
 	{
 		OnPropertyChanged("SessionStatus");
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnLogSearchTextChanged(string value)
+	partial void OnLogSearchTextChanged(string value)
 	{
 		RefreshLogFilter();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedLogPriorityChanged(string value)
+	partial void OnSelectedLogPriorityChanged(string value)
 	{
 		RefreshLogFilter();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedLogSourceChanged(string value)
+	partial void OnSelectedLogSourceChanged(string value)
 	{
 		RefreshLogFilter();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnLogRegexEnabledChanged(bool value)
+	partial void OnLogRegexEnabledChanged(bool value)
 	{
 		RefreshLogFilter();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnMediaSearchTextChanged(string value)
+	partial void OnMediaSearchTextChanged(string value)
 	{
 		RefreshMediaView();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedMediaKindChanged(string value)
+	partial void OnSelectedMediaKindChanged(string value)
 	{
 		RefreshMediaView();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedMediaDeviceChanged(string value)
+	partial void OnSelectedMediaDeviceChanged(string value)
 	{
 		RefreshMediaView();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedMediaPackageChanged(string value)
+	partial void OnSelectedMediaPackageChanged(string value)
 	{
 		RefreshMediaView();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedMediaSortChanged(string value)
+	partial void OnSelectedMediaSortChanged(string value)
 	{
 		RefreshMediaView();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedMediaItemChanged(MediaItem? value)
+	partial void OnSelectedMediaItemChanged(MediaItem? value)
 	{
 		MediaRenameText = (((object)value == null) ? "" : Path.GetFileNameWithoutExtension(value.FileName));
 		MediaNote = value?.Note ?? "";
@@ -5742,27 +3975,23 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 		SelectedMediaMarker = (SessionMarker?)selectedMediaMarker;
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedStoredSessionChanged(SessionSummary? value)
+	partial void OnSelectedStoredSessionChanged(SessionSummary? value)
 	{
 		_ = LoadStoredSessionAsync(value);
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedApkPathChanged(string? value)
+	partial void OnSelectedApkPathChanged(string? value)
 	{
 		OnPropertyChanged("SelectedApkInfo");
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnFileSearchTextChanged(string value)
+	partial void OnFileSearchTextChanged(string value)
 	{
 		LocalFileView.Refresh();
 		RemoteFileView.Refresh();
 	}
 
-	[GeneratedCode("CommunityToolkit.Mvvm.SourceGenerators.ObservablePropertyGenerator", "8.4.0.0")]
-	private void OnSelectedRemoteFileChanged(FileEntry? value)
+	partial void OnSelectedRemoteFileChanged(FileEntry? value)
 	{
 		if ((object)value != null)
 		{
