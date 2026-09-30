@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using AndroidDevMonitor.Adb.Execution;
 using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -341,8 +342,8 @@ public partial class MainViewModel
     {
         AndroidDevice[] targets = ConnectedDevices();
         if (targets.Length == 0) { MultiDeviceSummary = "No connected devices. Refresh the device list first."; return; }
-        string? scrcpy = ResolveExecutable("scrcpy.exe");
-        if (scrcpy is null) { MultiDeviceSummary = "scrcpy.exe was not found. Install scrcpy or add it to PATH."; return; }
+        string? scrcpy = ToolLocator.Default.FindScrcpy();
+        if (scrcpy is null) { MultiDeviceSummary = "scrcpy was not found. Install scrcpy or add it to PATH."; return; }
 
         int launched = 0;
         foreach (AndroidDevice device in targets)

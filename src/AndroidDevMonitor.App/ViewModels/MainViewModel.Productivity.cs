@@ -287,7 +287,7 @@ public partial class MainViewModel
         string? adbPath = _adb.ResolvedAdbPath;
         if (string.IsNullOrWhiteSpace(adbPath))
         {
-            AppDataSummary = "adb.exe was not found, so the file cannot be pulled.";
+            AppDataSummary = "ADB was not found, so the file cannot be pulled.";
             return;
         }
 

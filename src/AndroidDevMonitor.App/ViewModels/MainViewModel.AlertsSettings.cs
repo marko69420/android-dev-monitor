@@ -748,7 +748,7 @@ public partial class MainViewModel
     {
         if (!string.IsNullOrWhiteSpace(SelectedAdbPath) && !File.Exists(SelectedAdbPath))
         {
-            _dialogs.Notify("The selected adb.exe path does not exist.", error: true);
+            _dialogs.Notify("The selected ADB path does not exist.", error: true);
             return;
         }
 
@@ -780,7 +780,7 @@ public partial class MainViewModel
         {
             AdbVersion = "Demo provider";
             AdbServerState = "ADB disabled in demo mode";
-            AdbDiagnostics = "DEMO DATA uses deterministic local providers and never invokes adb.exe.";
+            AdbDiagnostics = "DEMO DATA uses deterministic local providers and never invokes ADB.";
             return;
         }
 
@@ -789,7 +789,7 @@ public partial class MainViewModel
             AdbVersion = "Not found";
             AdbServerState = "Unavailable";
             AdbDiagnostics =
-                "adb.exe was not found. Select it here or install Android Platform Tools.";
+                "ADB was not found. Select it here or install Android Platform Tools.";
             return;
         }
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
+using AndroidDevMonitor.Adb.Execution;
 using AndroidDevMonitor.Adb.Parsers;
 using AndroidDevMonitor.Core.Analysis;
 using AndroidDevMonitor.Core.Models;
@@ -91,7 +92,7 @@ public partial class MainViewModel
 
         if (_adb.ResolvedAdbPath is null)
         {
-            WirelessStatus = "ADB was not found. Configure adb.exe in Settings.";
+            WirelessStatus = "ADB was not found. Configure it in Settings.";
             return;
         }
 
@@ -388,8 +389,8 @@ public partial class MainViewModel
     {
         string? apk = SelectedApkPath;
         if (string.IsNullOrWhiteSpace(apk) || !File.Exists(apk)) return "Choose an APK with Select APK first.";
-        string? aapt = FindLatestBuildTool("aapt.exe");
-        if (aapt is null) return "Android SDK Build Tools (aapt.exe) were not found.";
+        string? aapt = ToolLocator.Default.FindBuildTool("aapt");
+        if (aapt is null) return "Android SDK Build Tools (aapt) were not found.";
         ApkArchiveSnapshot snapshot = ApkArchiveAnalyzer.Analyze(apk);
         StringBuilder report = new(snapshot.ToReport() + $"\nAndroid SDK tool: {aapt}\n\n");
         foreach (string command in new[] { "badging", "permissions", "resources", "configurations" })
@@ -450,14 +451,6 @@ public partial class MainViewModel
         if (string.IsNullOrWhiteSpace(BugReportPath) || !File.Exists(BugReportPath)) return "Choose a bugreport ZIP or TXT first.";
         BugReportAnalysis analysis = await BugReportAnalyzer.AnalyzeAsync(BugReportPath, LabToken);
         return await SaveStandaloneTextAsync("bugreport-analysis", analysis.ToReport());
-    }
-
-    private static string? FindLatestBuildTool(string fileName)
-    {
-        string? sdk = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT") ?? Environment.GetEnvironmentVariable("ANDROID_HOME");
-        sdk ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Android", "Sdk");
-        string root = Path.Combine(sdk, "build-tools");
-        return Directory.Exists(root) ? Directory.EnumerateFiles(root, fileName, SearchOption.AllDirectories).OrderByDescending(path => path, StringComparer.OrdinalIgnoreCase).FirstOrDefault() : null;
     }
 
     private async Task<string> RunHiddenProcessAsync(string executable, IReadOnlyList<string> arguments)

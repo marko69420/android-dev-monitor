@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using AndroidDevMonitor.Adb.Execution;
 using AndroidDevMonitor.Adb.Parsers;
 using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -258,7 +259,7 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task RefreshAvdsAsync()
     {
-        string? emulator = ResolveSdkExecutable("emulator.exe", "emulator");
+        string? emulator = ToolLocator.Default.FindSdkTool("emulator", "emulator");
         if (emulator is null) { DeviceLabStatus = "Android Emulator was not found in the configured SDK."; return; }
         string output = await RunHiddenProcessAsync(emulator, ["-list-avds"]);
         AvailableAvds.Clear();
@@ -270,7 +271,7 @@ public partial class MainViewModel
     [RelayCommand]
     private void StartAvd(string? mode)
     {
-        string? emulator = ResolveSdkExecutable("emulator.exe", "emulator");
+        string? emulator = ToolLocator.Default.FindSdkTool("emulator", "emulator");
         if (emulator is null || string.IsNullOrWhiteSpace(SelectedAvd)) { DeviceLabStatus = "Refresh and select a local AVD first."; return; }
         ProcessStartInfo start = new(emulator) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(emulator)! };
         start.ArgumentList.Add("-avd"); start.ArgumentList.Add(SelectedAvd);
@@ -292,7 +293,7 @@ public partial class MainViewModel
     [RelayCommand]
     private void WipeAndStartAvd()
     {
-        string? emulator = ResolveSdkExecutable("emulator.exe", "emulator");
+        string? emulator = ToolLocator.Default.FindSdkTool("emulator", "emulator");
         if (emulator is null || string.IsNullOrWhiteSpace(SelectedAvd)) { DeviceLabStatus = "Refresh and select a local AVD first."; return; }
         if (!_dialogs.Confirm("Wipe emulator data", $"Delete all user data from AVD {SelectedAvd} and start it? This cannot be undone.")) return;
         ProcessStartInfo start = new(emulator) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(emulator)! };
@@ -306,8 +307,8 @@ public partial class MainViewModel
     {
         AndroidDevice? device = SelectedDevice;
         if (device is null) { DeviceLabStatus = "Select a connected Android device."; return; }
-        string? scrcpy = ResolveExecutable("scrcpy.exe");
-        if (scrcpy is null) { DeviceLabStatus = "scrcpy.exe was not found. Install scrcpy or add it to PATH."; return; }
+        string? scrcpy = ToolLocator.Default.FindScrcpy();
+        if (scrcpy is null) { DeviceLabStatus = "scrcpy was not found. Install scrcpy or add it to PATH."; return; }
         ProcessStartInfo start = new(scrcpy) { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
         start.ArgumentList.Add("--serial"); start.ArgumentList.Add(device.Serial);
         start.ArgumentList.Add("--window-title"); start.ArgumentList.Add($"Android Dev Monitor · {device.FriendlyName}");
@@ -401,28 +402,5 @@ public partial class MainViewModel
     {
         PermissionChanges.Insert(0, change);
         while (PermissionChanges.Count > 20) PermissionChanges.RemoveAt(PermissionChanges.Count - 1);
-    }
-
-    private static string? ResolveExecutable(string name)
-    {
-        string? fromPath = (Environment.GetEnvironmentVariable("PATH") ?? "")
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(directory => Path.Combine(directory.Trim().Trim('"'), name)).FirstOrDefault(File.Exists);
-        if (fromPath is not null) return fromPath;
-        string[] candidates =
-        [
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "scrcpy", name),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "scrcpy", name),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "scoop", "apps", "scrcpy", "current", name)
-        ];
-        return candidates.FirstOrDefault(File.Exists);
-    }
-
-    private static string? ResolveSdkExecutable(string name, string folder)
-    {
-        string? sdk = Environment.GetEnvironmentVariable("ANDROID_SDK_ROOT") ?? Environment.GetEnvironmentVariable("ANDROID_HOME");
-        sdk ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Android", "Sdk");
-        string candidate = Path.Combine(sdk, folder, name);
-        return File.Exists(candidate) ? candidate : ResolveExecutable(name);
     }
 }
