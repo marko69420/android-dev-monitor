@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Android Dev Monitor — a Windows Task Manager for Android developers</title>
-  <meta name="description" content="Android Dev Monitor is a native Windows app that monitors Android apps and devices through ADB: CPU, memory, I/O, network, FPS, logcat, sessions, emulators, and developer workflows.">
+  <title>Android Dev Monitor — a Task Manager for Android developers on Windows and Linux</title>
+  <meta name="description" content="Android Dev Monitor is a native Windows and Linux app that monitors Android apps and devices through ADB: CPU, memory, I/O, network, FPS, logcat, sessions, emulators, and developer workflows.">
   <style>
     :root {
       color-scheme: dark;
@@ -102,20 +102,22 @@
 
   <main class="wrap">
     <div class="hero">
-      <h1>A Windows Task Manager for Android developers.</h1>
+      <h1>A Task Manager for Android developers, on Windows and Linux.</h1>
       <p class="lede">
         Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs,
         and export sessions for debugging beta builds — on physical devices and local emulators.
       </p>
       <div class="badges">
-        <span class="pill">Version 2.8.1</span>
+        <span class="pill">Version 2.9.0</span>
         <span class="pill">Windows 10 / 11 x64</span>
+        <span class="pill">Linux x64</span>
         <span class="pill">Self-contained build</span>
         <span class="pill">No cloud, no telemetry</span>
         <span class="pill">MIT License</span>
       </div>
       <div class="cta">
-        <a class="button primary" href="https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.1/AndroidDevMonitor-v2.8.1-win-x64.zip">Download for Windows</a>
+        <a class="button primary" href="https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-win-x64.zip">Download for Windows</a>
+        <a class="button primary" href="https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-linux-x64.tar.gz">Download for Linux</a>
         <a class="button" href="USER_GUIDE.html">Read the guide</a>
         <a class="button" href="https://github.com/marko69420/android-dev-monitor/blob/main/README.md">Open the README</a>
       </div>
@@ -144,10 +146,10 @@
 
     <section id="start">
       <h2>Get started in three steps</h2>
-      <p class="sub">No installer and no .NET SDK required for the downloadable build.</p>
+      <p class="sub">No installer and no .NET SDK required for the downloadable builds.</p>
       <ol class="steps">
-        <li>Download the <a href="https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.1/AndroidDevMonitor-v2.8.1-win-x64.zip">v2.8.1 ZIP</a> and extract it anywhere.</li>
-        <li>Double-click <code>AndroidDevMonitor.exe</code>. The app opens even without ADB — try <code>--demo</code> for sample data.</li>
+        <li>Download the <a href="https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-win-x64.zip">Windows ZIP</a> or the <a href="https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-linux-x64.tar.gz">Linux tar.gz</a> and extract it anywhere.</li>
+        <li>Windows: double-click <code>AndroidDevMonitor.exe</code>. Linux: run <code>./AndroidDevMonitor</code>, or <code>./install.sh</code> for a menu entry. The app opens even without ADB — try <code>--demo</code> for sample data.</li>
         <li>Enable <b>Developer options → USB debugging</b> on the device, connect it, and accept the debugging prompt.</li>
       </ol>
       <p class="sub">
@@ -155,7 +157,12 @@
         vendor policy, or device permissions — the interface reports unavailable data instead of fabricating it.
       </p>
       <p class="sub">
-        Something went wrong? Application logs are in <code>%LOCALAPPDATA%\AndroidDevMonitor\Logs</code>; attach the latest file
+        On Linux, install adb with your package manager (<code>sudo apt install adb</code>, <code>dnf install android-tools</code>, <code>pacman -S android-tools</code>);
+        if the phone shows <i>no permissions</i>, add the Android udev rules (<code>android-sdk-platform-tools-common</code> or <code>android-udev</code>) and replug it.
+      </p>
+      <p class="sub">
+        Something went wrong? Application logs are in <code>%LOCALAPPDATA%\AndroidDevMonitor\Logs</code> on Windows and
+        <code>~/.local/share/AndroidDevMonitor/Logs</code> on Linux; attach the latest file
         to a <a href="https://github.com/marko69420/android-dev-monitor/issues/new/choose">bug report</a>.
       </p>
     </section>
@@ -185,7 +192,7 @@
       <table>
         <tr><th>Document</th><th>What it covers</th></tr>
         <tr><td><a href="USER_GUIDE.html">User guide</a></td><td>Step-by-step instructions for every workspace, in Croatian.</td></tr>
-        <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/RELEASE_NOTES_v2.8.1.md">Release notes</a></td><td>What changed in v2.8.1; earlier notes sit next to it in <code>docs/</code>.</td></tr>
+        <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/RELEASE_NOTES_v2.9.0.md">Release notes</a></td><td>What changed in v2.9.0; earlier notes sit next to it in <code>docs/</code>.</td></tr>
         <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/ARCHITECTURE.md">Architecture</a></td><td>Projects, composition root, session handling, and ADB execution model.</td></tr>
         <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/METRICS.md">Metrics</a></td><td>How each metric is collected and what it means.</td></tr>
         <tr><td><a href="https://github.com/marko69420/android-dev-monitor/blob/main/docs/ADB_LIMITATIONS.md">ADB limitations</a></td><td>Which counters need specific Android versions, permissions, or vendor support.</td></tr>
@@ -197,7 +204,7 @@
 
   <footer>
     <div class="wrap">
-      Android Dev Monitor · <a href="https://github.com/marko69420/android-dev-monitor/releases/tag/v2.8.1">v2.8.1</a> ·
+      Android Dev Monitor · <a href="https://github.com/marko69420/android-dev-monitor/releases/tag/v2.9.0">v2.9.0</a> ·
       <a href="https://github.com/marko69420/android-dev-monitor/blob/main/LICENSE">MIT License</a> ·
       Previous releases: <a href="https://github.com/marko69420/android-dev-monitor/releases/tag/v2.8.0">v2.8.0</a>,
       <a href="https://github.com/marko69420/android-dev-monitor/releases/tag/v2.6.1">v2.6.1</a>,

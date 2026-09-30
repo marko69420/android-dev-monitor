@@ -1,14 +1,18 @@
 # Android Dev Monitor
 
-[![Download Android Dev Monitor v2.8.1 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.8.1-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.1/AndroidDevMonitor-v2.8.1-win-x64.zip)
-[![Windows 10 / 11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white)](#prerequisites)
+[![Download Android Dev Monitor v2.9.0 for Windows](https://img.shields.io/badge/Download_for_Windows-v2.9.0-19c4dc?style=for-the-badge&logo=windows11&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-win-x64.zip)
+[![Download Android Dev Monitor v2.9.0 for Linux](https://img.shields.io/badge/Download_for_Linux-v2.9.0-19c4dc?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-linux-x64.tar.gz)
+[![Windows 10 / 11 x64 · Linux x64](https://img.shields.io/badge/Windows_10%2F11_·_Linux-x64-0078D6?style=for-the-badge)](#prerequisites)
 [![License MIT](https://img.shields.io/badge/License-MIT-59D35F?style=for-the-badge)](LICENSE)
 
-**Ready to run:** [download the v2.8.1 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.8.1/AndroidDevMonitor-v2.8.1-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**. Self-contained build — no installer and no .NET SDK required.
+**Ready to run — no installer and no .NET needed:**
 
-**A Windows Task Manager for Android developers.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
+- **Windows:** [download the v2.9.0 ZIP](https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-win-x64.zip) → extract it → double-click **`AndroidDevMonitor.exe`**.
+- **Linux:** [download the v2.9.0 tar.gz](https://github.com/marko69420/android-dev-monitor/releases/download/v2.9.0/AndroidDevMonitor-v2.9.0-linux-x64.tar.gz) → `tar -xzf AndroidDevMonitor-v2.9.0-linux-x64.tar.gz` → run `./AndroidDevMonitor/AndroidDevMonitor`, or `./AndroidDevMonitor/install.sh` to add it to your applications menu. See [Linux setup](#linux).
 
-**Version 2.8.1** · Windows desktop app · Physical Android devices and local emulators
+**A Task Manager for Android developers, on Windows and Linux.** Monitor Android apps and devices through ADB, correlate performance spikes with actions and logs, and export sessions for debugging beta builds.
+
+**Version 2.9.0** · Windows and Linux desktop app · Physical Android devices and local emulators
 
 **Project page:** [marko69420.github.io/android-dev-monitor](https://marko69420.github.io/android-dev-monitor/) — download, feature overview, screens, and documentation links.
 
@@ -28,6 +32,8 @@ No device at hand? Launch with `--demo` to explore every workspace with determin
 
 ![Logs workspace with crash filters and the refreshed dark theme](docs/images/android-dev-monitor-v26-logs.png)
 
+![The same app running on Linux](docs/images/android-dev-monitor-linux.png)
+
 > [!NOTE]
 > Android Dev Monitor is an early preview. Core monitoring, sessions, exports, media capture, logs, file transfer, shell, and automation are implemented, but metric availability depends on the Android version, device vendor, and app permissions.
 
@@ -39,8 +45,15 @@ It is designed for:
 
 - Developers testing beta builds across emulators and physical devices.
 - QA teams capturing reproducible performance sessions alongside logs and screenshots.
-- Indie developers who want a lightweight Windows dashboard around common ADB workflows.
+- Indie developers who want a lightweight desktop dashboard around common ADB workflows on Windows or Linux.
 - Technical users reporting evidence-backed performance bugs to app teams.
+
+## What's new in v2.9.0
+
+- **Linux version:** the full app now runs natively on Linux (x86_64) with the same pages, charts and tools as on Windows. It is a self-contained download with an optional `install.sh` that adds a menu entry. ADB, the emulator and scrcpy are found in the Android SDK, the usual Linux install folders or `PATH`.
+- **Settings defaults fixed (Windows too):** switches that should start on — confirm before closing during recording or automation, alert sounds, compact density, restore the last page and device — were read as off on first start. They now start with their intended defaults; settings you already changed are kept.
+- **"Open media directory"** in Settings works (the button did nothing before).
+- **Tested without a phone:** CI builds both apps and runs UI tests of the Linux app against a fake Android device, including file transfer with quotes and spaces in names, the ADB shell, screenshots, the live mirror, APK install and crash alerts.
 
 ## What's new in v2.8.1
 
@@ -132,14 +145,16 @@ The **Name** column uses descriptions such as *Disk journal* and *App installer*
 
 ## Prerequisites
 
-- Windows 10/11 x64.
-- Optional for live mode: Android SDK Platform Tools. The app resolves a configured path, `ANDROID_SDK_ROOT`, `ANDROID_HOME`, then `PATH`.
+- Windows 10/11 x64, or 64-bit Linux (x86_64) with X11 or Wayland (through XWayland).
+- Optional for live mode: Android SDK Platform Tools. The app resolves a configured path, `ANDROID_SDK_ROOT`, `ANDROID_HOME`, the default Android Studio SDK folder, then `PATH`.
 
-The downloadable Windows build is self-contained and does not require .NET. Building from source requires any [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (10.0.100 or newer; see `global.json`).
+The downloadable builds are self-contained and do not require .NET. Building from source requires any [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (10.0.100 or newer; see `global.json`).
 
 The app still opens without ADB; use `--demo` to explore it with sample data. Unauthorized devices require accepting the Android USB-debugging prompt. Unavailable measurements appear as `—` in the process table or `N/A` in other views.
 
 ## Build and run
+
+Windows (WPF app):
 
 ```powershell
 dotnet restore AndroidDevMonitor.slnx
@@ -162,27 +177,48 @@ After publishing:
 
 Or run `powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1`.
 
+Linux (Avalonia app):
+
+```bash
+dotnet run --project src/AndroidDevMonitor.Desktop -- --demo
+dotnet build AndroidDevMonitor.slnx -p:EnableWindowsTargeting=true   # also compiles the Windows app
+dotnet test AndroidDevMonitor.slnx -p:EnableWindowsTargeting=true    # includes headless UI tests
+scripts/build-linux.sh v2.9.0                                        # tested, self-contained tar.gz in artifacts/
+```
+
+The UI tests drive the Linux app against `tests/fake-android`, a fake adb and Android device (Python 3), so no phone or emulator is needed. Point `ANDROID_HOME` at `tests/fake-android/sdk` to try live mode with it by hand.
+
+## Linux
+
+1. Install adb: `sudo apt install adb` (Ubuntu/Debian), `sudo dnf install android-tools` (Fedora) or `sudo pacman -S android-tools` (Arch). An Android Studio SDK in `~/Android/Sdk` works too.
+2. Extract the download and run `./AndroidDevMonitor/AndroidDevMonitor` (add `--demo` for sample data). `./AndroidDevMonitor/install.sh` installs it for your user with a menu entry and the `android-dev-monitor` command; `install.sh --uninstall` removes it.
+3. If the phone shows as **no permissions** or **unauthorized**, install the Android udev rules (`sudo apt install android-sdk-platform-tools-common` on Ubuntu/Debian, `android-udev` on Arch), replug the cable and accept the USB-debugging prompt on the phone.
+
+Data is stored in `~/.local/share/AndroidDevMonitor` and exports in `~/Documents/Android Dev Monitor`. "Start when I log in" adds `~/.config/autostart/AndroidDevMonitor.desktop`. Emulator GPU counters are Windows-only, so the GPU card shows `N/A` on Linux; everything else works the same.
+
 ## Data and troubleshooting
 
-Local data is under `%LOCALAPPDATA%\AndroidDevMonitor`: SQLite database, diagnostics, media, demo media, sessions, and exports. Application logs, including unexpected errors, are in its `Logs` folder; attach the latest file when reporting a bug. If ADB is missing, install Platform Tools or set `ANDROID_SDK_ROOT`/`ANDROID_HOME`. If a device is `unauthorized`, accept its debugging prompt. `offline` usually requires reconnecting the device; Refresh performs discovery/collection refresh only and never restarts ADB or a target.
+Local data is under `%LOCALAPPDATA%\AndroidDevMonitor` on Windows and `~/.local/share/AndroidDevMonitor` on Linux: SQLite database, diagnostics, media, demo media, sessions, and exports. Application logs, including unexpected errors, are in its `Logs` folder; attach the latest file when reporting a bug. If ADB is missing, install Platform Tools or set `ANDROID_SDK_ROOT`/`ANDROID_HOME`. If a device is `unauthorized`, accept its debugging prompt. `offline` usually requires reconnecting the device; Refresh performs discovery/collection refresh only and never restarts ADB or a target.
 
 ## Project structure
 
-- `src/AndroidDevMonitor.App`: WPF/MVVM shell and dialogs.
+- `src/AndroidDevMonitor.App`: Windows app (WPF) and its dialogs.
+- `src/AndroidDevMonitor.Desktop`: Linux app (Avalonia) with the same pages.
+- `src/AndroidDevMonitor.Presentation`: view models shared by both apps, with small platform interfaces for dialogs, files, clipboard and the desktop shell.
 - `src/AndroidDevMonitor.Core`: models, contracts, constants, buffers and formatting.
 - `src/AndroidDevMonitor.Adb`: argument-safe execution, discovery and tolerant parsers.
 - `src/AndroidDevMonitor.Collectors`: live/demo sources and counter calculations.
 - `src/AndroidDevMonitor.Infrastructure`: SQLite, exports, media, and Windows emulator GPU counters.
-- `tests`: parser, calculation, serialization and bounded-buffer tests.
+- `tests`: parser, calculation, serialization and bounded-buffer tests, plus headless UI tests of the Linux app and the fake Android device they use.
 - `docs`: architecture, metrics, UI behavior, limitations and implementation plan.
 
 ## Current limitations
 
-- **GPU scope:** the Windows provider measures the busiest GPU engine of the matching local emulator process. This includes all apps inside that emulator; it is not a per-Android-app GPU percentage. Physical-device GPU monitoring still requires a supported provider.
+- **GPU scope:** GPU counters exist only on Windows. The Windows provider measures the busiest GPU engine of the matching local emulator process. This includes all apps inside that emulator; it is not a per-Android-app GPU percentage. Physical-device GPU monitoring still requires a supported provider.
 - **Disk scope:** the card title identifies **App disk I/O** or **Device disk I/O**. The device fallback covers all Android UIDs and may use a longer sampling interval. While a sample is unavailable, the card can show `0/0` and a zero chart baseline; that placeholder does not prove there was no disk activity.
 - **App memory:** B shows the sum of process RSS for the selected package. Shared memory can overlap, so adding app RSS values is not equivalent to total device RAM usage.
 - **Device permissions:** UID network, process I/O, package storage, filesystem, socket ownership, and frame statistics depend on Android version, vendor, and permissions.
-- **Recording:** `screenrecord` support varies by build. Recordings open in the Windows player; the Media page does not decode video thumbnails in-process.
+- **Recording:** `screenrecord` support varies by build. Recordings open in the system video player; the Media page does not decode video thumbnails in-process.
 
 See [metric definitions](docs/METRICS.md), [ADB limitations](docs/ADB_LIMITATIONS.md), and [product notes](docs/PRODUCT_NOTES.md) for more detail.
 

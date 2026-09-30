@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -25,6 +26,7 @@ public partial class App : Application
 {
     private ServiceProvider? _provider;
     private MainWindow? _mainWindow;
+    private readonly List<PosixSignalRegistration> _signals = [];
 
     /// <summary>Set by the headless tests to replace platform services (for example to answer dialogs).</summary>
     public static Func<Func<Window?>, PlatformServices>? PlatformFactory { get; set; }
@@ -43,6 +45,7 @@ public partial class App : Application
             desktop.MainWindow = _mainWindow;
             desktop.Exit += (_, _) => Shutdown();
             _mainWindow.Opened += async (_, _) => await InitializeViewModelAsync();
+            HandleTerminationSignals();
         }
         base.OnFrameworkInitializationCompleted();
     }
@@ -115,12 +118,33 @@ public partial class App : Application
         }
     }
 
+    /// <summary>
+    /// Logging out, `kill` and Ctrl+C in a terminal close the window the normal way, so the session is saved
+    /// instead of the process ending mid-write.
+    /// </summary>
+    private void HandleTerminationSignals()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        foreach (PosixSignal signal in new[] { PosixSignal.SIGTERM, PosixSignal.SIGINT, PosixSignal.SIGHUP })
+        {
+            _signals.Add(PosixSignalRegistration.Create(signal, context =>
+            {
+                if (_mainWindow is null) return;
+                context.Cancel = true;
+                Log.Information("Received {Signal}; closing the window", context.Signal);
+                Dispatcher.UIThread.Post(() => _mainWindow.Close());
+            }));
+        }
+    }
+
     /// <summary>MainWindow's closing handler has already saved the session; release the remaining services.</summary>
     public void Shutdown()
     {
         try { if (_provider is not null) Task.Run(() => _provider.DisposeAsync().AsTask()).Wait(TimeSpan.FromSeconds(5)); }
         catch (Exception ex) { Log.Error(ex, "Service disposal failed"); }
         _provider = null;
+        foreach (PosixSignalRegistration registration in _signals) registration.Dispose();
+        _signals.Clear();
         Dispatcher.UIThread.UnhandledException -= OnDispatcherUnhandledException;
         TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
         AppDomain.CurrentDomain.UnhandledException -= OnDomainUnhandledException;

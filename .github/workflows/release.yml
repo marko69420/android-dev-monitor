@@ -1,7 +1,8 @@
 name: Release
 
-# Builds the self-contained Windows package with scripts/build-release.ps1 (restore, build, test, publish)
-# and publishes it as a GitHub release. Run it from the Actions tab, or push a tag such as v2.8.0.
+# Builds the self-contained Windows package with scripts/build-release.ps1 and the Linux package with
+# scripts/build-linux.sh (each builds, tests and publishes), and attaches both to one GitHub release.
+# Run it from the Actions tab, or push a tag such as v2.9.0.
 on:
   push:
     tags: ['v*']
@@ -13,6 +14,9 @@ on:
 
 permissions:
   contents: write
+
+env:
+  AVALONIA_TELEMETRY_OPTOUT: 1
 
 jobs:
   release:
@@ -41,3 +45,25 @@ jobs:
           name: Android Dev Monitor ${{ env.TAG }}
           body_path: docs/RELEASE_NOTES_${{ env.TAG }}.md
           files: AndroidDevMonitor-${{ env.TAG }}-win-x64.zip
+
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build, test and package
+        run: ./scripts/build-linux.sh "$TAG"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: Android Dev Monitor ${{ env.TAG }}
+          body_path: docs/RELEASE_NOTES_${{ env.TAG }}.md
+          files: artifacts/AndroidDevMonitor-${{ env.TAG }}-linux-x64.tar.gz

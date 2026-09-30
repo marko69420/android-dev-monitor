@@ -12,6 +12,7 @@
     <Project Path="tests/AndroidDevMonitor.Adb.Tests/AndroidDevMonitor.Adb.Tests.csproj" />
     <Project Path="tests/AndroidDevMonitor.Collectors.Tests/AndroidDevMonitor.Collectors.Tests.csproj" />
     <Project Path="tests/AndroidDevMonitor.Core.Tests/AndroidDevMonitor.Core.Tests.csproj" />
+    <Project Path="tests/AndroidDevMonitor.Desktop.Tests/AndroidDevMonitor.Desktop.Tests.csproj" />
     <Project Path="tests/AndroidDevMonitor.Presentation.Tests/AndroidDevMonitor.Presentation.Tests.csproj" />
   </Folder>
 </Solution>

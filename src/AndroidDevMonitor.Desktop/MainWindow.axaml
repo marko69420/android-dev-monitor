@@ -904,11 +904,11 @@
               <Grid RowDefinitions="190,Auto,Auto,*,Auto">
                 <Border Background="#090E12" CornerRadius="9,9,0,0" ClipToBounds="True">
                   <Panel>
-                    <Image Source="{Binding SelectedMediaItem.ThumbnailPath, Converter={StaticResource MediaThumbnail}, ConverterParameter=720, FallbackValue={x:Null}}" Stretch="Uniform"
-                           IsVisible="{Binding SelectedMediaItem.Kind, Converter={StaticResource Equal}, ConverterParameter=Screenshot, FallbackValue=False}"/>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding SelectedMediaItem.Kind, Converter={StaticResource Equal}, ConverterParameter=Recording, FallbackValue=False}">
+                    <Image Source="{Binding SelectedMediaItem?.ThumbnailPath, Converter={StaticResource MediaThumbnail}, ConverterParameter=720, FallbackValue={x:Null}}" Stretch="Uniform"
+                           IsVisible="{Binding SelectedMediaItem?.Kind, Converter={StaticResource Equal}, ConverterParameter=Screenshot, FallbackValue=False}"/>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding SelectedMediaItem?.Kind, Converter={StaticResource Equal}, ConverterParameter=Recording, FallbackValue=False}">
                       <TextBlock Text="SCREEN RECORDING" Classes="accent" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
-                      <TextBlock Text="{Binding SelectedMediaItem.Duration, StringFormat='Duration: {0:g}', FallbackValue=''}" Classes="muted" Margin="0,8" HorizontalAlignment="Center"/>
+                      <TextBlock Text="{Binding SelectedMediaItem?.Duration, StringFormat='Duration: {0:g}', FallbackValue=''}" Classes="muted" Margin="0,8" HorizontalAlignment="Center"/>
                       <Button Content="Play in video player" Command="{Binding OpenSelectedMediaCommand}"/>
                     </StackPanel>
                     <TextBlock Text="Select a media item" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -916,12 +916,12 @@
                   </Panel>
                 </Border>
                 <StackPanel Grid.Row="1" Margin="14,12,14,5">
-                  <TextBlock Text="{Binding SelectedMediaItem.FileName, TargetNullValue='No selection', FallbackValue='No selection'}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Text="{Binding SelectedMediaItem.LocalPath, FallbackValue=''}" Classes="muted" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SelectedMediaItem.LocalPath, FallbackValue={x:Null}}" Margin="0,4"/>
-                  <TextBlock Text="{Binding SelectedMediaItem.DeviceSerial, StringFormat='Device serial: {0}', FallbackValue=''}" Classes="accent"/>
-                  <TextBlock Text="{Binding SelectedMediaItem.PackageName, StringFormat='Package: {0}', TargetNullValue='Package: N/A', FallbackValue=''}"/>
-                  <TextBlock Text="{Binding SelectedMediaItem.Resolution, StringFormat='Resolution: {0}', TargetNullValue='Resolution: N/A', FallbackValue=''}"/>
-                  <TextBlock Text="{Binding SelectedMediaItem.SessionId, StringFormat='Session: {0}', TargetNullValue='Session: N/A', FallbackValue=''}"/>
+                  <TextBlock Text="{Binding SelectedMediaItem?.FileName, TargetNullValue='No selection', FallbackValue='No selection'}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedMediaItem?.LocalPath, FallbackValue=''}" Classes="muted" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SelectedMediaItem?.LocalPath, FallbackValue={x:Null}}" Margin="0,4"/>
+                  <TextBlock Text="{Binding SelectedMediaItem?.DeviceSerial, StringFormat='Device serial: {0}', FallbackValue=''}" Classes="accent"/>
+                  <TextBlock Text="{Binding SelectedMediaItem?.PackageName, StringFormat='Package: {0}', TargetNullValue='Package: N/A', FallbackValue=''}"/>
+                  <TextBlock Text="{Binding SelectedMediaItem?.Resolution, StringFormat='Resolution: {0}', TargetNullValue='Resolution: N/A', FallbackValue=''}"/>
+                  <TextBlock Text="{Binding SelectedMediaItem?.SessionId, StringFormat='Session: {0}', TargetNullValue='Session: N/A', FallbackValue=''}"/>
                 </StackPanel>
                 <WrapPanel Grid.Row="2" Margin="10,4">
                   <Button Content="Open / Play" Command="{Binding OpenSelectedMediaCommand}"/>
@@ -1125,7 +1125,7 @@
                 <Button Content="Copy" DockPanel.Dock="Right" Padding="9,3" Command="{Binding CopySelectedLogCommand}"/>
               </DockPanel>
               <TextBox Grid.Row="1" Classes="plain" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto"
-                       Text="{Binding SelectedLogEntry.Message, TargetNullValue='Select a log row to inspect its complete message.', FallbackValue='Select a log row to inspect its complete message.'}"/>
+                       Text="{Binding SelectedLogEntry?.Message, TargetNullValue='Select a log row to inspect its complete message.', FallbackValue='Select a log row to inspect its complete message.'}"/>
             </Grid>
           </Border>
         </Grid>

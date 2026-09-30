@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Android Dev Monitor
+GenericName=Android performance monitor
+Comment=Live CPU, memory, FPS, logcat, files and ADB tools for Android devices
+Exec=android-dev-monitor
+Icon=android-dev-monitor
+Terminal=false
+Categories=Development;Debugger;
+Keywords=adb;android;logcat;profiler;performance;
+StartupWMClass=AndroidDevMonitor

@@ -134,7 +134,7 @@
   <header class="hero">
     <h1>Android Dev Monitor</h1>
     <p class="subtitle">Task Manager za Android aplikacije — poveži uređaj, prati problem, sačuvaj dokaz.</p>
-    <p style="margin-top:18px"><span class="tag">v2.8.1</span><span class="tag">Windows</span><span class="tag green">USB ili Wi-Fi ADB</span><span class="tag yellow">Demo mod bez uređaja</span></p>
+    <p style="margin-top:18px"><span class="tag">v2.9.0</span><span class="tag">Windows</span><span class="tag">Linux</span><span class="tag green">USB ili Wi-Fi ADB</span><span class="tag yellow">Demo mod bez uređaja</span></p>
   </header>
 
   <nav class="section-nav">
@@ -185,7 +185,7 @@
   <section id="bez-uredaja" class="card">
     <h2>Nemaš uređaj? Istraži demo mod</h2>
     <p>Ako želiš samo vidjeti kako aplikacija izgleda, pokreni je sa:</p>
-    <p><code>AndroidDevMonitor.exe --demo</code></p>
+    <p><code>AndroidDevMonitor.exe --demo</code> na Windowsu, ili <code>./AndroidDevMonitor --demo</code> na Linuxu</p>
     <p class="muted">Demo mod ima stalnu žutu oznaku <strong>DEMO DATA</strong>. On ne pokreće ADB niti dira pravi uređaj, a možeš ga resetovati iz <strong>Settings → Demo mode</strong>.</p>
   </section>
 
@@ -200,7 +200,7 @@
       <tr><td>Media</td><td>tražiš screenshot ili snimak ekrana povezan sa sesijom.</td></tr>
       <tr><td>Performance</td><td>upoređuješ dvije sačuvane sesije ili otvaraš stariji zapis.</td></tr>
       <tr><td>Logs</td><td>filtriraš live logcat i čitaš cijelu poruku izabranog reda.</td></tr>
-      <tr><td>File Explorer</td><td>kopiraš datoteke između Windowsa i Androida.</td></tr>
+      <tr><td>File Explorer</td><td>kopiraš datoteke između računala i Androida.</td></tr>
       <tr><td>Network</td><td>provjeravaš interfejse, DNS, rute i sockete.</td></tr>
       <tr><td>ADB Shell</td><td>želiš ručno pokrenuti ADB komandu. Komanda se izvršava samo kada klikneš Run.</td></tr>
       <tr><td>Automation</td><td>ponavljaš tapove, swipeove, tekst i pauze.</td></tr>
@@ -258,7 +258,9 @@
       <tr><td>Uređaj se ne pojavljuje</td><td>Otvori <strong>Settings → ADB</strong>, klikni <strong>Auto-detect</strong>, pa <strong>Test connection</strong>. Provjeri da li je USB debugging prihvaćen na telefonu.</td></tr>
       <tr><td>Vrijednost je N/A</td><td>To znači da Android nije izložio taj brojač. Nije greška u aplikaciji i vrijednost se ne smišlja.</td></tr>
       <tr><td>Live podaci kasne</td><td>Provjeri kabel, Wi-Fi kvalitet i trenutno opterećenje emulatora. ADB odgovori mogu biti sporiji od intervala prikaza.</td></tr>
-      <tr><td>scrcpy se ne otvara</td><td>Instaliraj <code>scrcpy.exe</code> ili dodaj njegovu lokaciju u Windows <code>PATH</code>.</td></tr>
+      <tr><td>scrcpy se ne otvara</td><td>Windows: instaliraj <code>scrcpy.exe</code> ili dodaj njegovu lokaciju u <code>PATH</code>. Linux: <code>sudo apt install scrcpy</code> (ili <code>dnf</code>/<code>pacman</code>/<code>snap</code>).</td></tr>
+      <tr><td>Linux: uređaj je „no permissions” ili „unauthorized”</td><td>Instaliraj Android udev pravila (<code>sudo apt install android-sdk-platform-tools-common</code>, na Archu <code>android-udev</code>), ponovo uključi kabel i prihvati upit za USB debugging na telefonu.</td></tr>
+      <tr><td>Linux: adb nije pronađen</td><td>Instaliraj ga: <code>sudo apt install adb</code>, <code>sudo dnf install android-tools</code> ili <code>sudo pacman -S android-tools</code>. SDK iz Android Studija u <code>~/Android/Sdk</code> se pronađe automatski.</td></tr>
     </table>
   </section>
 
@@ -299,7 +301,7 @@
         <p class="muted"><strong>Save frame</strong> sprema zadnji kadar kao PNG u mapu Developer Lab rezultata.</p>
       </div>
     </div>
-    <p>Treba li vam najveća glatkoća i zvuk, ispod prikaza je dugme <strong>Open full-speed scrcpy window</strong>. scrcpy 4.1 je instaliran u <code>%LOCALAPPDATA%\Programs\scrcpy</code> i aplikacija ga nađe automatski.</p>
+    <p>Treba li vam najveća glatkoća i zvuk, ispod prikaza je dugme <strong>Open full-speed scrcpy window</strong>. Aplikacija sama pronađe scrcpy u <code>PATH</code>-u ili na uobičajenim mjestima (na Windowsu npr. <code>%LOCALAPPDATA%\Programs\scrcpy</code>, na Linuxu <code>/usr/bin</code>, <code>/snap/bin</code>).</p>
     <p class="muted">Ako prikaz ostane crn ili prazan, provjerite da je uređaj i dalje u stanju <code>device</code> (ne <code>unauthorized</code>) i da nije zaključan ekran.</p>
   </section>
 
@@ -445,7 +447,7 @@
   </section>
 
   <footer>
-    <p>Android Dev Monitor <strong>v2.8.1</strong> · MIT licenca · sva uputstva rade bez interneta i bez računa.</p>
+    <p>Android Dev Monitor <strong>v2.9.0</strong> · MIT licenca · sva uputstva rade bez interneta i bez računa.</p>
   </footer>
 </body>
 </html>
