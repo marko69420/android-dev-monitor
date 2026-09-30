@@ -1,0 +1,1826 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AndroidDevMonitor.Presentation.ViewModels"
+        xmlns:m="using:AndroidDevMonitor.Core.Models"
+        xmlns:c="using:AndroidDevMonitor.Desktop.Controls"
+        xmlns:conv="using:AndroidDevMonitor.Desktop.Converters"
+        x:Class="AndroidDevMonitor.Desktop.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Width="1600" Height="900" MinWidth="1280" MinHeight="720"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized"
+        Background="{StaticResource WindowBackgroundBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontSize="{Binding UiFontSize}"
+        Icon="avares://AndroidDevMonitor/Assets/app-icon.png"
+        Title="{Binding WindowTitle}">
+  <Window.Resources>
+    <ResourceDictionary>
+      <conv:EqualityConverter x:Key="Equal"/>
+      <conv:NullToTextConverter x:Key="NullText"/>
+      <conv:NullToTextConverter x:Key="BlankWhenNull" MissingText=""/>
+      <conv:NullToTextConverter x:Key="ProcessValue" MissingText="—"/>
+      <conv:DurationTextConverter x:Key="DurationText"/>
+      <conv:LocalTimestampConverter x:Key="LocalTimestamp"/>
+      <conv:PathTailConverter x:Key="PathTail"/>
+      <conv:MediaThumbnailConverter x:Key="MediaThumbnail"/>
+      <conv:PageSelectionBrushConverter x:Key="PageSelectionBrush"/>
+      <conv:RatePairConverter x:Key="RatePair"/>
+      <conv:NavigationIconConverter x:Key="NavigationIcon"/>
+      <conv:LogPriorityBrushConverter x:Key="LogPriorityBrush"/>
+      <conv:ProcessGroupBrushConverter x:Key="ProcessGroupBrush"/>
+      <conv:BoolToValueConverter x:Key="PausedDotBrush" TrueValue="#E5B260" FalseValue="#59D35F"/>
+      <conv:BoolToValueConverter x:Key="FolderText" TrueValue="Folder" FalseValue="File"/>
+      <conv:BoolToValueConverter x:Key="FolderBrush" TrueValue="#19C3D4" FalseValue="#93A2AD"/>
+      <conv:BoolToValueConverter x:Key="BoldWhenTrue" TrueValue="SemiBold" FalseValue="Normal"/>
+
+      <DataTemplate x:Key="MetricCardTemplate" x:DataType="vm:MetricCardViewModel">
+        <Border Margin="6" Classes="panel">
+          <Grid RowDefinitions="Auto,Auto,Auto,62">
+            <DockPanel>
+              <Ellipse Width="7" Height="7" Margin="0,0,8,0" Fill="{StaticResource AccentBrush}"/>
+              <TextBlock FontSize="14" Text="{Binding Title}"/>
+            </DockPanel>
+            <TextBlock Grid.Row="1" FontSize="27" Margin="0,10,0,1" Text="{Binding DisplayValue}"/>
+            <TextBlock Grid.Row="2" TextTrimming="CharacterEllipsis" Classes="muted" Text="{Binding SecondaryValue}" ToolTip.Tip="{Binding Source}"/>
+            <c:Sparkline Grid.Row="3" MinHeight="58" Margin="0,7,-2,-3" ClipToBounds="True" Values="{Binding Values}" Minimum="{Binding ChartMinimum}" Maximum="{Binding ChartMaximum}"/>
+          </Grid>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="TrackingCardTemplate" x:DataType="vm:TrackingMetricCardViewModel">
+        <Border Margin="6" Classes="panel" MinHeight="190">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+            <DockPanel LastChildFill="False">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                <Ellipse Width="7" Height="7" Margin="0,0,8,0" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                <TextBlock FontSize="14" Text="{Binding DisplayTitle}"/>
+              </StackPanel>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Classes="cardToggle" Classes.selected="{Binding !IsBackground}" Margin="3,0,0,0" Content="A" Command="{Binding ShowActiveCommand}" ToolTip.Tip="{Binding PrimaryToolTip}"/>
+                <Button Classes="cardToggle" Classes.selected="{Binding IsBackground}" Margin="5,0,0,0" Content="B" Command="{Binding ShowBackgroundCommand}" ToolTip.Tip="B: selected application, whether on screen or in the background"/>
+              </StackPanel>
+            </DockPanel>
+            <TextBlock Grid.Row="1" FontSize="27" Margin="0,10,0,1" Text="{Binding Chart.DisplayValue}" ToolTip.Tip="{Binding Chart.Source}"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal">
+              <TextBlock Text="{Binding PrimaryLabel}" Classes="muted"/>
+              <TextBlock Text="{Binding PrimaryDescription}" TextTrimming="CharacterEllipsis" Classes="muted"/>
+            </StackPanel>
+            <Grid Grid.Row="3" Margin="0,3,0,2" ColumnDefinitions="Auto,Auto,Auto,*">
+              <TextBlock Text="{Binding SecondaryLabel}" Classes="muted" VerticalAlignment="Center"/>
+              <ComboBox Grid.Column="1" Margin="4,0,4,0" Width="96" MinHeight="23" Height="25" Padding="5,1" FontSize="11"
+                        ItemsSource="{Binding $parent[Window].((vm:MainViewModel)DataContext).BackgroundApplications}"
+                        SelectedValueBinding="{ReflectionBinding PackageName}"
+                        SelectedValue="{Binding $parent[Window].((vm:MainViewModel)DataContext).BackgroundPackage, Mode=TwoWay}"
+                        PlaceholderText="App"
+                        AutomationProperties.Name="Application to monitor">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:MainViewModel+ApplicationChoice">
+                    <TextBlock Text="{Binding DisplayName}" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Description}"/>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <TextBlock Grid.Column="2" Text="{Binding Background.DisplayValue}" Classes="muted" VerticalAlignment="Center"
+                         IsVisible="{Binding $parent[Window].((vm:MainViewModel)DataContext).BackgroundPackage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </Grid>
+            <c:Sparkline Grid.Row="4" Margin="0,5,0,7" ClipToBounds="True" Values="{Binding Chart.Values}" Minimum="{Binding Chart.ChartMinimum}" Maximum="{Binding Chart.ChartMaximum}"/>
+          </Grid>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="DiskCardTemplate" x:DataType="vm:DiskMetricCardViewModel">
+        <Border Margin="6" Classes="panel" ToolTip.Tip="{Binding Source}">
+          <Grid RowDefinitions="Auto,Auto,Auto,62">
+            <DockPanel>
+              <Ellipse Width="7" Height="7" Margin="0,0,8,0" Fill="{StaticResource AccentBrush}"/>
+              <TextBlock FontSize="14" Text="{Binding Title}"/>
+            </DockPanel>
+            <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Height="33" Margin="0,10,0,1">
+              <TextBlock FontSize="27" Text="{Binding DisplayValue}"/>
+            </Viewbox>
+            <Grid Grid.Row="2" ColumnDefinitions="*,*">
+              <TextBlock Text="W · Write" Classes="muted"/>
+              <TextBlock Grid.Column="1" Margin="9,0,0,0" Text="R · Read" Classes="muted"/>
+            </Grid>
+            <Grid Grid.Row="3" Margin="0,7,-2,-3" ColumnDefinitions="*,1,*">
+              <c:Sparkline Margin="0,0,8,0" ClipToBounds="True" ShowMissingAsZero="True" Values="{Binding Write.Values}" Minimum="0" Maximum="{Binding ChartMaximum}"/>
+              <Border Grid.Column="1" Background="{StaticResource BorderBrush}"/>
+              <c:Sparkline Grid.Column="2" Margin="8,0,0,0" ClipToBounds="True" ShowMissingAsZero="True" Values="{Binding Read.Values}" Minimum="0" Maximum="{Binding ChartMaximum}"/>
+            </Grid>
+          </Grid>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="LiveChartTemplate" x:DataType="vm:LiveChartViewModel">
+        <Border Margin="5" Padding="12" Classes="panel">
+          <Grid RowDefinitions="Auto,Auto,135,Auto">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Right" Classes="muted" Text="{Binding AvailabilityText}"/>
+              <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding Title}"/>
+            </DockPanel>
+            <TextBlock Grid.Row="1" Margin="0,5,0,2" Classes="accent" Text="{Binding CurrentText}"/>
+            <c:TimeSeriesChart Grid.Row="2" Margin="0,4" PrimaryPoints="{Binding PrimaryPoints}" SecondaryPoints="{Binding SecondaryPoints}" Annotations="{Binding Annotations}"
+                               PrimaryLabel="{Binding PrimaryLabel}" SecondaryLabel="{Binding SecondaryLabel}" Minimum="{Binding Minimum}" Maximum="{Binding Maximum}" FullRange="{Binding IsFullSession}"/>
+            <DockPanel Grid.Row="3">
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Rectangle Width="14" Height="2" Fill="#19C3D4" Margin="8,0,4,0"/>
+                <TextBlock FontSize="10" Classes="muted" Text="{Binding PrimaryLabel}"/>
+                <Rectangle Width="14" Height="2" Fill="#598AFF" Margin="8,0,4,0"/>
+                <TextBlock FontSize="10" Classes="muted" Text="{Binding SecondaryLabel}"/>
+              </StackPanel>
+              <TextBlock FontSize="11" Classes="muted" Text="{Binding StatisticsText}"/>
+            </DockPanel>
+          </Grid>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="LogPriorityTemplate" x:DataType="m:LogEntry">
+        <Border CornerRadius="9" Padding="7,2" Margin="8,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Background="{Binding Priority, Converter={StaticResource LogPriorityBrush}}">
+          <TextBlock FontSize="11" Text="{Binding Priority}"/>
+        </Border>
+      </DataTemplate>
+    </ResourceDictionary>
+  </Window.Resources>
+
+  <Grid ColumnDefinitions="232,*" RowDefinitions="*,30">
+    <!-- Sidebar -->
+    <Border Grid.RowSpan="2" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+      <Grid RowDefinitions="76,*,52">
+        <StackPanel Orientation="Horizontal" Margin="20,18">
+          <Border Width="36" Height="36" CornerRadius="10" Background="#16373A">
+            <Path Data="M3,12H7L10,4L14,20L17,12H21" Stroke="{StaticResource AccentBrush}" StrokeThickness="2.2" StrokeJoin="Round" StrokeLineCap="Round" Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <StackPanel Margin="11,0">
+            <TextBlock Text="Android Dev Monitor" FontWeight="SemiBold" FontSize="15"/>
+            <TextBlock Text="{Binding ApplicationVersion, StringFormat='v{0}'}" Classes="muted" FontSize="11"/>
+          </StackPanel>
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="10,8">
+          <ItemsControl ItemsSource="{Binding NavigationItems}" x:Name="NavigationList">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <Button Classes="nav" Width="210" Height="38" Margin="0,3" Padding="14,9"
+                        Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).NavigateCommand}" CommandParameter="{Binding}"
+                        AutomationProperties.Name="{Binding}">
+                  <Button.Background>
+                    <MultiBinding Converter="{StaticResource PageSelectionBrush}">
+                      <Binding/>
+                      <Binding Path="$parent[Window].((vm:MainViewModel)DataContext).CurrentPage"/>
+                    </MultiBinding>
+                  </Button.Background>
+                  <StackPanel Orientation="Horizontal">
+                    <Path Width="16" Height="16" Margin="0,0,11,0" Stretch="Uniform" Fill="{StaticResource AccentBrush}" VerticalAlignment="Center" Data="{Binding Converter={StaticResource NavigationIcon}}"/>
+                    <TextBlock VerticalAlignment="Center" Text="{Binding}"/>
+                  </StackPanel>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="16">
+          <StackPanel Orientation="Horizontal">
+            <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+            <TextBlock Classes="muted" Text="{Binding ConnectionText}"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Column="1" RowDefinitions="78,*">
+      <!-- Top bar -->
+      <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Background="{StaticResource SidebarBrush}" Padding="14,10">
+        <Grid ColumnDefinitions="240,190,*,Auto">
+          <ComboBox Height="55" VerticalContentAlignment="Center" ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" PlaceholderText="No Android device" AutomationProperties.Name="Android device">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="m:AndroidDevice">
+                <Grid Width="200" ColumnDefinitions="18,*">
+                  <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding FriendlyName}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Classes="muted" FontSize="11" Text="{Binding VersionLine}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Classes="muted" FontSize="10" Text="{Binding Serial}" TextTrimming="CharacterEllipsis"/>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <ComboBox x:Name="LaunchApplicationSelector" Grid.Column="1" Margin="8,0" Height="55" VerticalContentAlignment="Center"
+                    AutomationProperties.Name="Launch application" PlaceholderText="Launch application"
+                    ToolTip.Tip="Choose an application to open on the Android device. If you don't know what app a package is for, click any available package and the app should open on the main screen."
+                    ItemsSource="{Binding BackgroundPackages}" SelectedItem="{Binding SelectedPackage}"/>
+          <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Content="{Binding LiveLabel}" Command="{Binding ToggleLiveCommand}"/>
+            <Border Background="#11272A" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="3">
+              <TextBlock Classes="accent">
+                <Run Text="{Binding CollectionState, Mode=OneWay}"/><Run Text=" · 1s"/>
+              </TextBlock>
+            </Border>
+            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="3">
+              <TextBlock Text="{Binding SessionStatus}"/>
+            </Border>
+            <Button Content="Mark Event" Command="{Binding MarkEventCommand}"/>
+            <Button Content="Export Session" Command="{Binding ExportSessionCommand}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+            <Button Content="Refresh" Command="{Binding RefreshCommand}"/>
+            <Button Content="{Binding RecordingLabel}" Command="{Binding ToggleRecordingCommand}"/>
+            <Button Content="Screenshot" Command="{Binding ScreenshotCommand}"/>
+            <Button Content="•••" ToolTip.Tip="Collection diagnostics" Command="{Binding ShowMoreCommand}"/>
+            <Button Content="Help" Classes="primary" Command="{Binding NavigateCommand}" CommandParameter="Help" ToolTip.Tip="Open the built-in quick guide"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Row="1" Margin="14">
+        <!-- Overview -->
+        <Grid RowDefinitions="190,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Overview}">
+          <Grid ColumnDefinitions="*,*,*,*">
+            <ContentControl ContentTemplate="{StaticResource TrackingCardTemplate}" Content="{Binding CpuTracking}"/>
+            <ContentControl Grid.Column="1" ContentTemplate="{StaticResource TrackingCardTemplate}" Content="{Binding MemoryTracking}"/>
+            <ContentControl Grid.Column="2" ContentTemplate="{StaticResource MetricCardTemplate}" Content="{Binding GpuCard}"/>
+            <ContentControl Grid.Column="3" ContentTemplate="{StaticResource DiskCardTemplate}" Content="{Binding DiskCard}"/>
+          </Grid>
+          <Border Grid.Row="1" Classes="panel" Padding="0">
+            <Grid RowDefinitions="52,*">
+              <Grid Margin="12,8" ColumnDefinitions="*,Auto,220">
+                <StackPanel Orientation="Horizontal">
+                  <Button Content="Processes" Classes="processTab" Classes.selected="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Processes}" CommandParameter="Processes" Command="{Binding SelectOverviewTabCommand}"/>
+                  <Button Content="Performance" Classes="processTab" Classes.selected="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Performance}" CommandParameter="Performance" Command="{Binding SelectOverviewTabCommand}"/>
+                  <Button Content="Network" Classes="processTab" Classes.selected="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Network}" CommandParameter="Network" Command="{Binding SelectOverviewTabCommand}"/>
+                  <Button Content="Storage" Classes="processTab" Classes.selected="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Storage}" CommandParameter="Storage" Command="{Binding SelectOverviewTabCommand}"/>
+                  <Button Content="Thermal" Classes="processTab" Classes.selected="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Thermal}" CommandParameter="Thermal" Command="{Binding SelectOverviewTabCommand}"/>
+                  <Button Content="Logs" Classes="processTab" Classes.selected="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Logs}" CommandParameter="Logs" Command="{Binding SelectOverviewTabCommand}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0"
+                            IsVisible="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Processes}">
+                  <Ellipse Width="5" Height="5" Margin="0,0,6,0" VerticalAlignment="Center" Fill="{Binding IsProcessTablePaused, Converter={StaticResource PausedDotBrush}}"/>
+                  <TextBlock Text="{Binding ProcessTableStatus}" Classes="muted" FontSize="11" VerticalAlignment="Center" Margin="0,0,9,0" AutomationProperties.AutomationId="ProcessTableStatus"/>
+                  <Button Content="Start" MinWidth="50" Height="30" FontSize="12" Padding="9,4" Command="{Binding StartProcessTableCommand}" ToolTip.Tip="Resume live updates in the process table" AutomationProperties.AutomationId="ProcessTableStart"/>
+                  <Button Content="Stop" MinWidth="50" Height="30" FontSize="12" Padding="9,4" Command="{Binding StopProcessTableCommand}" ToolTip.Tip="Freeze the current process values and row order for inspection" AutomationProperties.AutomationId="ProcessTableStop"/>
+                </StackPanel>
+                <TextBox Grid.Column="2" Height="30" MinHeight="30" VerticalAlignment="Center" FontSize="12" Padding="8,4" Background="#10191F" Watermark="Search processes…"
+                         ToolTip.Tip="Search name, package, or PID" Text="{Binding SearchText}" AutomationProperties.AutomationId="ProcessSearch">
+                  <TextBox.InnerLeftContent>
+                    <Path Data="{x:Static conv:Icons.Search}" Fill="{StaticResource MutedBrush}" Width="12" Height="12" Stretch="Uniform" Margin="10,0,2,0" VerticalAlignment="Center"/>
+                  </TextBox.InnerLeftContent>
+                </TextBox>
+              </Grid>
+              <DataGrid x:Name="ProcessTable" Grid.Row="1" FrozenColumnCount="2" BorderThickness="0" ColumnHeaderHeight="36" HorizontalGridLinesBrush="#20313C" RowBackground="#111B22"
+                        ItemsSource="{Binding ProcessRows}" SelectedItem="{Binding SelectedProcessRow}" AutomationProperties.AutomationId="ProcessTable"
+                        IsVisible="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Processes}">
+                <DataGrid.Columns>
+                  <DataGridTemplateColumn Header="Group" Width="96" SortMemberPath="Group" x:DataType="vm:ProcessDisplayRow">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate x:DataType="vm:ProcessDisplayRow">
+                        <Border CornerRadius="4" Padding="6,3" Margin="12,0,4,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Background="{Binding GroupText, Converter={StaticResource ProcessGroupBrush}}"
+                                IsVisible="{Binding GroupText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                          <TextBlock Text="{Binding GroupText}" FontSize="10" Foreground="#B6CCD9"/>
+                        </Border>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTemplateColumn Header="Name" SortMemberPath="Name" Width="1.2*" MinWidth="200" x:DataType="vm:ProcessDisplayRow">
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate x:DataType="vm:ProcessDisplayRow">
+                        <Grid Margin="10,0,12,0" ColumnDefinitions="18,*">
+                          <Button Width="18" Height="22" VerticalAlignment="Center" Padding="0" Margin="0" BorderThickness="0" Content="{Binding ExpanderGlyph}"
+                                  IsVisible="{Binding CanExpand}"
+                                  Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ToggleProcessGroupCommand}" CommandParameter="{Binding}"/>
+                          <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding DisplayName}" ToolTip.Tip="{Binding Name}"
+                                     FontWeight="{Binding CanExpand, Converter={StaticResource BoldWhenTrue}}"/>
+                        </Grid>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                  </DataGridTemplateColumn>
+                  <DataGridTextColumn Header="Package / command" Width="1.6*" MinWidth="200" CellStyleClasses="command" x:DataType="vm:ProcessDisplayRow" Binding="{Binding PackageOrCommand}"/>
+                  <DataGridTextColumn Width="62" CellStyleClasses="number" x:DataType="vm:ProcessDisplayRow" Binding="{Binding Pid, Converter={StaticResource ProcessValue}}" SortMemberPath="Pid">
+                    <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="PID"/></DataGridTextColumn.Header>
+                  </DataGridTextColumn>
+                  <DataGridTextColumn Header="Status" Width="108" CellStyleClasses="command" x:DataType="vm:ProcessDisplayRow" Binding="{Binding Status}"/>
+                  <DataGridTextColumn Width="70" CellStyleClasses="number" x:DataType="vm:ProcessDisplayRow" Binding="{Binding CpuPercent, Converter={StaticResource ProcessValue}}" SortMemberPath="CpuPercent">
+                    <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="CPU %"/></DataGridTextColumn.Header>
+                  </DataGridTextColumn>
+                  <DataGridTextColumn Width="92" CellStyleClasses="number" x:DataType="vm:ProcessDisplayRow" Binding="{Binding RssBytes, Converter={StaticResource ProcessValue}}" SortMemberPath="RssBytes">
+                    <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="RAM"/></DataGridTextColumn.Header>
+                  </DataGridTextColumn>
+                  <DataGridTextColumn Width="70" CellStyleClasses="number" x:DataType="vm:ProcessDisplayRow" Binding="{Binding GpuPercent, Converter={StaticResource ProcessValue}}" SortMemberPath="GpuPercent">
+                    <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="GPU %"/></DataGridTextColumn.Header>
+                  </DataGridTextColumn>
+                  <DataGridTextColumn Width="174" CellStyleClasses="number" x:DataType="vm:ProcessDisplayRow" SortMemberPath="DiskWriteBytesPerSecond">
+                    <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Disk I/O · W/R"/></DataGridTextColumn.Header>
+                    <DataGridTextColumn.Binding>
+                      <MultiBinding Converter="{StaticResource RatePair}">
+                        <Binding Path="DiskWriteBytesPerSecond"/>
+                        <Binding Path="DiskReadBytesPerSecond"/>
+                      </MultiBinding>
+                    </DataGridTextColumn.Binding>
+                  </DataGridTextColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Performance}">
+                <ItemsControl ItemTemplate="{StaticResource LiveChartTemplate}" ItemsSource="{Binding PerformanceCharts}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                </ItemsControl>
+              </ScrollViewer>
+              <Grid Grid.Row="1" Margin="12" RowDefinitions="Auto,*" IsVisible="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Network}">
+                <DockPanel>
+                  <TextBlock Text="No packet capture" Classes="muted" DockPanel.Dock="Right"/>
+                  <StackPanel>
+                    <TextBlock Text="Network · Last 10 minutes" Classes="sectionTitle"/>
+                    <TextBlock Classes="accent" Text="{Binding NetworkContext}"/>
+                    <TextBlock Classes="muted" Text="{Binding NetworkTotals}"/>
+                    <TextBlock Text="Device totals and selected-app UID traffic stay separate; unsupported app counters remain N/A." Classes="muted"/>
+                  </StackPanel>
+                </DockPanel>
+                <Grid Grid.Row="1" ColumnDefinitions="*,*">
+                  <ContentControl ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding NetworkChart}"/>
+                  <ContentControl Grid.Column="1" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding AppNetworkChart}"/>
+                </Grid>
+              </Grid>
+              <Grid Grid.Row="1" Margin="12" RowDefinitions="Auto,*" IsVisible="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Storage}">
+                <StackPanel>
+                  <TextBlock Text="Storage and logical I/O · Last 10 minutes" Classes="sectionTitle"/>
+                  <TextBlock Classes="accent" Text="{Binding StorageSummary}"/>
+                  <TextBlock Classes="muted" Text="{Binding AppStorageSummary}"/>
+                  <TextBlock Text="Read/write are selected-process logical counters, never claimed as physical SSD writes." Classes="muted"/>
+                </StackPanel>
+                <ContentControl Grid.Row="1" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding DiskChart}"/>
+              </Grid>
+              <Grid Grid.Row="1" Margin="12" RowDefinitions="Auto,*" IsVisible="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Thermal}">
+                <StackPanel>
+                  <TextBlock Text="Thermal and GPU · Last 10 minutes" Classes="sectionTitle"/>
+                  <TextBlock Classes="accent" Text="{Binding ThermalSummary}"/>
+                  <TextBlock Text="Only values reported by Android or a genuine GPU provider are drawn." Classes="muted"/>
+                </StackPanel>
+                <Grid Grid.Row="1" ColumnDefinitions="*,*">
+                  <ContentControl ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding ThermalChart}"/>
+                  <ContentControl Grid.Column="1" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding GpuChart}"/>
+                </Grid>
+              </Grid>
+              <Grid Grid.Row="1" RowDefinitions="46,*" IsVisible="{Binding OverviewTab, Converter={StaticResource Equal}, ConverterParameter=Logs}">
+                <Grid Margin="10,5" ColumnDefinitions="120,220,Auto,*,Auto">
+                  <ComboBox ItemsSource="{Binding LogPriorities}" SelectedItem="{Binding SelectedLogPriority}"/>
+                  <TextBox Grid.Column="1" Margin="6,0" Watermark="Search logs" ToolTip.Tip="Search logs" Text="{Binding LogSearchText}"/>
+                  <CheckBox Grid.Column="2" Content="Regex" VerticalAlignment="Center" Margin="4,0" IsChecked="{Binding LogRegexEnabled}"/>
+                  <TextBlock Grid.Column="3" Classes="muted" VerticalAlignment="Center" Margin="12,0" Text="{Binding LogFilterStatus}" TextTrimming="CharacterEllipsis"/>
+                  <StackPanel Grid.Column="4" Orientation="Horizontal">
+                    <Button Content="Pause / Resume" Command="{Binding ToggleLogPauseCommand}"/>
+                    <Button Content="Clear" Command="{Binding ClearLogViewCommand}"/>
+                    <Button Content="Full Logs" Command="{Binding OpenFullLogsCommand}"/>
+                  </StackPanel>
+                </Grid>
+                <DataGrid x:Name="OverviewLogTable" Grid.Row="1" ItemsSource="{Binding LogView}" SelectedItem="{Binding SelectedLogEntry}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Time" Width="105" x:DataType="m:LogEntry" Binding="{Binding LocalTimestamp, StringFormat='{}{0:HH:mm:ss.fff}'}"/>
+                    <DataGridTemplateColumn Header="Level" CellTemplate="{StaticResource LogPriorityTemplate}" Width="82" SortMemberPath="Priority"/>
+                    <DataGridTextColumn Header="Source" Width="120" x:DataType="m:LogEntry" Binding="{Binding Source}"/>
+                    <DataGridTextColumn Header="Message" Width="*" x:DataType="m:LogEntry" Binding="{Binding Message}"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Grid>
+          </Border>
+        </Grid>
+
+        <!-- Instances -->
+        <Grid RowDefinitions="Auto,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Instances}">
+          <Grid Margin="0,4,0,24" ColumnDefinitions="*,Auto">
+            <StackPanel>
+              <TextBlock Text="Instances" FontSize="26" FontWeight="SemiBold"/>
+              <TextBlock Text="Devices and emulators discovered through ADB" Classes="muted" Margin="0,4,0,0"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Discover now" Command="{Binding RefreshCommand}" Classes="primary" Padding="20,10" Margin="20,0,0,0" VerticalAlignment="Center"/>
+          </Grid>
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Devices}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="m:AndroidDevice">
+                  <Border Classes="panel" Padding="24,16" Margin="0,0,8,12">
+                    <StackPanel>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel>
+                          <TextBlock Text="{Binding FriendlyName}" FontSize="21" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                          <TextBlock Classes="muted" Margin="0,6,0,0"><Run Text="{Binding Manufacturer}"/><Run Text=" · "/><Run Text="{Binding Kind}"/></TextBlock>
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="#17313B" CornerRadius="12" Padding="14,7" Margin="16,0,0,0" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding State}" Classes="accent" FontWeight="SemiBold"/>
+                        </Border>
+                      </Grid>
+                      <UniformGrid Columns="3" Margin="0,14,0,12">
+                        <UniformGrid.Styles>
+                          <Style Selector="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,0,20,6"/></Style>
+                        </UniformGrid.Styles>
+                        <StackPanel>
+                          <TextBlock Text="DEVICE" Classes="muted" FontSize="11"/>
+                          <TextBlock Text="{Binding Model}" FontWeight="SemiBold"/>
+                          <TextBlock Text="{Binding Serial}" Classes="muted" ToolTip.Tip="Device serial"/>
+                        </StackPanel>
+                        <StackPanel>
+                          <TextBlock Text="SYSTEM &amp; DISPLAY" Classes="muted" FontSize="11"/>
+                          <TextBlock Text="{Binding VersionLine}"/>
+                          <TextBlock Classes="muted"><Run Text="{Binding Resolution}"/><Run Text=" · "/><Run Text="{Binding Density}"/><Run Text=" dpi"/></TextBlock>
+                        </StackPanel>
+                        <StackPanel>
+                          <TextBlock Text="PROCESSOR" Classes="muted" FontSize="11"/>
+                          <TextBlock Text="{Binding Abi}"/>
+                          <TextBlock Text="{Binding CpuCores, StringFormat='{}{0} cores', TargetNullValue='N/A'}" Classes="muted"/>
+                        </StackPanel>
+                      </UniformGrid>
+                      <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
+                        <WrapPanel>
+                          <TextBlock Margin="0,0,28,4"><Run Text="RAM  " Foreground="{StaticResource MutedBrush}"/><Run Text="{Binding TotalMemoryBytes, Converter={StaticResource NullText}}"/></TextBlock>
+                          <TextBlock Margin="0,0,28,4"><Run Text="Storage  " Foreground="{StaticResource MutedBrush}"/><Run Text="{Binding TotalStorageBytes, Converter={StaticResource NullText}}"/></TextBlock>
+                          <TextBlock Margin="0,0,0,4" Classes="muted" Text="{Binding LastSeenUtc, StringFormat='Last seen  {0:dd MMM HH:mm:ss zzz}'}"/>
+                        </WrapPanel>
+                      </Border>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+
+        <!-- Wireless -->
+        <Grid RowDefinitions="Auto,Auto,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Wireless}">
+          <DockPanel Margin="0,0,0,12">
+            <Button DockPanel.Dock="Right" Content="Refresh mDNS" Command="{Binding RefreshWirelessCommand}"/>
+            <StackPanel>
+              <TextBlock Text="Wireless Device Center" Classes="sectionTitle"/>
+              <TextBlock Text="Secure ADB Wi-Fi discovery, pairing, reconnect and connection health" Classes="muted"/>
+            </StackPanel>
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,0,0,10" ColumnDefinitions="*,10,*">
+            <Border Classes="panel">
+              <StackPanel>
+                <TextBlock Text="Pair or connect" Classes="cardTitle"/>
+                <TextBlock Text="On Android: Developer options → Wireless debugging → Pair device" Classes="muted" TextWrapping="Wrap" Margin="0,5,0,10"/>
+                <Grid ColumnDefinitions="2*,*,Auto">
+                  <TextBox Watermark="IP address or mDNS host and port" ToolTip.Tip="IP address or mDNS host and port" Text="{Binding WirelessHost}"/>
+                  <TextBox Grid.Column="1" Margin="6,0" Watermark="Pairing code" ToolTip.Tip="Six-digit pairing code" MaxLength="6" Text="{Binding PairingCode}"/>
+                  <Button Grid.Column="2" Content="Pair securely" Command="{Binding PairWirelessCommand}"/>
+                </Grid>
+                <WrapPanel Margin="0,8,0,0">
+                  <Button Content="Connect" Command="{Binding ConnectWirelessCommand}"/>
+                  <Button Content="Disconnect" Command="{Binding DisconnectWirelessCommand}"/>
+                  <Button Content="Measure latency" Command="{Binding MeasureWirelessLatencyCommand}"/>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="panel">
+              <StackPanel>
+                <TextBlock Text="Connection health" Classes="cardTitle"/>
+                <TextBlock Text="{Binding WirelessStatus}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                <TextBlock Text="{Binding MdnsBackend, StringFormat='mDNS: {0}'}" Classes="muted" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <TextBlock Text="{Binding ConnectionHealth}" Classes="accent" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <TextBlock Text="ADB Wi-Fi 2.0 auto-reconnect requires Android 17 and Platform Tools 37+. Android 11+ secure pairing remains supported." Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+          <Border Grid.Row="2" Classes="panel" Padding="0">
+            <DataGrid ItemsSource="{Binding WirelessServices}" SelectedItem="{Binding SelectedWirelessService}">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Device/service" Width="2*" x:DataType="vm:WirelessServiceRow" Binding="{Binding Name}"/>
+                <DataGridTextColumn Header="Security/transport" Width="180" x:DataType="vm:WirelessServiceRow" Binding="{Binding Type}"/>
+                <DataGridTextColumn Header="Address" Width="190" x:DataType="vm:WirelessServiceRow" Binding="{Binding Address}"/>
+                <DataGridTextColumn Header="State" Width="*" x:DataType="vm:WirelessServiceRow" Binding="{Binding Purpose}"/>
+              </DataGrid.Columns>
+            </DataGrid>
+          </Border>
+        </Grid>
+
+        <!-- Developer Tools -->
+        <Grid RowDefinitions="Auto,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Developer Tools}">
+          <DockPanel Margin="0,0,0,12">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+              <Button Content="Open results" Command="{Binding OpenDeveloperLabDirectoryCommand}"/>
+              <Button Content="Cancel" Command="{Binding CancelDeveloperToolCommand}" IsEnabled="{Binding DeveloperLabIsRunning}"/>
+              <Button Content="Run selected tool" Classes="primary" Command="{Binding RunDeveloperToolCommand}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Developer Tools" Classes="sectionTitle" Margin="0,0,0,5"/>
+              <StackPanel Orientation="Horizontal">
+                <Button Content="Diagnostics &amp; profiling" Classes="workspaceTab selected"/>
+                <Button Content="App &amp; device controls" Classes="workspaceTab" Command="{Binding NavigateCommand}" CommandParameter="App &amp; Device Lab"/>
+              </StackPanel>
+            </StackPanel>
+          </DockPanel>
+          <Grid Grid.Row="1" ColumnDefinitions="430,10,*">
+            <Border Classes="panel" Padding="0">
+              <Grid RowDefinitions="*,Auto">
+                <DataGrid ItemsSource="{Binding DeveloperTools}" SelectedItem="{Binding SelectedDeveloperTool}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Tool" Width="165" x:DataType="vm:DeveloperToolRow" Binding="{Binding Name}"/>
+                    <DataGridTextColumn Header="Category" Width="90" x:DataType="vm:DeveloperToolRow" Binding="{Binding Category}"/>
+                    <DataGridTextColumn Header="Access" Width="*" x:DataType="vm:DeveloperToolRow" Binding="{Binding Access}"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+                <StackPanel Grid.Row="1" Margin="10">
+                  <TextBlock Text="{Binding SelectedDeveloperTool.Description}" TextWrapping="Wrap" Classes="muted"/>
+                  <WrapPanel Margin="0,8,0,0">
+                    <Button Content="Select APK" Command="{Binding SelectApkCommand}"/>
+                    <Button Content="Baseline APK" Command="{Binding SelectComparisonApkCommand}"/>
+                    <Button Content="Bugreport file" Command="{Binding SelectBugReportCommand}"/>
+                  </WrapPanel>
+                  <WrapPanel Margin="0,4,0,0">
+                    <TextBlock Text="Trace seconds" VerticalAlignment="Center"/>
+                    <TextBox Width="60" Margin="6,0,14,0" Text="{Binding TraceDurationSeconds}"/>
+                    <TextBlock Text="Monkey events" VerticalAlignment="Center"/>
+                    <TextBox Width="70" Margin="6,0,14,0" Text="{Binding MonkeyEventCount}"/>
+                    <TextBlock Text="Seed" VerticalAlignment="Center"/>
+                    <TextBox Width="70" Margin="6,0" Text="{Binding MonkeySeed}"/>
+                  </WrapPanel>
+                </StackPanel>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Classes="panel">
+              <Grid RowDefinitions="Auto,*">
+                <DockPanel Margin="0,0,0,8">
+                  <TextBlock DockPanel.Dock="Right" Text="{Binding DeveloperLabStatus}" Classes="accent" TextTrimming="CharacterEllipsis" MaxWidth="620"/>
+                  <TextBlock Text="Result" Classes="cardTitle"/>
+                </DockPanel>
+                <TextBox Grid.Row="1" Classes="mono" Text="{Binding DeveloperLabOutput}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontSize="11"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
+        <!-- App & Device Lab -->
+        <Grid RowDefinitions="Auto,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=App &amp; Device Lab}">
+          <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="Developer Tools" Classes="sectionTitle" Margin="0,0,0,5"/>
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Diagnostics &amp; profiling" Classes="workspaceTab" Command="{Binding NavigateCommand}" CommandParameter="Developer Tools"/>
+              <Button Content="App &amp; device controls" Classes="workspaceTab selected"/>
+              <Button Content="Build device matrix" Classes="primary" Command="{Binding BuildMultiDeviceMatrixCommand}" Height="34" Padding="14,5" Margin="4,0,0,0"/>
+            </StackPanel>
+          </StackPanel>
+          <Grid Grid.Row="1" ColumnDefinitions="350,10,350,10,*">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Permission Laboratory" Classes="cardTitle"/>
+                    <TextBlock Text="Runtime permission changes target only the selected application." Classes="muted" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <TextBox Text="{Binding PermissionName}" ToolTip.Tip="Example: android.permission.POST_NOTIFICATIONS"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Refresh state" Command="{Binding RefreshPermissionStateCommand}"/>
+                      <Button Content="Grant" Command="{Binding GrantPermissionCommand}"/>
+                      <Button Content="Revoke" Command="{Binding RevokePermissionCommand}"/>
+                      <Button Content="Reset AppOps" Command="{Binding ResetAppOpsCommand}"/>
+                      <Button Content="Rollback last" Command="{Binding RollbackPermissionChangeCommand}"/>
+                      <Button Content="Open audit file" Command="{Binding OpenPermissionAuditCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding PermissionAuditPath, StringFormat='Audit file: {0}'}" Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding PermissionAuditPath}" Margin="0,8,0,0"/>
+                    <ItemsControl ItemsSource="{Binding PermissionChanges}" Margin="0,8,0,0">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PermissionChangeRow">
+                          <DockPanel ToolTip.Tip="{Binding Timestamp}">
+                            <TextBlock Text="{Binding Status}" DockPanel.Dock="Right" Classes="muted"/>
+                            <TextBlock Text="{Binding Action}" Classes="accent" Margin="0,0,7,0"/>
+                            <TextBlock Text="{Binding Permission}" TextTrimming="CharacterEllipsis"/>
+                          </DockPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel">
+                  <StackPanel>
+                    <TextBlock Text="Instrumentation Test Runner" Classes="cardTitle"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Discover" Command="{Binding DiscoverInstrumentationCommand}"/>
+                      <ComboBox ItemsSource="{Binding Instrumentations}" SelectedItem="{Binding SelectedInstrumentation}" DisplayMemberBinding="{ReflectionBinding DisplayName}"/>
+                    </DockPanel>
+                    <TextBox Margin="0,7,0,0" Text="{Binding InstrumentationClass}" Watermark="Optional class or Class#method" ToolTip.Tip="Optional class or Class#method filter"/>
+                    <DockPanel Margin="0,7,0,0">
+                      <Button DockPanel.Dock="Right" Content="Run tests" Command="{Binding RunInstrumentationTestsCommand}"/>
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Repeat" VerticalAlignment="Center"/>
+                        <TextBox Width="60" Margin="7,0" Text="{Binding InstrumentationRepeatCount}"/>
+                      </StackPanel>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,10,0,0">
+                  <StackPanel>
+                    <TextBlock Text="Test Runner · Monkey · crash scan · UI hierarchy" Classes="cardTitle" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding TestRunnerSummary}" Classes="muted" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <WrapPanel>
+                      <TextBlock Text="Events" VerticalAlignment="Center"/>
+                      <TextBox Width="64" Margin="7,0" Text="{Binding MonkeyEventCount}"/>
+                      <TextBlock Text="Seed" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                      <TextBox Width="64" Margin="7,0" Text="{Binding MonkeySeed}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,6,0,0">
+                      <TextBlock Text="Throttle ms" VerticalAlignment="Center"/>
+                      <TextBox Width="56" Margin="7,0" Text="{Binding MonkeyThrottleMs}"/>
+                    </WrapPanel>
+                    <CheckBox Content="Stop on failure and capture screenshot + logcat" IsChecked="{Binding StopOnFailure}" Margin="0,7,0,0"/>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Monkey stress" Command="{Binding RunMonkeyStressCommand}"/>
+                      <Button Content="Scan crash / ANR" Command="{Binding ScanForCrashOrAnrCommand}"/>
+                      <Button Content="Dump UI hierarchy" Command="{Binding DumpUiHierarchyCommand}"/>
+                      <Button Content="Export ZIP" Command="{Binding ExportTestArtifactsCommand}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,7,0,0">
+                      <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenTestArtifactCommand}" CommandParameter="{Binding SelectedTestArtifact}"/>
+                      <ComboBox ItemsSource="{Binding TestArtifacts}" SelectedItem="{Binding SelectedTestArtifact}" ToolTip.Tip="Captured screenshots, logs, UI dumps and ZIP exports"/>
+                    </DockPanel>
+                    <Button Content="Clear artifact list" Command="{Binding ClearTestArtifactsCommand}" Margin="0,6,0,0" HorizontalAlignment="Left"/>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,10,0,0">
+                  <StackPanel>
+                    <TextBlock Text="Multi-device lab" Classes="cardTitle"/>
+                    <TextBlock Text="{Binding MultiDeviceSummary}" Classes="muted" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <WrapPanel>
+                      <Button Content="Install on all" ToolTip.Tip="Installs the APK chosen in Application productivity on every connected device" Command="{Binding InstallOnAllDevicesCommand}"/>
+                      <Button Content="Launch on all" Command="{Binding LaunchOnAllDevicesCommand}"/>
+                      <Button Content="Screenshot all" Command="{Binding CaptureAllScreenshotsCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Collect logs" Command="{Binding CollectFleetLogsCommand}"/>
+                      <Button Content="Export bundle" ToolTip.Tip="ZIP with every fleet- report, screenshot and log" Command="{Binding ExportFleetBundleCommand}"/>
+                      <Button Content="scrcpy on all" ToolTip.Tip="Opens one scrcpy window per connected device; scrcpy forwards device audio on Android 11+" Command="{Binding OpenScrcpyForAllDevicesCommand}"/>
+                      <Button Content="Clear list" Command="{Binding ClearFleetArtifactsCommand}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,7,0,0">
+                      <Button DockPanel.Dock="Right" Content="Open" Command="{Binding OpenFleetArtifactCommand}" CommandParameter="{Binding SelectedFleetArtifact}"/>
+                      <ComboBox ItemsSource="{Binding FleetArtifacts}" SelectedItem="{Binding SelectedFleetArtifact}" ToolTip.Tip="Screenshots, logcat snapshots, install/launch reports and ZIP bundles"/>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+              <StackPanel>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Live mirror inside this window" Classes="cardTitle"/>
+                    <TextBlock Text="Streams the real device screen over ADB only, so no scrcpy install is required. Click anywhere on the image to tap that exact spot on the device. 2 fps is easy to read; 4-8 fps gives smoother feedback while you work." Classes="muted" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <Border Background="{StaticResource Panel2Brush}" CornerRadius="6" Height="230" ClipToBounds="True">
+                      <Panel>
+                        <Image x:Name="MirrorImage" Source="{Binding MirrorFrame, Converter={x:Static conv:ImageSourceConverter.Instance}}" Stretch="Uniform" RenderOptions.BitmapInterpolationMode="HighQuality"
+                               Cursor="Cross" PointerReleased="OnMirrorFrameClick" ToolTip.Tip="Click to tap this point on the device"/>
+                        <Canvas IsHitTestVisible="False">
+                          <Ellipse x:Name="MirrorTapMarker" Width="34" Height="34" IsVisible="False" Opacity="0" Stroke="#FF19C3D4" StrokeThickness="2" Fill="#4019C3D4"/>
+                        </Canvas>
+                      </Panel>
+                    </Border>
+                    <TextBlock Text="{Binding MirrorStatus}" Classes="accent" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="{Binding MirrorButtonLabel}" Command="{Binding ToggleMirrorCommand}" MinWidth="110"/>
+                      <Button Content="Save frame" Command="{Binding SaveMirrorFrameCommand}"/>
+                      <Button Content="Paste clipboard to device" ToolTip.Tip="Types this computer's clipboard into the field that has focus on the device" Command="{Binding PasteClipboardToDeviceCommand}"/>
+                      <StackPanel Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Frames per second" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox Width="70" ItemsSource="{Binding MirrorFpsOptions}" SelectedItem="{Binding MirrorFps}"/>
+                      </StackPanel>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Device controls &amp; mirroring" Classes="cardTitle"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Home" Command="{Binding SendDeviceKeyCommand}" CommandParameter="HOME"/>
+                      <Button Content="Back" Command="{Binding SendDeviceKeyCommand}" CommandParameter="BACK"/>
+                      <Button Content="Recent" Command="{Binding SendDeviceKeyCommand}" CommandParameter="APP_SWITCH"/>
+                      <Button Content="Power" Command="{Binding SendDeviceKeyCommand}" CommandParameter="POWER"/>
+                      <Button Content="Vol +" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_UP"/>
+                      <Button Content="Vol −" Command="{Binding SendDeviceKeyCommand}" CommandParameter="VOLUME_DOWN"/>
+                    </WrapPanel>
+                    <Button Content="Open full-speed scrcpy window" Command="{Binding StartDeviceMirroringCommand}" Margin="0,8,0,0" ToolTip.Tip="Install scrcpy from your distribution (apt, dnf, pacman or snap). The external window is faster than the in-app mirror."/>
+                    <StackPanel Margin="0,8,0,0">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Background wait" VerticalAlignment="Center"/>
+                        <TextBox Width="60" Margin="7,0" Text="{Binding BackgroundTestSeconds}" ToolTip.Tip="5–300 seconds"/>
+                        <TextBlock Text="seconds" VerticalAlignment="Center"/>
+                      </StackPanel>
+                      <Button Content="Run background test" Command="{Binding RunBackgroundScenarioCommand}" Margin="0,7,0,0" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Emulator Control Center" Classes="cardTitle"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Refresh AVDs" Command="{Binding RefreshAvdsCommand}"/>
+                      <ComboBox ItemsSource="{Binding AvailableAvds}" SelectedItem="{Binding SelectedAvd}" ToolTip.Tip="Installed Android Virtual Devices"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Start" Command="{Binding StartAvdCommand}" CommandParameter="normal"/>
+                      <Button Content="Cold boot" Command="{Binding StartAvdCommand}" CommandParameter="cold"/>
+                      <Button Content="Stop running" Command="{Binding StopEmulatorCommand}"/>
+                      <Button Content="Wipe data…" Classes="danger" Command="{Binding WipeAndStartAvdCommand}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Apply" Command="{Binding ApplyEmulatorActionCommand}"/>
+                      <ComboBox ItemsSource="{Binding EmulatorActions}" SelectedItem="{Binding SelectedEmulatorAction}"/>
+                    </DockPanel>
+                    <TextBlock Text="{Binding EmulatorProfileSummary}" Classes="muted" TextWrapping="Wrap" Margin="0,9,0,0" FontSize="11"/>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Read profile" ToolTip.Tip="API, ABI, display, locale, font scale, dark mode, AVD name and Play Store" Command="{Binding ReadExtendedProfileCommand}"/>
+                      <Button Content="Toggle dark mode" Command="{Binding ToggleDarkModeCommand}"/>
+                      <Button Content="Check Play Store" Command="{Binding CheckPlayStoreCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <TextBlock Text="Font scale" VerticalAlignment="Center"/>
+                      <TextBox Width="56" Margin="7,0" Text="{Binding DeviceFontScale}" ToolTip.Tip="0.5 – 2.0, for example 1.15"/>
+                      <Button Content="Apply font scale" Command="{Binding ApplyFontScaleCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <TextBlock Text="GPS lat" VerticalAlignment="Center"/>
+                      <TextBox Width="76" Margin="7,0" Text="{Binding GpsLatitude}"/>
+                      <TextBlock Text="lon" VerticalAlignment="Center"/>
+                      <TextBox Width="76" Margin="7,0" Text="{Binding GpsLongitude}"/>
+                      <Button Content="Send GPS fix" Command="{Binding SendGeoFixCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Fold" Command="{Binding FoldDeviceCommand}"/>
+                      <Button Content="Unfold" Command="{Binding UnfoldDeviceCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Sensor status" ToolTip.Tip="emu sensor status: which virtual sensors this AVD exposes and whether they are enabled" Command="{Binding ReadSensorStatusCommand}"/>
+                      <Button Content="Toggle airplane mode" ToolTip.Tip="cmd connectivity airplane-mode enable/disable, for offline handling tests" Command="{Binding ToggleAirplaneModeCommand}"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <TextBlock Text="Snapshot" VerticalAlignment="Center"/>
+                      <TextBox Width="120" Margin="7,0" Text="{Binding SnapshotName}" ToolTip.Tip="Letters, digits, dash, dot or underscore"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,6,0,0">
+                      <Button Content="Save" Command="{Binding SaveEmulatorSnapshotCommand}"/>
+                      <Button Content="Load" Command="{Binding LoadEmulatorSnapshotCommand}"/>
+                      <Button Content="List" Command="{Binding ListEmulatorSnapshotsCommand}"/>
+                      <Button Content="Delete…" Classes="danger" Command="{Binding DeleteEmulatorSnapshotCommand}"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Deep Link Launcher" Classes="cardTitle"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Launch" Command="{Binding LaunchDeepLinkCommand}"/>
+                      <TextBox Text="{Binding DeepLinkUri}"/>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Application productivity" Classes="cardTitle"/>
+                    <TextBlock Text="Install a new build and control the selected package without leaving this window." Classes="muted" TextWrapping="Wrap" Margin="0,4,0,8"/>
+                    <DockPanel>
+                      <Button DockPanel.Dock="Right" Content="Browse" Command="{Binding PickApkFileCommand}"/>
+                      <TextBox Text="{Binding ApkPath}" Watermark="Full path to a local APK" ToolTip.Tip="Full path to a local APK"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Install / update" ToolTip.Tip="adb install -r keeps existing app data" Command="{Binding InstallApkCommand}"/>
+                      <Button Content="Restart cold" ToolTip.Tip="Force stop, then relaunch and measure" Command="{Binding RestartAppCommand}"/>
+                      <Button Content="Force stop" Command="{Binding ForceStopAppCommand}"/>
+                      <Button Content="Clear data…" Classes="danger" Command="{Binding ClearAppDataCommand}"/>
+                      <Button Content="Uninstall…" Classes="danger" Command="{Binding UninstallAppCommand}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="Type on device" Command="{Binding SendInputTextCommand}"/>
+                      <TextBox Text="{Binding InputTextToSend}" ToolTip.Tip="Text is typed into whatever field has focus on the device"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Diff device properties" ToolTip.Tip="First run saves a baseline; later runs list added, removed and changed properties" Command="{Binding CompareDevicePropertiesCommand}"/>
+                      <Button Content="Open session directory" Command="{Binding OpenSessionDirectoryCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding DevicePropertiesSummary}" Classes="muted" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Compare screenshots" ToolTip.Tip="Pixel-diffs the two newest screenshots of the selected device and writes a report" Command="{Binding CompareLatestScreenshotsCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding ScreenshotDiffSummary}" Classes="muted" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                    <DockPanel Margin="0,8,0,0">
+                      <Button DockPanel.Dock="Right" Content="List" ToolTip.Tip="Lists this path inside the app's private data over run-as" Command="{Binding ListAppDataCommand}"/>
+                      <TextBox Text="{Binding AppDataFile}" ToolTip.Tip="Path inside the app data directory, for example shared_prefs/settings.xml or databases/"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,6,0,0">
+                      <Button Content="Pull file…" ToolTip.Tip="Copies one file out of the app's private data over run-as (debuggable builds only)" Command="{Binding PullAppDataFileCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding AppDataSummary}" Classes="muted" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel">
+                  <StackPanel>
+                    <TextBlock Text="ADB Port Manager" Classes="cardTitle"/>
+                    <ComboBox Margin="0,8,0,0" ItemsSource="{Binding PortDirections}" SelectedItem="{Binding SelectedPortDirection}"/>
+                    <Grid Margin="0,7,0,0" ColumnDefinitions="*,8,*">
+                      <TextBox Text="{Binding ForwardLocalPort}" ToolTip.Tip="Computer port"/>
+                      <TextBox Grid.Column="2" Text="{Binding ForwardDevicePort}" ToolTip.Tip="Device port"/>
+                    </Grid>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Apply" Command="{Binding ApplyPortMappingCommand}"/>
+                      <Button Content="Remove" Command="{Binding RemovePortMappingCommand}"/>
+                      <Button Content="List mappings" Command="{Binding ListPortMappingsCommand}"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+            <Border Grid.Column="4" Classes="panel">
+              <Grid RowDefinitions="Auto,Auto,*">
+                <TextBlock Text="Activity" Classes="cardTitle"/>
+                <TextBlock Grid.Row="1" Text="{Binding DeviceLabStatus}" Classes="accent" TextWrapping="Wrap" Margin="0,4,0,10"/>
+                <TextBox Grid.Row="2" Classes="mono" Text="{Binding DeviceLabOutput}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontSize="11"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
+        <!-- Media -->
+        <Grid RowDefinitions="Auto,54,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Media}">
+          <DockPanel>
+            <TextBlock Text="{Binding MediaFilterStatus}" Classes="accent" DockPanel.Dock="Right" VerticalAlignment="Center"/>
+            <StackPanel>
+              <TextBlock Text="Media library" Classes="sectionTitle"/>
+              <TextBlock Text="Screenshots and Android screen recordings · stored only on this computer" Classes="muted"/>
+            </StackPanel>
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,9" ColumnDefinitions="*,150,180,210,130,115,Auto">
+            <TextBox Text="{Binding MediaSearchText}" Watermark="Search file name or note" ToolTip.Tip="Search file name or note"/>
+            <ComboBox Grid.Column="1" Margin="6,0,0,0" ItemsSource="{Binding MediaKinds}" SelectedItem="{Binding SelectedMediaKind}"/>
+            <TextBox Grid.Column="2" Margin="6,0,0,0" Text="{Binding SelectedMediaDevice}" ToolTip.Tip="Device serial filter; use All for every device"/>
+            <TextBox Grid.Column="3" Margin="6,0,0,0" Text="{Binding SelectedMediaPackage}" ToolTip.Tip="Package filter; use All for every package"/>
+            <ComboBox Grid.Column="4" Margin="6,0,0,0" ItemsSource="{Binding MediaSortOptions}" SelectedItem="{Binding SelectedMediaSort}"/>
+            <ComboBox Grid.Column="5" Margin="6,0,0,0" ItemsSource="{Binding MediaLayouts}" SelectedItem="{Binding MediaLayout}"/>
+            <Button Grid.Column="6" Content="Refresh" Command="{Binding RefreshCommand}"/>
+          </Grid>
+          <Grid Grid.Row="2" ColumnDefinitions="1.6*,12,0.9*">
+            <Panel>
+              <ListBox Classes="mediaGallery" Background="Transparent" BorderThickness="0" ItemsSource="{Binding MediaView}" SelectedItem="{Binding SelectedMediaItem}"
+                       IsVisible="{Binding MediaLayout, Converter={StaticResource Equal}, ConverterParameter=Gallery}"
+                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                  <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="m:MediaItem">
+                    <Grid RowDefinitions="128,*">
+                      <Border Background="#0B1116" CornerRadius="8,8,0,0" ClipToBounds="True">
+                        <Panel>
+                          <Image Source="{Binding ThumbnailPath, Converter={StaticResource MediaThumbnail}, ConverterParameter=320}" Stretch="UniformToFill"/>
+                          <Border Background="#18232B" Padding="12" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding Kind, Converter={StaticResource Equal}, ConverterParameter=Recording}">
+                            <TextBlock Text="VIDEO" Classes="accent" FontSize="18" FontWeight="Bold"/>
+                          </Border>
+                          <Border Background="#CC10171D" CornerRadius="4" Padding="6,3" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="7">
+                            <TextBlock Text="{Binding Kind}" FontSize="11"/>
+                          </Border>
+                        </Panel>
+                      </Border>
+                      <StackPanel Grid.Row="1" Margin="9,7">
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <DockPanel Margin="0,4,0,0">
+                          <TextBlock Text="{Binding FileSize, Converter={StaticResource NullText}}" Classes="accent" FontSize="11" DockPanel.Dock="Right"/>
+                          <TextBlock Text="{Binding CapturedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" Classes="muted" FontSize="11"/>
+                        </DockPanel>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <DataGrid ItemsSource="{Binding MediaView}" SelectedItem="{Binding SelectedMediaItem}" IsVisible="{Binding MediaLayout, Converter={StaticResource Equal}, ConverterParameter=List}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Type" Width="95" x:DataType="m:MediaItem" Binding="{Binding Kind}"/>
+                  <DataGridTextColumn Header="File" Width="*" x:DataType="m:MediaItem" Binding="{Binding FileName}"/>
+                  <DataGridTextColumn Header="Device" Width="150" x:DataType="m:MediaItem" Binding="{Binding FriendlyDeviceName}"/>
+                  <DataGridTextColumn Header="Package" Width="190" x:DataType="m:MediaItem" Binding="{Binding PackageName, TargetNullValue='N/A'}"/>
+                  <DataGridTextColumn Header="Captured" Width="145" x:DataType="m:MediaItem" Binding="{Binding CapturedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"/>
+                  <DataGridTextColumn Header="Duration" Width="90" x:DataType="m:MediaItem" Binding="{Binding Duration, TargetNullValue='—'}"/>
+                  <DataGridTextColumn Width="90" CellStyleClasses="number" x:DataType="m:MediaItem" Binding="{Binding FileSize, Converter={StaticResource NullText}}" SortMemberPath="FileSize">
+                    <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Size"/></DataGridTextColumn.Header>
+                  </DataGridTextColumn>
+                </DataGrid.Columns>
+              </DataGrid>
+            </Panel>
+            <Border Grid.Column="2" Classes="panel" Padding="0">
+              <Grid RowDefinitions="190,Auto,Auto,*,Auto">
+                <Border Background="#090E12" CornerRadius="9,9,0,0" ClipToBounds="True">
+                  <Panel>
+                    <Image Source="{Binding SelectedMediaItem.ThumbnailPath, Converter={StaticResource MediaThumbnail}, ConverterParameter=720, FallbackValue={x:Null}}" Stretch="Uniform"
+                           IsVisible="{Binding SelectedMediaItem.Kind, Converter={StaticResource Equal}, ConverterParameter=Screenshot, FallbackValue=False}"/>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding SelectedMediaItem.Kind, Converter={StaticResource Equal}, ConverterParameter=Recording, FallbackValue=False}">
+                      <TextBlock Text="SCREEN RECORDING" Classes="accent" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"/>
+                      <TextBlock Text="{Binding SelectedMediaItem.Duration, StringFormat='Duration: {0:g}', FallbackValue=''}" Classes="muted" Margin="0,8" HorizontalAlignment="Center"/>
+                      <Button Content="Play in video player" Command="{Binding OpenSelectedMediaCommand}"/>
+                    </StackPanel>
+                    <TextBlock Text="Select a media item" Classes="muted" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsVisible="{Binding SelectedMediaItem, Converter={x:Static ObjectConverters.IsNull}}"/>
+                  </Panel>
+                </Border>
+                <StackPanel Grid.Row="1" Margin="14,12,14,5">
+                  <TextBlock Text="{Binding SelectedMediaItem.FileName, TargetNullValue='No selection', FallbackValue='No selection'}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                  <TextBlock Text="{Binding SelectedMediaItem.LocalPath, FallbackValue=''}" Classes="muted" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding SelectedMediaItem.LocalPath, FallbackValue={x:Null}}" Margin="0,4"/>
+                  <TextBlock Text="{Binding SelectedMediaItem.DeviceSerial, StringFormat='Device serial: {0}', FallbackValue=''}" Classes="accent"/>
+                  <TextBlock Text="{Binding SelectedMediaItem.PackageName, StringFormat='Package: {0}', TargetNullValue='Package: N/A', FallbackValue=''}"/>
+                  <TextBlock Text="{Binding SelectedMediaItem.Resolution, StringFormat='Resolution: {0}', TargetNullValue='Resolution: N/A', FallbackValue=''}"/>
+                  <TextBlock Text="{Binding SelectedMediaItem.SessionId, StringFormat='Session: {0}', TargetNullValue='Session: N/A', FallbackValue=''}"/>
+                </StackPanel>
+                <WrapPanel Grid.Row="2" Margin="10,4">
+                  <Button Content="Open / Play" Command="{Binding OpenSelectedMediaCommand}"/>
+                  <Button Content="Show in folder" Command="{Binding OpenMediaFolderCommand}"/>
+                  <Button Content="Copy path" Command="{Binding CopyMediaPathCommand}"/>
+                  <Button Content="Delete" Classes="danger" Command="{Binding DeleteMediaCommand}"/>
+                </WrapPanel>
+                <StackPanel Grid.Row="3" Margin="14,6">
+                  <TextBlock Text="Rename" FontWeight="SemiBold"/>
+                  <DockPanel Margin="0,5,0,10">
+                    <Button Content="Rename" Command="{Binding RenameMediaCommand}" DockPanel.Dock="Right"/>
+                    <TextBox Text="{Binding MediaRenameText}"/>
+                  </DockPanel>
+                  <TextBlock Text="Note" FontWeight="SemiBold"/>
+                  <TextBox Text="{Binding MediaNote}" AcceptsReturn="True" Height="64" TextWrapping="Wrap" Margin="0,5,0,10"/>
+                  <TextBlock Text="Associate with marker" FontWeight="SemiBold"/>
+                  <ComboBox ItemsSource="{Binding Markers}" SelectedItem="{Binding SelectedMediaMarker}" DisplayMemberBinding="{ReflectionBinding Name}" Margin="0,5,0,0"/>
+                </StackPanel>
+                <Button Grid.Row="4" Content="Save note and marker" Command="{Binding SaveMediaMetadataCommand}" Margin="14,6,14,14" HorizontalAlignment="Stretch"/>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
+        <!-- Performance sessions -->
+        <Grid RowDefinitions="Auto,230,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Performance}">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+              <Button Content="Refresh" Command="{Binding RefreshCommand}"/>
+              <Button Content="Export JSON" Command="{Binding ExportStoredSessionCommand}" CommandParameter="JSON"/>
+              <Button Content="Export CSV" Command="{Binding ExportStoredSessionCommand}" CommandParameter="CSV"/>
+              <Button Content="Export ZIP" Command="{Binding ExportStoredSessionCommand}" CommandParameter="ZIP"/>
+              <Button Content="Open exports" Command="{Binding OpenSessionExportFolderCommand}"/>
+              <Button Content="Delete session" Classes="danger" Command="{Binding DeleteStoredSessionCommand}"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+              <TextBlock Text="Performance sessions" Classes="sectionTitle"/>
+              <TextBlock Text="Full locally stored sessions · live Overview charts remain fixed to the last 10 minutes" Classes="muted" TextWrapping="Wrap"/>
+            </StackPanel>
+          </DockPanel>
+          <DataGrid Grid.Row="1" Margin="0,12,0,10" ItemsSource="{Binding StoredSessions}" SelectedItem="{Binding SelectedStoredSession}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Started" Width="160" x:DataType="m:SessionSummary" Binding="{Binding StartedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"/>
+              <DataGridTextColumn Width="110" CellStyleClasses="number" x:DataType="m:SessionSummary" Binding="{Binding Duration, Converter={StaticResource DurationText}}" SortMemberPath="Duration">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Duration"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Header="Device" Width="*" MinWidth="150" x:DataType="m:SessionSummary" Binding="{Binding Device.FriendlyName}"/>
+              <DataGridTextColumn Header="Android" Width="150" x:DataType="m:SessionSummary" Binding="{Binding Device.VersionLine}"/>
+              <DataGridTextColumn Header="Package" Width="1.4*" MinWidth="170" x:DataType="m:SessionSummary" Binding="{Binding CurrentPackage, TargetNullValue='N/A'}"/>
+              <DataGridTextColumn Width="70" CellStyleClasses="number" x:DataType="m:SessionSummary" Binding="{Binding AlertCount}">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Alerts"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Width="85" CellStyleClasses="number" x:DataType="m:SessionSummary" Binding="{Binding MarkerCount}">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Markers"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Width="85" CellStyleClasses="number" x:DataType="m:SessionSummary" Binding="{Binding AverageFps, StringFormat='{}{0:N1}', TargetNullValue='N/A'}" SortMemberPath="AverageFps">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Avg FPS"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Width="95" CellStyleClasses="number" x:DataType="m:SessionSummary" Binding="{Binding FrameTimeP95Ms, StringFormat='{}{0:N1} ms', TargetNullValue='N/A'}" SortMemberPath="FrameTimeP95Ms">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="P95 frame"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Width="120" CellStyleClasses="number" x:DataType="m:SessionSummary" Binding="{Binding PeakMemoryBytes, Converter={StaticResource NullText}}" SortMemberPath="PeakMemoryBytes">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Peak memory"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Width="95" CellStyleClasses="number" x:DataType="m:SessionSummary" Binding="{Binding PeakCpuPercent, StringFormat='{}{0:N1}%', TargetNullValue='N/A'}" SortMemberPath="PeakCpuPercent">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Peak CPU"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Header="Export" Width="*" MinWidth="120" x:DataType="m:SessionSummary" Binding="{Binding ExportStatus}"/>
+            </DataGrid.Columns>
+          </DataGrid>
+          <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+              <Border Classes="panel" Margin="0,0,0,10">
+                <Grid ColumnDefinitions="Auto,280,Auto,*">
+                  <TextBlock Text="Compare with" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                  <ComboBox Grid.Column="1" Margin="10,0" ItemsSource="{Binding StoredSessions}" SelectedItem="{Binding ComparisonSession}" DisplayMemberBinding="{ReflectionBinding StartedUtc}"/>
+                  <Button Grid.Column="2" Content="Compare A/B" Command="{Binding CompareSessionsCommand}"/>
+                  <TextBlock Grid.Column="3" Text="{Binding SessionComparison}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="12,0,0,0" Classes="muted"/>
+                </Grid>
+              </Border>
+              <Border Classes="panel" Margin="0,0,0,10">
+                <DockPanel>
+                  <TextBlock Text="{Binding StoredSessionStatus}" Classes="accent" DockPanel.Dock="Right" Margin="20,0,0,0"/>
+                  <TextBlock Text="{Binding StoredSessionDetails}" TextWrapping="Wrap"/>
+                </DockPanel>
+              </Border>
+              <ItemsControl ItemTemplate="{StaticResource LiveChartTemplate}" ItemsSource="{Binding StoredSessionCharts}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+              </ItemsControl>
+              <Grid Height="220" Margin="0,8,0,0" ColumnDefinitions="*,10,*,10,*">
+                <Border Classes="panel" Padding="0">
+                  <Grid RowDefinitions="38,*">
+                    <TextBlock Text="Markers" FontWeight="SemiBold" Margin="10"/>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding StoredSessionMarkers}">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Width="120" x:DataType="m:SessionMarker" Binding="{Binding LocalTimestamp, StringFormat='{}{0:HH:mm:ss}'}"/>
+                        <DataGridTextColumn Header="Name" Width="*" x:DataType="m:SessionMarker" Binding="{Binding Name}"/>
+                        <DataGridTextColumn Header="Note" Width="*" x:DataType="m:SessionMarker" Binding="{Binding Note, TargetNullValue='—'}"/>
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </Grid>
+                </Border>
+                <Border Grid.Column="2" Classes="panel" Padding="0">
+                  <Grid RowDefinitions="38,*">
+                    <TextBlock Text="Alerts" FontWeight="SemiBold" Margin="10"/>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding StoredSessionAlerts}">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Severity" Width="75" x:DataType="m:SessionAlert" Binding="{Binding Severity}"/>
+                        <DataGridTextColumn Header="Type" Width="120" x:DataType="m:SessionAlert" Binding="{Binding Type}"/>
+                        <DataGridTextColumn Header="Message" Width="*" x:DataType="m:SessionAlert" Binding="{Binding Message}"/>
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </Grid>
+                </Border>
+                <Border Grid.Column="4" Classes="panel" Padding="0">
+                  <Grid RowDefinitions="38,*">
+                    <TextBlock Text="Session events" FontWeight="SemiBold" Margin="10"/>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding StoredSessionEvents}">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Time" Width="75" x:DataType="m:SessionEvent" Binding="{Binding TimestampUtc, StringFormat='{}{0:HH:mm:ss}'}"/>
+                        <DataGridTextColumn Header="Type" Width="115" x:DataType="m:SessionEvent" Binding="{Binding Type}"/>
+                        <DataGridTextColumn Header="Message" Width="*" x:DataType="m:SessionEvent" Binding="{Binding Message}"/>
+                      </DataGrid.Columns>
+                    </DataGrid>
+                  </Grid>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <!-- Logs -->
+        <Grid RowDefinitions="Auto,Auto,*,110" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Logs}">
+          <DockPanel LastChildFill="False">
+            <StackPanel>
+              <TextBlock Text="Logs" Classes="sectionTitle"/>
+              <TextBlock Text="Live logcat · crash/ANR quick view · bookmarks · 10 second window · Appium import" Classes="muted"/>
+            </StackPanel>
+            <TextBlock Classes="accent" DockPanel.Dock="Right" Text="{Binding DeviceContext}"/>
+          </DockPanel>
+          <StackPanel Grid.Row="1" Margin="0,10,0,4">
+            <ItemsControl ItemsSource="{Binding DefaultLogFilters}" Margin="0,0,0,5">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SavedLogFilter">
+                  <Button Content="{Binding Name}" Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ApplyDefaultLogFilterCommand}" CommandParameter="{Binding}" Padding="12,5"/>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <WrapPanel>
+              <ComboBox ToolTip.Tip="Source" ItemsSource="{Binding LogSources}" SelectedItem="{Binding SelectedLogSource}" Width="170" Margin="0,3,8,3"/>
+              <ComboBox ToolTip.Tip="Priority" ItemsSource="{Binding LogPriorities}" SelectedItem="{Binding SelectedLogPriority}" Width="120" Margin="0,3,8,3"/>
+              <TextBox Watermark="Search visible logs" ToolTip.Tip="Search visible logs" Text="{Binding LogSearchText}" Width="240" Margin="0,3,8,3"/>
+              <CheckBox Content="Regex" VerticalAlignment="Center" IsChecked="{Binding LogRegexEnabled}" Margin="0,3,14,3"/>
+              <CheckBox Content="Crash / ANR only" VerticalAlignment="Center" IsChecked="{Binding LogCrashOnly}" ToolTip.Tip="Keeps only fatal exceptions and ANR events, so the important row is easy to find." Margin="0,3,14,3"/>
+              <CheckBox Content="Bookmarked only" VerticalAlignment="Center" IsChecked="{Binding LogBookmarksOnly}" ToolTip.Tip="Shows only the rows you bookmarked." Margin="0,3,14,3"/>
+              <CheckBox Content="Auto-scroll" VerticalAlignment="Center" IsChecked="{Binding IsLogAutoScroll}" Margin="0,3,14,3"/>
+            </WrapPanel>
+            <WrapPanel Margin="0,4,0,4">
+              <Button Content="Bookmark" ToolTip.Tip="Bookmark or un-bookmark the selected row" Command="{Binding ToggleLogBookmarkCommand}"/>
+              <Button Content="10 s before event" ToolTip.Tip="Shows the 10 seconds of logs before the selected row. Use it on a crash or a spike." Command="{Binding ShowWindowBeforeSelectedCommand}"/>
+              <Button Content="Pause / Resume" Command="{Binding ToggleLogPauseCommand}"/>
+              <Button Content="Import Appium" Command="{Binding ImportAppiumLogCommand}"/>
+              <Button Content="Save" Command="{Binding SaveLogsCommand}"/>
+              <Button Content="Clear" Command="{Binding ClearLogViewCommand}"/>
+              <TextBlock Text="{Binding LogFilterStatus}" Classes="muted" VerticalAlignment="Center" Margin="12,4"/>
+            </WrapPanel>
+            <Expander Header="Saved filters &amp; time window" Foreground="{StaticResource MutedBrush}" Margin="0,4">
+              <WrapPanel Margin="0,8,0,4">
+                <TextBox Watermark="Filter name" ToolTip.Tip="Type a name for the current filter combination, then press Save filter" Text="{Binding NewLogFilterName}" Width="190" Margin="0,3,8,3"/>
+                <ComboBox ToolTip.Tip="Saved filters" ItemsSource="{Binding SavedLogFilters}" SelectedItem="{Binding SelectedSavedLogFilter}" DisplayMemberBinding="{ReflectionBinding Name}" Width="190" Margin="0,3,8,3"/>
+                <Button Content="Save filter" Command="{Binding SaveLogFilterCommand}"/>
+                <Button Content="Apply" Command="{Binding ApplySavedLogFilterCommand}"/>
+                <Button Content="Delete" Command="{Binding DeleteSavedLogFilterCommand}"/>
+                <Button Content="Clear time window" Padding="9,3" Command="{Binding ClearLogWindowCommand}"/>
+                <Button Content="Clear bookmarks" Padding="9,3" Command="{Binding ClearLogBookmarksCommand}"/>
+                <TextBlock Text="{Binding LogWindowSummary}" Classes="muted" VerticalAlignment="Center" Margin="12,4"/>
+              </WrapPanel>
+            </Expander>
+          </StackPanel>
+          <DataGrid x:Name="LogTable" Grid.Row="2" Margin="0,6,0,0" ItemsSource="{Binding LogView}" SelectedItem="{Binding SelectedLogEntry}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Local time" Width="110" x:DataType="m:LogEntry" Binding="{Binding LocalTimestamp, StringFormat='{}{0:HH:mm:ss.fff}'}"/>
+              <DataGridTemplateColumn Header="Level" CellTemplate="{StaticResource LogPriorityTemplate}" Width="84" SortMemberPath="Priority"/>
+              <DataGridTextColumn Header="Source" Width="135" x:DataType="m:LogEntry" Binding="{Binding Source}"/>
+              <DataGridTextColumn Width="70" CellStyleClasses="number" x:DataType="m:LogEntry" Binding="{Binding Pid, Converter={StaticResource NullText}}" SortMemberPath="Pid">
+                <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="PID"/></DataGridTextColumn.Header>
+              </DataGridTextColumn>
+              <DataGridTextColumn Header="Package" Width="205" x:DataType="m:LogEntry" Binding="{Binding PackageName, TargetNullValue='N/A'}"/>
+              <DataGridTextColumn Header="Message" Width="*" MinWidth="320" x:DataType="m:LogEntry" Binding="{Binding Message}"/>
+            </DataGrid.Columns>
+          </DataGrid>
+          <Border Grid.Row="3" Classes="panel" Margin="0,8,0,0" Padding="10">
+            <Grid RowDefinitions="Auto,*">
+              <DockPanel LastChildFill="False">
+                <TextBlock VerticalAlignment="Center" Text="Selected log detail" FontWeight="SemiBold"/>
+                <Button Content="Copy" DockPanel.Dock="Right" Padding="9,3" Command="{Binding CopySelectedLogCommand}"/>
+              </DockPanel>
+              <TextBox Grid.Row="1" Classes="plain" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                       Text="{Binding SelectedLogEntry.Message, TargetNullValue='Select a log row to inspect its complete message.', FallbackValue='Select a log row to inspect its complete message.'}"/>
+            </Grid>
+          </Border>
+        </Grid>
+
+        <!-- File Explorer -->
+        <Grid RowDefinitions="Auto,Auto,*,Auto" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=File Explorer}">
+          <DockPanel LastChildFill="False">
+            <StackPanel>
+              <TextBlock Text="File Explorer" Classes="sectionTitle"/>
+              <TextBlock Classes="accent" Text="{Binding DeviceContext}"/>
+            </StackPanel>
+            <TextBlock Text="Browse files and transfer between this computer and Android" TextWrapping="Wrap" Margin="20,0,0,0" Classes="muted" DockPanel.Dock="Right"/>
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,8" ColumnDefinitions="Auto,300,*,Auto">
+            <Button Content="Refresh both" Command="{Binding RefreshFileExplorerCommand}"/>
+            <TextBox Grid.Column="1" Margin="6,0" Watermark="Search both folders" ToolTip.Tip="Search both current directories" Text="{Binding FileSearchText}"/>
+            <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center" Margin="12,0" Text="{Binding TransferStatus}" TextTrimming="CharacterEllipsis"/>
+            <Button Grid.Column="3" Content="Cancel transfer" Command="{Binding CancelTransferCommand}"/>
+          </Grid>
+          <Grid Grid.Row="2" ColumnDefinitions="*,10,*">
+            <Border Classes="panel">
+              <Grid RowDefinitions="Auto,Auto,*">
+                <DockPanel LastChildFill="False">
+                  <TextBlock Text="This computer" FontSize="16" FontWeight="SemiBold"/>
+                  <TextBlock Classes="muted" TextTrimming="CharacterEllipsis" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="300" ToolTip.Tip="{Binding LocalPath}" Text="{Binding LocalPath, Converter={StaticResource PathTail}}"/>
+                </DockPanel>
+                <WrapPanel Grid.Row="1" Margin="0,5">
+                  <Button Content="←" Command="{Binding LocalBackCommand}"/>
+                  <Button Content="→" Command="{Binding LocalForwardCommand}"/>
+                  <Button Content="↑" Command="{Binding LocalUpCommand}"/>
+                  <Button Content="Open folder" Command="{Binding OpenSelectedLocalCommand}"/>
+                  <Button Content="Choose…" Command="{Binding BrowseLocalCommand}"/>
+                  <Button Content="File manager" Command="{Binding OpenLocalFolderCommand}"/>
+                </WrapPanel>
+                <DataGrid x:Name="LocalFileTable" Grid.Row="2" Margin="0,5,0,0" ItemsSource="{Binding LocalFileView}" SelectedItem="{Binding SelectedLocalFile}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" x:DataType="m:FileEntry" Binding="{Binding Name}"/>
+                    <DataGridTemplateColumn Header="Type" Width="65" SortMemberPath="IsDirectory">
+                      <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:FileEntry">
+                          <TextBlock Margin="12,0" VerticalAlignment="Center" Text="{Binding IsDirectory, Converter={StaticResource FolderText}}" Foreground="{Binding IsDirectory, Converter={StaticResource FolderBrush}}"/>
+                        </DataTemplate>
+                      </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Width="95" CellStyleClasses="number" x:DataType="m:FileEntry" Binding="{Binding Size, Converter={StaticResource BlankWhenNull}}" SortMemberPath="Size">
+                      <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Size"/></DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Modified" Width="150" x:DataType="m:FileEntry" Binding="{Binding ModifiedUtc, Converter={StaticResource LocalTimestamp}}" SortMemberPath="ModifiedUtc"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Classes="panel">
+              <Grid RowDefinitions="Auto,Auto,Auto,*">
+                <DockPanel LastChildFill="False">
+                  <TextBlock Text="Android device" FontSize="16" FontWeight="SemiBold"/>
+                  <TextBlock Classes="accent" DockPanel.Dock="Right" Margin="14,0,0,0" MaxWidth="280" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding RemotePath}" Text="{Binding RemotePath, Converter={StaticResource PathTail}}"/>
+                </DockPanel>
+                <WrapPanel Grid.Row="1" Margin="0,6">
+                  <Button Content="←" Command="{Binding RemoteBackCommand}"/>
+                  <Button Content="→" Command="{Binding RemoteForwardCommand}"/>
+                  <Button Content="↑" Command="{Binding RemoteUpCommand}"/>
+                  <Button Content="Open folder" Command="{Binding OpenSelectedRemoteCommand}"/>
+                  <ComboBox ItemsSource="{Binding RemoteQuickLocations}" SelectedItem="{Binding SelectedRemoteQuickLocation}" Width="170" Margin="3"/>
+                  <Button Content="Go" Command="{Binding GoRemoteQuickLocationCommand}"/>
+                </WrapPanel>
+                <WrapPanel Grid.Row="2" Margin="0,6">
+                  <TextBox Watermark="New folder name" ToolTip.Tip="New folder name" Text="{Binding NewRemoteFolderName}" Width="150" Margin="3"/>
+                  <Button Content="Create folder" Command="{Binding CreateRemoteFolderCommand}"/>
+                  <TextBox Watermark="New name" ToolTip.Tip="New name for selected item" Text="{Binding RemoteRenameText}" Width="150" Margin="3"/>
+                  <Button Content="Rename" Command="{Binding RenameRemoteCommand}"/>
+                  <Button Content="Delete" Command="{Binding DeleteRemoteCommand}"/>
+                </WrapPanel>
+                <DataGrid x:Name="RemoteFileTable" Grid.Row="3" Margin="0,5,0,0" ItemsSource="{Binding RemoteFileView}" SelectedItem="{Binding SelectedRemoteFile}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Width="*" MinWidth="140" x:DataType="m:FileEntry" Binding="{Binding Name}"/>
+                    <DataGridTemplateColumn Header="Type" Width="65" SortMemberPath="IsDirectory">
+                      <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="m:FileEntry">
+                          <TextBlock Margin="12,0" VerticalAlignment="Center" Text="{Binding IsDirectory, Converter={StaticResource FolderText}}" Foreground="{Binding IsDirectory, Converter={StaticResource FolderBrush}}"/>
+                        </DataTemplate>
+                      </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Width="95" CellStyleClasses="number" x:DataType="m:FileEntry" Binding="{Binding Size, Converter={StaticResource BlankWhenNull}}" SortMemberPath="Size">
+                      <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="Size"/></DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Modified" Width="150" x:DataType="m:FileEntry" Binding="{Binding ModifiedUtc, Converter={StaticResource LocalTimestamp}}" SortMemberPath="ModifiedUtc"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+          </Grid>
+          <Border Grid.Row="3" Background="#10171D" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0" Padding="6">
+            <DockPanel LastChildFill="False">
+              <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding TransferStatus}"/>
+              <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Push selected →" Command="{Binding PushFileCommand}"/>
+                <Button Content="← Pull selected" Command="{Binding PullFileCommand}"/>
+                <Button Content="Cancel" Command="{Binding CancelTransferCommand}"/>
+              </StackPanel>
+            </DockPanel>
+          </Border>
+        </Grid>
+
+        <!-- Network -->
+        <Grid RowDefinitions="Auto,Auto,190,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Network}">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <TextBlock Text="{Binding NetworkDiagnosticsStatus}" Classes="accent" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="560"/>
+              <Button Content="Refresh network" Command="{Binding RefreshNetworkDiagnosticsCommand}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Network Diagnostics" Classes="sectionTitle"/>
+              <TextBlock Text="Device-total and supported selected-package traffic are kept separate." Classes="muted"/>
+              <TextBlock Text="{Binding NetworkFailureSummary}" Classes="muted" Margin="0,4,0,0"/>
+            </StackPanel>
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,12,0,10" ColumnDefinitions="*,8,*,8,*,8,*">
+            <Border Classes="panel">
+              <StackPanel>
+                <TextBlock Text="Connection" Classes="muted"/>
+                <TextBlock Text="{Binding NetworkConnectionState}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="panel">
+              <StackPanel>
+                <TextBlock Text="Gateway" Classes="muted"/>
+                <TextBlock Text="{Binding NetworkGateway}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="4" Classes="panel">
+              <StackPanel>
+                <TextBlock Text="DNS servers" Classes="muted"/>
+                <TextBlock Text="{Binding NetworkDnsServers}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="6" Classes="panel">
+              <StackPanel>
+                <TextBlock Text="Session totals" Classes="muted"/>
+                <TextBlock Text="{Binding NetworkTotals}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+          <Grid Grid.Row="2" ColumnDefinitions="*,10,*">
+            <ContentControl ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding NetworkChart}"/>
+            <ContentControl Grid.Column="2" ContentTemplate="{StaticResource LiveChartTemplate}" Content="{Binding AppNetworkChart}"/>
+          </Grid>
+          <Grid Grid.Row="3" Margin="0,10,0,0" ColumnDefinitions="0.85*,10,1.4*">
+            <Border Classes="panel" Padding="0">
+              <Grid RowDefinitions="42,*">
+                <DockPanel Margin="11,9">
+                  <TextBlock Text="{Binding NetworkInterfaces.Count, StringFormat='{}{0} found'}" Classes="accent" DockPanel.Dock="Right"/>
+                  <TextBlock Text="Android interfaces" FontWeight="SemiBold"/>
+                </DockPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding NetworkInterfaces}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Interface" Width="95" x:DataType="vm:NetworkInterfaceRow" Binding="{Binding Name}"/>
+                    <DataGridTextColumn Header="State" Width="65" x:DataType="vm:NetworkInterfaceRow" Binding="{Binding State}"/>
+                    <DataGridTextColumn Header="Local addresses" Width="*" x:DataType="vm:NetworkInterfaceRow" Binding="{Binding Addresses}"/>
+                    <DataGridTextColumn Width="90" CellStyleClasses="number" x:DataType="vm:NetworkInterfaceRow" Binding="{Binding ReceivedBytes, Converter={StaticResource NullText}}" SortMemberPath="ReceivedBytes">
+                      <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="RX total"/></DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Width="90" CellStyleClasses="number" x:DataType="vm:NetworkInterfaceRow" Binding="{Binding SentBytes, Converter={StaticResource NullText}}" SortMemberPath="SentBytes">
+                      <DataGridTextColumn.Header><TextBlock Classes="numberHeader" Text="TX total"/></DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Classes="panel" Padding="0">
+              <Grid RowDefinitions="42,*">
+                <DockPanel Margin="11,6">
+                  <ComboBox DockPanel.Dock="Right" Width="205" ItemsSource="{Binding NetworkFilters}" SelectedItem="{Binding SelectedNetworkFilter}"/>
+                  <TextBlock Text="TCP / UDP sockets" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </DockPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredNetworkSockets}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Protocol" Width="65" x:DataType="vm:NetworkSocketRow" Binding="{Binding Protocol}"/>
+                    <DataGridTextColumn Header="State" Width="90" x:DataType="vm:NetworkSocketRow" Binding="{Binding State}"/>
+                    <DataGridTextColumn Header="Local address" Width="*" x:DataType="vm:NetworkSocketRow" Binding="{Binding LocalAddress}"/>
+                    <DataGridTextColumn Header="Port" Width="55" CellStyleClasses="number" x:DataType="vm:NetworkSocketRow" Binding="{Binding LocalPort}"/>
+                    <DataGridTextColumn Header="Remote address" Width="*" x:DataType="vm:NetworkSocketRow" Binding="{Binding RemoteAddress}"/>
+                    <DataGridTextColumn Header="Port" Width="55" CellStyleClasses="number" x:DataType="vm:NetworkSocketRow" Binding="{Binding RemotePort}"/>
+                    <DataGridTextColumn Header="UID" Width="65" x:DataType="vm:NetworkSocketRow" Binding="{Binding Uid}"/>
+                    <DataGridTextColumn Header="Package" Width="165" x:DataType="vm:NetworkSocketRow" Binding="{Binding PackageName}"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
+        <!-- ADB Shell -->
+        <Grid RowDefinitions="Auto,Auto,Auto,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=ADB Shell}">
+          <DockPanel>
+            <Border Background="#11272A" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,6" DockPanel.Dock="Right" VerticalAlignment="Top">
+              <TextBlock Classes="accent" Text="{Binding ShellStatus}"/>
+            </Border>
+            <StackPanel>
+              <TextBlock Text="ADB Shell" Classes="sectionTitle"/>
+              <TextBlock Classes="accent" Text="{Binding DeviceContext}"/>
+              <TextBlock Text="Shell commands can change device state. Nothing runs until Run is clicked." Foreground="{StaticResource WarningBrush}" Margin="0,6"/>
+            </StackPanel>
+          </DockPanel>
+          <Grid Grid.Row="1" Margin="0,6" ColumnDefinitions="250,Auto,*,Auto">
+            <ComboBox ItemsSource="{Binding ShellPresets}" SelectedItem="{Binding SelectedShellPreset}" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Use preset" Command="{Binding ApplyShellPresetCommand}" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="2" Text="Safe presets only fill the input; they do not execute." Classes="muted" VerticalAlignment="Center" Margin="12,0" TextTrimming="CharacterEllipsis"/>
+            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+              <Button Content="↑ History" Command="{Binding PreviousShellCommandCommand}"/>
+              <Button Content="↓ History" Command="{Binding NextShellCommandCommand}"/>
+              <Button Content="Clear output" Command="{Binding ClearShellOutputCommand}"/>
+              <Button Content="Save output" Command="{Binding SaveShellOutputCommand}"/>
+            </StackPanel>
+          </Grid>
+          <Grid Grid.Row="2" Margin="0,6" ColumnDefinitions="*,90,90">
+            <TextBox x:Name="ShellInput" Classes="mono" Watermark="adb shell command, for example getprop ro.build.version.release" Text="{Binding ShellCommand}" Margin="0,3,3,3"/>
+            <Button Grid.Column="1" Content="Run" Command="{Binding RunShellCommand}" HorizontalAlignment="Stretch"/>
+            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelShellCommand}" HorizontalAlignment="Stretch"/>
+          </Grid>
+          <Border Grid.Row="3" Classes="panel" Padding="0" Margin="0,6,0,0">
+            <TextBox Classes="mono plain" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" Text="{Binding ShellOutput}"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+          </Border>
+        </Grid>
+
+        <!-- Automation -->
+        <Grid RowDefinitions="Auto,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Automation}">
+          <DockPanel>
+            <Border Background="#11272A" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="7" Padding="10,6" DockPanel.Dock="Right" VerticalAlignment="Top">
+              <TextBlock Classes="accent" Text="{Binding AutomationState}"/>
+            </Border>
+            <StackPanel>
+              <TextBlock Text="Automation" Classes="sectionTitle"/>
+              <TextBlock Classes="accent" Text="{Binding DeviceContext}"/>
+              <TextBlock Classes="muted" Text="{Binding SelectedPackage, StringFormat='Selected package: {0}'}"/>
+            </StackPanel>
+          </DockPanel>
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+            <StackPanel>
+              <Border Classes="panel" Margin="0,0,0,8">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <StackPanel>
+                    <TextBlock Text="Application deployment" FontSize="16" FontWeight="SemiBold"/>
+                    <TextBlock Text="Selecting a file never installs it." Classes="muted"/>
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="14,0" Text="{Binding SelectedApkInfo}"/>
+                  <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="Select APK" Command="{Binding SelectApkCommand}"/>
+                    <Button Content="Install / reinstall" CommandParameter="Install APK" Command="{Binding RunAutomationCommand}"/>
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <Border Classes="panel" Margin="0,0,0,8">
+                <StackPanel>
+                  <TextBlock Text="Application controls" FontSize="16" FontWeight="SemiBold"/>
+                  <WrapPanel Margin="0,7,0,0">
+                    <Button Content="Launch" CommandParameter="Launch" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Restart" CommandParameter="Restart" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Force Stop" CommandParameter="Force Stop" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Clear Data" CommandParameter="Clear Data" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Uninstall" CommandParameter="Uninstall" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="App Info" CommandParameter="App Info" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Grant permission" CommandParameter="Grant Permission" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Revoke permission" CommandParameter="Revoke Permission" Command="{Binding RunAutomationCommand}"/>
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+              <Border Classes="panel" Margin="0,0,0,8">
+                <Grid RowDefinitions="Auto,Auto,Auto">
+                  <TextBlock Text="Device input controls" FontSize="16" FontWeight="SemiBold"/>
+                  <Grid Grid.Row="1" Margin="0,8" ColumnDefinitions="Auto,150,Auto,240,Auto,90,*">
+                    <TextBlock Text="Coordinates" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="1" Margin="7,0" Text="{Binding AutomationCoordinates}"/>
+                    <TextBlock Grid.Column="2" Text="Text / permission" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="3" Margin="7,0" Text="{Binding AutomationText}"/>
+                    <TextBlock Grid.Column="4" Text="Swipe ms" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="5" Margin="7,0" Text="{Binding SwipeDurationMs}"/>
+                  </Grid>
+                  <WrapPanel Grid.Row="2">
+                    <Button Content="Back" CommandParameter="Back" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Home" CommandParameter="Home" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Recents" CommandParameter="Recents" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Power" CommandParameter="Power" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Vol +" CommandParameter="Volume Up" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Vol −" CommandParameter="Volume Down" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Enter" CommandParameter="Enter" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Escape" CommandParameter="Escape" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Tap center" CommandParameter="Tap Center" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Tap x,y" CommandParameter="Tap Coordinates" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Long press" CommandParameter="Long Press" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Double tap" CommandParameter="Double Tap" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Swipe ↑" CommandParameter="Swipe Up" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Swipe ↓" CommandParameter="Swipe Down" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Swipe ←" CommandParameter="Swipe Left" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Swipe →" CommandParameter="Swipe Right" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Send text" CommandParameter="Send Text" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Portrait" CommandParameter="Portrait" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Landscape L" CommandParameter="Landscape Left" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Landscape R" CommandParameter="Landscape Right" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Auto rotate" CommandParameter="Auto Rotation" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Screenshot" CommandParameter="Screenshot" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Start recording" CommandParameter="Start Recording" Command="{Binding RunAutomationCommand}"/>
+                    <Button Content="Stop recording" CommandParameter="Stop Recording" Command="{Binding RunAutomationCommand}"/>
+                  </WrapPanel>
+                </Grid>
+              </Border>
+              <Grid Height="390" ColumnDefinitions="1.25*,10,*">
+                <Border Classes="panel">
+                  <Grid RowDefinitions="Auto,Auto,*">
+                    <DockPanel>
+                      <TextBlock Classes="accent" DockPanel.Dock="Right" Text="{Binding AutomationState}"/>
+                      <TextBlock Text="Linear test sequence" Classes="cardTitle"/>
+                    </DockPanel>
+                    <Grid Grid.Row="1" Margin="0,8" ColumnDefinitions="175,*,90,Auto">
+                      <ComboBox ItemsSource="{Binding AutomationStepKinds}" SelectedItem="{Binding SelectedStepKind}"/>
+                      <TextBox Grid.Column="1" Margin="6,0" Watermark="Argument" ToolTip.Tip="Step argument: text, coordinates, package, or log text" Text="{Binding NewStepArgument}"/>
+                      <TextBox Grid.Column="2" Margin="0,0,6,0" Watermark="ms" ToolTip.Tip="Wait/timeout ms" Text="{Binding NewStepDurationMs}"/>
+                      <Button Grid.Column="3" Content="Add step" Command="{Binding AddSequenceStepCommand}"/>
+                    </Grid>
+                    <Grid Grid.Row="2" RowDefinitions="Auto,*">
+                      <WrapPanel>
+                        <Button Content="↑" Command="{Binding MoveSequenceStepUpCommand}" CommandParameter="{Binding SelectedSequenceStep}"/>
+                        <Button Content="↓" Command="{Binding MoveSequenceStepDownCommand}" CommandParameter="{Binding SelectedSequenceStep}"/>
+                        <Button Content="Remove" Command="{Binding RemoveSequenceStepCommand}" CommandParameter="{Binding SelectedSequenceStep}"/>
+                        <TextBlock Text="Repeat" VerticalAlignment="Center" Margin="12,0,4,0"/>
+                        <TextBox Width="52" Text="{Binding AutomationRepeatCount}"/>
+                        <CheckBox Content="Stop on failure" VerticalAlignment="Center" Margin="10,0" IsChecked="{Binding AutomationStopOnFailure}"/>
+                        <Button Content="Run" Command="{Binding RunSequenceCommand}"/>
+                        <Button Content="Pause" Command="{Binding PauseSequenceCommand}"/>
+                        <Button Content="Resume" Command="{Binding ResumeSequenceCommand}"/>
+                        <Button Content="Stop" Command="{Binding StopSequenceCommand}"/>
+                      </WrapPanel>
+                      <DataGrid Grid.Row="1" Margin="0,6" ItemsSource="{Binding SequenceSteps}" SelectedItem="{Binding SelectedSequenceStep}">
+                        <DataGrid.Columns>
+                          <DataGridTextColumn Header="Step" Width="*" x:DataType="m:AutomationStep" Binding="{Binding Name}"/>
+                          <DataGridTextColumn Header="Argument" Width="170" x:DataType="m:AutomationStep" Binding="{Binding Argument, TargetNullValue='—'}"/>
+                          <DataGridTextColumn Header="Duration" Width="105" x:DataType="m:AutomationStep" Binding="{Binding Duration, TargetNullValue='—'}"/>
+                          <DataGridCheckBoxColumn Header="Destructive" Width="95" x:DataType="m:AutomationStep" Binding="{Binding IsDestructive}"/>
+                        </DataGrid.Columns>
+                      </DataGrid>
+                    </Grid>
+                  </Grid>
+                </Border>
+                <Border Grid.Column="2" Classes="panel">
+                  <Grid RowDefinitions="Auto,*">
+                    <TextBlock Text="Automation output" Classes="cardTitle"/>
+                    <TextBox Grid.Row="1" Classes="mono" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" Margin="0,8,0,0" Text="{Binding AutomationLog}"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                  </Grid>
+                </Border>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </Grid>
+
+        <!-- Alerts -->
+        <Grid RowDefinitions="Auto,210,*" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Alerts}">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button Content="Acknowledge selected" Command="{Binding AcknowledgeAlertCommand}"/>
+              <Button Content="Clear resolved" Command="{Binding ClearResolvedAlertsCommand}"/>
+              <Button Content="Export history" Command="{Binding ExportAlertsCommand}"/>
+            </StackPanel>
+            <StackPanel>
+              <TextBlock Text="Alerts" Classes="sectionTitle"/>
+              <TextBlock Text="Active problems, persistent history and editable first-build thresholds" Classes="muted"/>
+            </StackPanel>
+          </DockPanel>
+          <Border Grid.Row="1" Classes="panel" Padding="0" Margin="0,12,0,10">
+            <Grid RowDefinitions="38,*">
+              <DockPanel Margin="11,9">
+                <TextBlock Text="{Binding ActiveAlerts.Count, StringFormat='{}{0} active'}" Classes="accent" DockPanel.Dock="Right"/>
+                <TextBlock Text="Active alerts" FontWeight="SemiBold"/>
+              </DockPanel>
+              <DataGrid Grid.Row="1" ItemsSource="{Binding ActiveAlerts}" SelectedItem="{Binding SelectedActiveAlert}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Time" Width="145" x:DataType="m:SessionAlert" Binding="{Binding TimestampUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}"/>
+                  <DataGridTextColumn Header="Severity" Width="85" x:DataType="m:SessionAlert" Binding="{Binding Severity}"/>
+                  <DataGridTextColumn Header="Type" Width="165" x:DataType="m:SessionAlert" Binding="{Binding Type}"/>
+                  <DataGridTextColumn Header="Message" Width="*" x:DataType="m:SessionAlert" Binding="{Binding Message}"/>
+                </DataGrid.Columns>
+              </DataGrid>
+            </Grid>
+          </Border>
+          <Grid Grid.Row="2" ColumnDefinitions="1.15*,10,*">
+            <Border Classes="panel" Padding="0">
+              <Grid RowDefinitions="42,*">
+                <StackPanel Orientation="Horizontal" Margin="11,9">
+                  <TextBlock Text="Alert rules" FontWeight="SemiBold"/>
+                  <TextBlock Text="  ·  Changes apply immediately" Classes="muted"/>
+                </StackPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding AlertRules}" IsReadOnly="False">
+                  <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="On" Width="50" x:DataType="m:AlertRule" Binding="{Binding Enabled, Mode=TwoWay}"/>
+                    <DataGridTextColumn Header="Rule" Width="135" x:DataType="m:AlertRule" Binding="{Binding Type}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Metric" Width="145" x:DataType="m:AlertRule" Binding="{Binding Metric}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Threshold" Width="90" x:DataType="m:AlertRule" Binding="{Binding Threshold, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue='—'}"/>
+                    <DataGridTextColumn Header="Unit" Width="55" x:DataType="m:AlertRule" Binding="{Binding Unit}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="For (s)" Width="70" x:DataType="m:AlertRule" Binding="{Binding DurationSeconds, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                    <DataGridTextColumn Header="Severity" Width="80" x:DataType="m:AlertRule" Binding="{Binding Severity, Mode=TwoWay}"/>
+                    <DataGridCheckBoxColumn Header="System" Width="70" x:DataType="m:AlertRule" Binding="{Binding SystemCritical, Mode=OneWay}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Description" Width="*" x:DataType="m:AlertRule" Binding="{Binding Description}" IsReadOnly="True"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+            <Border Grid.Column="2" Classes="panel" Padding="0">
+              <Grid RowDefinitions="42,*">
+                <DockPanel Margin="11,9">
+                  <TextBlock Text="{Binding Alerts.Count, StringFormat='{}{0} entries'}" Classes="muted" DockPanel.Dock="Right"/>
+                  <TextBlock Text="Alert history" FontWeight="SemiBold"/>
+                </DockPanel>
+                <DataGrid Grid.Row="1" ItemsSource="{Binding Alerts}">
+                  <DataGrid.Columns>
+                    <DataGridTextColumn Header="Time" Width="135" x:DataType="m:SessionAlert" Binding="{Binding TimestampUtc, StringFormat='{}{0:MM-dd HH:mm:ss}'}"/>
+                    <DataGridTextColumn Header="Severity" Width="75" x:DataType="m:SessionAlert" Binding="{Binding Severity}"/>
+                    <DataGridTextColumn Header="Type" Width="125" x:DataType="m:SessionAlert" Binding="{Binding Type}"/>
+                    <DataGridTextColumn Header="Message" Width="*" x:DataType="m:SessionAlert" Binding="{Binding Message}"/>
+                    <DataGridCheckBoxColumn Header="Resolved" Width="80" x:DataType="m:SessionAlert" Binding="{Binding Resolved}" IsReadOnly="True"/>
+                  </DataGrid.Columns>
+                </DataGrid>
+              </Grid>
+            </Border>
+          </Grid>
+        </Grid>
+
+        <!-- Settings -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Settings}">
+          <StackPanel>
+            <DockPanel Margin="0,0,0,12">
+              <TextBlock Text="{Binding DemoBadge}" Foreground="{StaticResource WarningBrush}" FontWeight="Bold" DockPanel.Dock="Right" VerticalAlignment="Center"/>
+              <StackPanel>
+                <TextBlock Text="Settings" Classes="sectionTitle"/>
+                <TextBlock Text="Local configuration, ADB diagnostics, retention and safety" Classes="muted"/>
+              </StackPanel>
+            </DockPanel>
+            <Grid ColumnDefinitions="*,12,*">
+              <StackPanel>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="General" Classes="cardTitle"/>
+                    <CheckBox Content="Start when I log in" IsChecked="{Binding LaunchAtStartup}" Margin="0,10,0,4" ToolTip.Tip="Adds an entry to ~/.config/autostart"/>
+                    <CheckBox Content="Restore last selected page" IsChecked="{Binding RestoreLastPage}" Margin="0,4"/>
+                    <CheckBox Content="Restore last selected device when available" IsChecked="{Binding RestoreLastDevice}" Margin="0,4"/>
+                    <CheckBox Content="Automatically reconnect to the last device" IsChecked="{Binding AutoReconnectLastDevice}" Margin="0,4"/>
+                    <CheckBox Content="Confirm before closing during recording" IsChecked="{Binding ConfirmRecordingClose}" Margin="0,4"/>
+                    <CheckBox Content="Confirm before closing during Automation" IsChecked="{Binding ConfirmAutomationClose}" Margin="0,4"/>
+                    <TextBlock Text="UI language: system language (future localization)" Classes="muted" Margin="0,10,0,0"/>
+                    <TextBlock Text="Updates: local/offline distribution only; no cloud telemetry" Classes="muted" Margin="0,4,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="ADB" Classes="cardTitle"/>
+                    <TextBlock Text="Configured adb" Classes="muted" Margin="0,9,0,4"/>
+                    <DockPanel>
+                      <Button Content="Browse" Command="{Binding SelectAdbExecutableCommand}" DockPanel.Dock="Right"/>
+                      <Button Content="Apply" Command="{Binding ApplyAdbPathCommand}" DockPanel.Dock="Right"/>
+                      <TextBox Text="{Binding SelectedAdbPath}" Watermark="Leave empty to use the Android SDK or PATH"/>
+                    </DockPanel>
+                    <WrapPanel Margin="0,7,0,4">
+                      <Button Content="Auto-detect" Command="{Binding AutoDetectAdbCommand}"/>
+                      <Button Content="Test connection" Command="{Binding TestAdbConnectionCommand}"/>
+                      <Button Content="Restart ADB server…" Classes="warning" Command="{Binding RestartAdbServerCommand}"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding AdbVersion, StringFormat='Version: {0}'}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding AdbServerState, StringFormat='Server state: {0}'}"/>
+                    <TextBlock Text="Default command timeout: 15 seconds · adb root is never run automatically" Classes="muted" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Wireless debugging: pair/connect the device with Android Platform Tools; it will then appear in the global target selector." Classes="muted" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="USB on Linux: if the device shows as unauthorized or no permissions, install your distribution's android-udev-rules package (or add a udev rule for vendor 18d1), then replug the cable and accept the prompt on the phone." Foreground="{StaticResource WarningBrush}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                    <Border Background="#0E151A" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="5" Padding="8" Margin="0,8,0,0">
+                      <TextBlock Text="{Binding AdbDiagnostics}" Classes="mono" FontSize="11" TextWrapping="Wrap"/>
+                    </Border>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Monitoring · read-only in first build" Classes="cardTitle"/>
+                    <Grid Margin="0,9,0,0" ColumnDefinitions="*,*">
+                      <StackPanel>
+                        <TextBlock Text="Lightweight metrics   1 second"/>
+                        <TextBlock Text="Process refresh        2 seconds"/>
+                        <TextBlock Text="Heavy metrics          5 seconds"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Text="Device discovery       5 seconds"/>
+                        <TextBlock Text="Live chart window      10 minutes"/>
+                        <TextBlock Text="Summary sparkline      60 seconds"/>
+                      </StackPanel>
+                    </Grid>
+                    <TextBlock Text="These values are fixed in the first build and will become configurable in a later version." Foreground="{StaticResource WarningBrush}" Margin="0,9,0,0" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+              <StackPanel Grid.Column="2">
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Storage and sessions" Classes="cardTitle"/>
+                    <TextBlock Text="{Binding SessionDirectory, StringFormat='Session directory: {0}'}" Classes="muted" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Retention: keep locally until manual cleanup"/>
+                    <TextBlock Text="Completed sessions: saved automatically"/>
+                    <TextBlock Text="{Binding SessionStorageSummary, StringFormat='Local session storage: {0}'}" Classes="muted" TextWrapping="Wrap"/>
+                    <TextBlock Text="Exports: ~/Documents/Android Dev Monitor/Exports" Classes="muted"/>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Open session directory" Command="{Binding OpenSessionDirectoryCommand}"/>
+                      <Button Content="Clear completed sessions…" Classes="danger" Command="{Binding ClearOldSessionsCommand}"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Media" Classes="cardTitle"/>
+                    <TextBlock Text="{Binding ScreenshotDirectory, StringFormat='Screenshot directory: {0}'}" Classes="muted" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding RecordingDirectory, StringFormat='Recording directory: {0}'}" Classes="muted" TextWrapping="Wrap"/>
+                    <TextBlock Text="PNG: screenshot-{serial}-{yyyyMMdd-HHmmss-fff}.png"/>
+                    <TextBlock Text="MP4: recording-{serial}-{yyyyMMdd-HHmmss-fff}.mp4"/>
+                    <TextBlock Text="{Binding MediaStorageSummary, StringFormat='Local media: {0}'}" Classes="muted" TextWrapping="Wrap"/>
+                    <WrapPanel Margin="0,7,0,0">
+                      <Button Content="Open media directory" Command="{Binding OpenMediaDirectoryCommand}"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Logs" Classes="cardTitle"/>
+                    <TextBlock Text="{Binding DiagnosticsDirectory, StringFormat='Application log directory: {0}'}" Classes="muted" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Retention: 14 daily files · maximum 25 MB per file"/>
+                    <TextBlock Text="Default logcat priority: unfiltered · buffer: Android default"/>
+                    <TextBlock Text="Appium follow: explicit file import; no background file watcher" Classes="muted" TextWrapping="Wrap"/>
+                    <Button Content="Open diagnostics directory" HorizontalAlignment="Left" Margin="0,7,0,0" Command="{Binding OpenDiagnosticsDirectoryCommand}"/>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Appearance" Classes="cardTitle"/>
+                    <TextBlock Text="Dark theme" Margin="0,8,0,4"/>
+                    <CheckBox Content="Compact density (clear for comfortable density)" IsChecked="{Binding CompactDensity}" Margin="0,4"/>
+                    <TextBlock Text="Sidebar collapse, chart animation, reduce motion and font scaling are reserved for a later build; no inactive controls are exposed." Classes="muted" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Alerts, notifications and safety" Classes="cardTitle"/>
+                    <CheckBox Content="Desktop notifications (future)" IsChecked="{Binding WindowsNotificationsEnabled}" IsEnabled="False" Margin="0,4"/>
+                    <CheckBox Content="Enable alert sounds" IsChecked="{Binding AlertSoundsEnabled}" Margin="0,4"/>
+                    <CheckBox Content="Capture screenshot when an alert starts" IsChecked="{Binding ScreenshotOnAlert}" Margin="0,4"/>
+                    <CheckBox Content="Start screen recording when an alert starts" IsChecked="{Binding RecordingOnAlert}" Margin="0,4"/>
+                    <CheckBox Content="Quiet mode" IsChecked="{Binding QuietMode}" Margin="0,4"/>
+                    <TextBlock Text="Default alert behavior: show active alert, add session event, sound unless Quiet mode is enabled." Classes="muted" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Clear App Data, Uninstall, device-file deletion and Restart ADB always require confirmation showing the exact serial." Foreground="{StaticResource WarningBrush}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Raw shell commands never run until Run is clicked." Classes="muted" Margin="0,4,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Demo mode" Classes="cardTitle"/>
+                    <TextBlock Text="{Binding DemoModeStatus}" Margin="0,8,0,4" TextWrapping="Wrap"/>
+                    <WrapPanel>
+                      <Button Content="{Binding DemoModeActionText}" Command="{Binding RestartWithOtherDataModeCommand}"/>
+                      <Button Content="Reset demo data" Command="{Binding ResetDemoDataCommand}"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+                <Border Classes="panel">
+                  <StackPanel>
+                    <DockPanel>
+                      <TextBlock Text="{Binding ApplicationVersion, StringFormat='v{0}'}" Classes="accent" DockPanel.Dock="Right"/>
+                      <TextBlock Text="Diagnostics" Classes="cardTitle"/>
+                    </DockPanel>
+                    <Grid Margin="0,8,0,0" ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                      <TextBlock Text=".NET runtime" Classes="muted"/><TextBlock Grid.Column="1" Text="{Binding DotNetVersion}"/>
+                      <TextBlock Grid.Row="1" Text="Database" Classes="muted"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding DatabasePath}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding DatabasePath}"/>
+                      <TextBlock Grid.Row="2" Text="ADB path" Classes="muted"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AdbPathDisplay}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding AdbPathDisplay}"/>
+                      <TextBlock Grid.Row="3" Text="ADB version" Classes="muted"/><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AdbVersion}" TextWrapping="Wrap"/>
+                      <TextBlock Grid.Row="4" Text="Collectors / queues" Classes="muted"/><TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding CollectorStatus}" TextWrapping="Wrap"/>
+                      <TextBlock Grid.Row="5" Text="Last commands" Classes="muted"/><TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LastAdbCommandTimings}" Classes="mono" FontSize="10" TextWrapping="Wrap"/>
+                      <TextBlock Grid.Row="6" Text="Last parser error" Classes="muted"/><TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LastParserError}" TextWrapping="Wrap"/>
+                    </Grid>
+                    <WrapPanel Margin="0,8,0,0">
+                      <Button Content="Export diagnostics package" Command="{Binding ExportDiagnosticsCommand}"/>
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- Help -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" IsVisible="{Binding CurrentPage, Converter={StaticResource Equal}, ConverterParameter=Help}">
+          <StackPanel MaxWidth="1180" Margin="0,0,18,0">
+            <DockPanel Margin="0,0,0,14">
+              <Button DockPanel.Dock="Right" Content="Open complete HTML guide" Classes="primary" Command="{Binding OpenUserGuideCommand}" ToolTip.Tip="Opens the local guide in your browser" VerticalAlignment="Top"/>
+              <StackPanel>
+                <TextBlock Text="Help" Classes="sectionTitle"/>
+                <TextBlock Text="Everything below works from one selected device and one selected app." Classes="muted"/>
+              </StackPanel>
+            </DockPanel>
+            <Border Classes="panel" Padding="20" Margin="0,0,0,12">
+              <StackPanel>
+                <TextBlock Text="Start in 3 steps" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                <Grid ColumnDefinitions="*,18,*,18,*">
+                  <StackPanel>
+                    <Border Width="30" Height="30" CornerRadius="15" Background="#12343D" HorizontalAlignment="Left" Margin="0,0,0,8">
+                      <TextBlock Text="1" Classes="accent" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="Connect an Android device" FontWeight="SemiBold"/>
+                    <TextBlock Text="Enable Developer options and USB debugging, plug it in, then accept the prompt on the phone." Classes="muted" TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2">
+                    <Border Width="30" Height="30" CornerRadius="15" Background="#12343D" HorizontalAlignment="Left" Margin="0,0,0,8">
+                      <TextBlock Text="2" Classes="accent" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="Select it at the top" FontWeight="SemiBold"/>
+                    <TextBlock Text="Choose the device in the first selector. Use the second selector to choose the app you want to inspect." Classes="muted" TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <StackPanel Grid.Column="4">
+                    <Border Width="30" Height="30" CornerRadius="15" Background="#12343D" HorizontalAlignment="Left" Margin="0,0,0,8">
+                      <TextBlock Text="3" Classes="accent" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="Reproduce the problem" FontWeight="SemiBold"/>
+                    <TextBlock Text="Press Mark Event at the exact moment it happens, then export the session from the top bar." Classes="muted" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+            </Border>
+            <Grid Margin="0,0,0,12" ColumnDefinitions="*,12,*,12,*">
+              <Border Classes="panel" Padding="18">
+                <StackPanel>
+                  <TextBlock Text="Find your way around" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <TextBlock Text="Overview — live cards and processes" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Developer Tools — reports and APK analysis" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Wireless — pair and manage Wi-Fi devices" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Performance — stored sessions and A/B comparison" Classes="muted" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="panel" Padding="18">
+                <StackPanel>
+                  <TextBlock Text="Capture evidence" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <TextBlock Text="Logs — filter live logcat without losing rows" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Media — screenshots and recordings with context" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Alerts — automatic CPU, memory and network warnings" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Export Session — JSON, CSV or a complete ZIP" Classes="muted" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="4" Classes="panel" Padding="18">
+                <StackPanel>
+                  <TextBlock Text="Work directly on the device" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <TextBlock Text="File Explorer — copy files in both directions" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="ADB Shell — run a command only when you click Run" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Automation — repeat taps, swipes and text input" Classes="muted" TextWrapping="Wrap"/>
+                  <TextBlock Text="Settings — ADB path, storage, safety and diagnostics" Classes="muted" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+            <Grid ColumnDefinitions="*,12,*">
+              <Border Classes="panel" Padding="18">
+                <StackPanel>
+                  <TextBlock Text="When a value shows N/A" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <TextBlock Text="N/A and — mean the device did not expose that counter. Android versions, vendors and app permissions decide what is available; the app never invents a value." Classes="muted" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Classes="panel" Padding="18">
+                <StackPanel>
+                  <TextBlock Text="Safe by default" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <TextBlock Text="Destructive actions always ask for confirmation with the exact device or package. Sessions, media and reports stay on this computer; standard monitoring does not use root or cloud telemetry." Classes="muted" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+
+    <!-- Status bar -->
+    <Border Grid.Column="1" Grid.Row="1" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,6">
+      <Grid ColumnDefinitions="*,Auto">
+        <DockPanel Margin="0,0,18,0">
+          <TextBlock DockPanel.Dock="Left" Text="{Binding BottomDeviceContext}"/>
+          <TextBlock DockPanel.Dock="Left" Text="  ·  "/>
+          <TextBlock Classes="muted" Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis"/>
+        </DockPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal">
+          <TextBlock Foreground="{StaticResource WarningBrush}" FontWeight="Bold" Margin="0,0,16,0" Text="{Binding DemoBadge}"/>
+          <TextBlock Classes="muted" Text="{Binding DataAge}"/>
+          <TextBlock Text="  ·  "/>
+          <TextBlock Text="{Binding SessionStatus}"/>
+          <TextBlock Text="  ·  "/>
+          <TextBlock Classes="accent" Text="{Binding CollectionState}"/>
+          <TextBlock Text="  ·  "/>
+          <TextBlock Foreground="{StaticResource SuccessBrush}" Text="{Binding ConnectionText}"/>
+          <TextBlock Foreground="#FF6B6B" FontWeight="SemiBold" Margin="14,0,0,0" Text="{Binding RecordingState}"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

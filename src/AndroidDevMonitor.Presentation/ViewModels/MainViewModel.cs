@@ -120,7 +120,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     [ObservableProperty] private bool _isAutomationRunning;
     [ObservableProperty] private bool _isAutomationPaused;
     [ObservableProperty] private string _automationState = "Idle";
-    [ObservableProperty] private string _localPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+    [ObservableProperty] private string _localPath = AppPaths.DocumentsDirectory;
     [ObservableProperty] private string _remotePath = "/sdcard";
     [ObservableProperty] private string _fileSearchText = "";
     [ObservableProperty] private string _newRemoteFolderName = "NewFolder";
@@ -474,7 +474,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         {
             return;
         }
-        string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Android Dev Monitor", "Exports");
+        string directory = AppPaths.ExportsDirectory;
         try
         {
             string path = await _exporter.ExportZipAsync(_session, directory, CancellationToken.None);
@@ -502,7 +502,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             _dialogs.Notify("The selected session could not be loaded.", error: true);
             return;
         }
-        string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Android Dev Monitor", "Exports");
+        string directory = AppPaths.ExportsDirectory;
         try
         {
             StoredSessionStatus = "Exporting " + (format ?? "ZIP") + "…";
@@ -526,7 +526,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     [RelayCommand]
     private void OpenSessionExportFolder()
     {
-        string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Android Dev Monitor", "Exports");
+        string directory = AppPaths.ExportsDirectory;
         Directory.CreateDirectory(directory);
         OpenInShell(directory);
     }

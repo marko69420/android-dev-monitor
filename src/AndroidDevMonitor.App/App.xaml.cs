@@ -7,6 +7,7 @@ using AndroidDevMonitor.App.Services;
 using AndroidDevMonitor.Presentation.Platform;
 using AndroidDevMonitor.Presentation.ViewModels;
 using AndroidDevMonitor.Collectors.Sources;
+using AndroidDevMonitor.Core.Configuration;
 using AndroidDevMonitor.Core.Services;
 using AndroidDevMonitor.Infrastructure.Database;
 using AndroidDevMonitor.Infrastructure.Gpu;
@@ -24,7 +25,7 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e); var demo = e.Args.Any(x => x.Equals("--demo", StringComparison.OrdinalIgnoreCase));
-        var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AndroidDevMonitor"); Directory.CreateDirectory(data);
+        var data = AppPaths.DataDirectory; Directory.CreateDirectory(data);
         var logDirectory = Path.Combine(data, "Logs"); Directory.CreateDirectory(logDirectory);
         Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(
             Path.Combine(logDirectory, "android-dev-monitor-.log"),

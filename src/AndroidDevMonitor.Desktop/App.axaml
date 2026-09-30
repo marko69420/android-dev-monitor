@@ -1,0 +1,148 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AndroidDevMonitor.Desktop.App"
+             RequestedThemeVariant="Dark"
+             Name="Android Dev Monitor">
+  <Application.Resources>
+    <ResourceDictionary>
+      <Color x:Key="BackgroundColor">#0D1217</Color>
+      <Color x:Key="SidebarColor">#10171D</Color>
+      <Color x:Key="PanelColor">#151E25</Color>
+      <Color x:Key="Panel2Color">#18232B</Color>
+      <Color x:Key="BorderColor">#26343D</Color>
+      <Color x:Key="AccentColor">#19C3D4</Color>
+      <Color x:Key="SuccessColor">#59D35F</Color>
+      <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+      <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}"/>
+      <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}"/>
+      <SolidColorBrush x:Key="Panel2Brush" Color="{StaticResource Panel2Color}"/>
+      <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+      <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+      <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+      <SolidColorBrush x:Key="TextBrush" Color="#F2F6F8"/>
+      <SolidColorBrush x:Key="MutedBrush" Color="#93A2AD"/>
+      <SolidColorBrush x:Key="DangerBrush" Color="#FF8B87"/>
+      <SolidColorBrush x:Key="WarningBrush" Color="#E7B85B"/>
+      <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#0B1016" Offset="0"/>
+        <GradientStop Color="#10171D" Offset="0.45"/>
+        <GradientStop Color="#0C1620" Offset="1"/>
+      </LinearGradientBrush>
+      <LinearGradientBrush x:Key="PanelGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+        <GradientStop Color="#17222B" Offset="0"/>
+        <GradientStop Color="#131B22" Offset="1"/>
+      </LinearGradientBrush>
+      <FontFamily x:Key="MonoFont">DejaVu Sans Mono, Liberation Mono, Noto Sans Mono, Ubuntu Mono, Consolas, Menlo, monospace</FontFamily>
+      <!-- Fluent DataGrid colors -->
+      <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush" Color="#121B21"/>
+      <SolidColorBrush x:Key="DataGridColumnHeaderHoveredBackgroundBrush" Color="#18262E"/>
+      <SolidColorBrush x:Key="DataGridColumnHeaderPressedBackgroundBrush" Color="#1C2D38"/>
+      <SolidColorBrush x:Key="DataGridColumnHeaderForegroundBrush" Color="#C6D0D6"/>
+      <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#202D35"/>
+      <Color x:Key="DataGridRowHoveredBackgroundColor">#18262E</Color>
+      <SolidColorBrush x:Key="DataGridRowSelectedBackgroundBrush" Color="#123D49"/>
+      <SolidColorBrush x:Key="DataGridRowSelectedUnfocusedBackgroundBrush" Color="#123D49"/>
+      <SolidColorBrush x:Key="DataGridRowSelectedHoveredBackgroundBrush" Color="#164856"/>
+      <SolidColorBrush x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundBrush" Color="#164856"/>
+      <x:Double x:Key="DataGridRowSelectedBackgroundOpacity">1</x:Double>
+      <x:Double x:Key="DataGridRowSelectedUnfocusedBackgroundOpacity">1</x:Double>
+      <x:Double x:Key="DataGridRowSelectedHoveredBackgroundOpacity">1</x:Double>
+      <x:Double x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundOpacity">1</x:Double>
+      <SolidColorBrush x:Key="DataGridCellFocusVisualPrimaryBrush" Color="Transparent"/>
+      <SolidColorBrush x:Key="DataGridCellFocusVisualSecondaryBrush" Color="Transparent"/>
+      <SolidColorBrush x:Key="DataGridCurrencyVisualPrimaryBrush" Color="Transparent"/>
+
+      <!-- Flat rounded buttons with an accent border on hover, the same look as the Windows app. -->
+      <ControlTheme x:Key="{x:Type Button}" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,7"/>
+        <Setter Property="Margin" Value="3"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+          <ControlTemplate>
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Background="{TemplateBinding Background}"
+                              BorderBrush="{TemplateBinding BorderBrush}"
+                              BorderThickness="{TemplateBinding BorderThickness}"
+                              CornerRadius="{TemplateBinding CornerRadius}"
+                              Padding="{TemplateBinding Padding}"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Foreground="{TemplateBinding Foreground}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+          </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="#1C2A32"/>
+          <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+        </Style>
+        <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="#20343E"/>
+        </Style>
+        <Style Selector="^:disabled">
+          <Setter Property="Opacity" Value="0.42"/>
+        </Style>
+      </ControlTheme>
+
+      <!-- Column headers: the Fluent header reserves 32px for the sort arrow even when a column is not sorted,
+           which cuts off short headers such as "PID" or "CPU %". This one only takes space while sorted. -->
+      <ControlTheme x:Key="CompactColumnHeader" TargetType="DataGridColumnHeader">
+        <Setter Property="Foreground" Value="#C6D0D6"/>
+        <Setter Property="Background" Value="#121B21"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="SeparatorBrush" Value="#202D35"/>
+        <Setter Property="Padding" Value="8,6,6,6"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Panel Background="{TemplateBinding Background}">
+              <Grid ColumnDefinitions="*,Auto" Margin="{TemplateBinding Padding}">
+                <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                <Path x:Name="SortIcon" Grid.Column="1" Width="8" Height="5" Margin="4,0,0,0" Stretch="Uniform" IsVisible="False"
+                      Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+              </Grid>
+              <Rectangle x:Name="VerticalSeparator" Width="1" HorizontalAlignment="Right" Fill="{TemplateBinding SeparatorBrush}"
+                         IsVisible="{TemplateBinding AreSeparatorsVisible}"/>
+            </Panel>
+          </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover">
+          <Setter Property="Background" Value="#18262E"/>
+        </Style>
+        <Style Selector="^:pressed">
+          <Setter Property="Background" Value="#1C2D38"/>
+        </Style>
+        <Style Selector="^:sortascending /template/ Path#SortIcon">
+          <Setter Property="IsVisible" Value="True"/>
+          <Setter Property="Data" Value="M0,5 L4,0 L8,5 Z"/>
+        </Style>
+        <Style Selector="^:sortdescending /template/ Path#SortIcon">
+          <Setter Property="IsVisible" Value="True"/>
+          <Setter Property="Data" Value="M0,0 L8,0 L4,5 Z"/>
+        </Style>
+      </ControlTheme>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#19C3D4" AltHigh="#0D1217" RegionColor="#0D1217" BaseHigh="#F2F6F8" ChromeMediumLow="#18232B" ChromeLow="#151E25" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+    <StyleInclude Source="avares://AndroidDevMonitor/Styles.axaml"/>
+  </Application.Styles>
+</Application>

@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using AndroidDevMonitor.Core.Configuration;
 using AndroidDevMonitor.Core.Models;
 using AndroidDevMonitor.Presentation.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -67,8 +68,7 @@ public partial class MainViewModel
         "Closed or failed connections"
     ];
 
-    public string DataDirectory { get; } =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AndroidDevMonitor");
+    public string DataDirectory { get; } = AppPaths.DataDirectory;
     public string SessionDirectory => DataDirectory;
     public string DiagnosticsDirectory => Path.Combine(DataDirectory, "Logs");
     public string DatabasePath => Path.Combine(DataDirectory, "android-dev-monitor.db");
@@ -195,11 +195,12 @@ public partial class MainViewModel
         await RefreshAdbDiagnosticsAsync();
     }
 
-    private async Task<T> LoadSettingAsync<T>(string key, T fallback)
-    {
-        T? value = await _sessions.LoadSettingAsync<T>(key, CancellationToken.None);
-        return value is null ? fallback : value;
-    }
+    /// <summary>
+    /// Reads a stored switch, or the default when it was never saved. It loads bool? on purpose: for a plain bool
+    /// a missing key comes back as false, which silently turned every default-on setting off.
+    /// </summary>
+    private async Task<bool> LoadSettingAsync(string key, bool fallback) =>
+        await _sessions.LoadSettingAsync<bool?>(key, CancellationToken.None) ?? fallback;
 
     private async Task LoadAlertHistoryAsync()
     {
@@ -708,10 +709,7 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task ExportAlertsAsync()
     {
-        string directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-            "Android Dev Monitor",
-            "Exports");
+        string directory = AppPaths.ExportsDirectory;
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, $"alerts-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.csv");
         StringBuilder csv = new("timestamp_utc,severity,type,resolved,message\r\n");
@@ -844,6 +842,9 @@ public partial class MainViewModel
     private void OpenSessionDirectory() => OpenDirectory(SessionDirectory);
 
     [RelayCommand]
+    private void OpenMediaDirectory() => OpenDirectory(ScreenshotDirectory);
+
+    [RelayCommand]
     private async Task ClearOldSessionsAsync()
     {
         IReadOnlyList<SessionSummary> all = await _sessions.ListSessionSummariesAsync(CancellationToken.None);
@@ -871,10 +872,7 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task ExportDiagnosticsAsync()
     {
-        string directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Personal),
-            "Android Dev Monitor",
-            "Diagnostics");
+        string directory = Path.Combine(AppPaths.UserFilesDirectory, "Diagnostics");
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, $"diagnostics-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.zip");
 

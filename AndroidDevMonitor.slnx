@@ -4,6 +4,7 @@
     <Project Path="src/AndroidDevMonitor.App/AndroidDevMonitor.App.csproj" />
     <Project Path="src/AndroidDevMonitor.Collectors/AndroidDevMonitor.Collectors.csproj" />
     <Project Path="src/AndroidDevMonitor.Core/AndroidDevMonitor.Core.csproj" />
+    <Project Path="src/AndroidDevMonitor.Desktop/AndroidDevMonitor.Desktop.csproj" />
     <Project Path="src/AndroidDevMonitor.Infrastructure/AndroidDevMonitor.Infrastructure.csproj" />
     <Project Path="src/AndroidDevMonitor.Presentation/AndroidDevMonitor.Presentation.csproj" />
   </Folder>
