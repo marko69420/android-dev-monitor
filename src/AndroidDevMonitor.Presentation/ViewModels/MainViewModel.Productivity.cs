@@ -4,16 +4,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using AndroidDevMonitor.Adb.Parsers;
 using AndroidDevMonitor.Core.Analysis;
 using AndroidDevMonitor.Core.Models;
+using AndroidDevMonitor.Presentation.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MainViewModel
 {
@@ -25,15 +23,10 @@ public partial class MainViewModel
     [ObservableProperty] private string _appDataSummary = "List, then pull single files, from a debuggable app's private data directory over run-as.";
 
     [RelayCommand]
-    private void PickApkFile()
+    private async Task PickApkFileAsync()
     {
-        OpenFileDialog dialog = new()
-        {
-            Title = "Select an APK to install",
-            Filter = "Android package (*.apk)|*.apk|All files (*.*)|*.*",
-            CheckFileExists = true
-        };
-        if (dialog.ShowDialog() == true) ApkPath = dialog.FileName;
+        if (await _files.OpenFileAsync("Select an APK to install", [new FileTypeFilter("Android package", "*.apk"), FileTypeFilter.AllFiles]) is { } fileName)
+            ApkPath = fileName;
     }
 
     /// <summary>Installs or replaces a local APK with adb install -r, keeping existing app data.</summary>
@@ -58,7 +51,7 @@ public partial class MainViewModel
     private async Task UninstallAppAsync()
     {
         if (!TryGetDeviceAndPackage(out AndroidDevice device, out string package)) return;
-        if (!_dialogs.Confirm("Uninstall application", $"Uninstall {package} from {device.FriendlyName}?\n\nThis removes the app and all of its data from that device.")) return;
+        if (!await _dialogs.ConfirmAsync("Uninstall application", $"Uninstall {package} from {device.FriendlyName}?\n\nThis removes the app and all of its data from that device.")) return;
         AdbCommandResult result = await _adb.ExecuteAsync(device.Serial, ["uninstall", package], TimeSpan.FromMinutes(1), CancellationToken.None);
         DeviceLabOutput = (result.StandardOutput + result.StandardError).Trim();
         DeviceLabStatus = result.Success ? $"Uninstalled {package}." : "Uninstall failed: " + CleanError(result);
@@ -68,7 +61,7 @@ public partial class MainViewModel
     private async Task ClearAppDataAsync()
     {
         if (!TryGetDeviceAndPackage(out AndroidDevice device, out string package)) return;
-        if (!_dialogs.Confirm("Clear app data", $"Delete all private data, databases and caches of {package} on {device.FriendlyName}?")) return;
+        if (!await _dialogs.ConfirmAsync("Clear app data", $"Delete all private data, databases and caches of {package} on {device.FriendlyName}?")) return;
         AdbCommandResult result = await _adb.ExecuteAsync(device.Serial, ["shell", "pm", "clear", package], TimeSpan.FromSeconds(30), CancellationToken.None);
         DeviceLabOutput = (result.StandardOutput + result.StandardError).Trim();
         DeviceLabStatus = result.Success ? $"Cleared all data and caches for {package}." : "Clear data failed: " + CleanError(result);
@@ -205,8 +198,8 @@ public partial class MainViewModel
 
         try
         {
-            (byte[] beforePixels, int beforeWidth, int beforeHeight) = LoadBgra(shots[1].LocalPath);
-            (byte[] afterPixels, int afterWidth, int afterHeight) = LoadBgra(shots[0].LocalPath);
+            (byte[] beforePixels, int beforeWidth, int beforeHeight) = _images.LoadBgra(shots[1].LocalPath);
+            (byte[] afterPixels, int afterWidth, int afterHeight) = _images.LoadBgra(shots[0].LocalPath);
             if (beforeWidth != afterWidth || beforeHeight != afterHeight)
             {
                 ScreenshotDiffSummary = $"The two screenshots have different sizes ({beforeWidth}x{beforeHeight} vs {afterWidth}x{afterHeight}). Rotation or a resolution change makes a pixel diff meaningless; capture both frames in the same orientation.";
@@ -234,24 +227,6 @@ public partial class MainViewModel
         {
             ScreenshotDiffSummary = "Comparing screenshots failed: " + ex.Message;
         }
-    }
-
-    private static (byte[] Pixels, int Width, int Height) LoadBgra(string path)
-    {
-        BitmapImage image = new();
-        image.BeginInit();
-        image.CacheOption = BitmapCacheOption.OnLoad;
-        image.UriSource = new Uri(path, UriKind.Absolute);
-        image.EndInit();
-        image.Freeze();
-
-        FormatConvertedBitmap converted = new(image, PixelFormats.Bgra32, null, 0);
-        int width = converted.PixelWidth;
-        int height = converted.PixelHeight;
-        int stride = width * 4;
-        byte[] pixels = new byte[stride * height];
-        converted.CopyPixels(pixels, stride, 0);
-        return (pixels, width, height);
     }
 
     /// <summary>Lists a directory inside the app's private data area over run-as (debuggable builds only).</summary>

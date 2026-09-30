@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class TrackingMetricCardViewModel(string title, string unit, double maximum = double.NaN, bool useDeviceTotal = false) : ObservableObject
 {

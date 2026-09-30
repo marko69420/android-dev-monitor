@@ -1,7 +1,7 @@
 using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public sealed partial class ProcessDisplayRow : ObservableObject
 {

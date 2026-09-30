@@ -1,8 +1,7 @@
-using System.Diagnostics;
 using System.IO;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MainViewModel
 {
@@ -17,6 +16,6 @@ public partial class MainViewModel
             return;
         }
 
-        Process.Start(new ProcessStartInfo(UserGuidePath) { UseShellExecute = true });
+        OpenInShell(UserGuidePath);
     }
 }

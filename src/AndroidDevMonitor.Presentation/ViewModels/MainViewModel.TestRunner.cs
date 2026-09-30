@@ -10,7 +10,7 @@ using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MainViewModel
 {
@@ -219,7 +219,7 @@ public partial class MainViewModel
             _dialogs.Notify("Select an existing artifact first.", error: true);
             return;
         }
-        Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+        OpenInShell(target);
     }
 
     [RelayCommand]

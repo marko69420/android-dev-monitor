@@ -10,7 +10,7 @@ using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MainViewModel
 {
@@ -156,7 +156,7 @@ public partial class MainViewModel
     {
         string name = SnapshotName.Trim();
         if (!ValidSnapshotName(name)) { DeviceLabStatus = "Use letters, digits, dash or dot for the snapshot name."; return; }
-        if (!_dialogs.Confirm("Delete emulator snapshot", $"Delete snapshot '{name}' from the running emulator? This cannot be undone.")) return;
+        if (!await _dialogs.ConfirmAsync("Delete emulator snapshot", $"Delete snapshot '{name}' from the running emulator? This cannot be undone.")) return;
         await RunEmulatorConsoleAsync($"Delete snapshot '{name}'", ["emu", "avd", "snapshot", "delete", name]);
     }
 
@@ -322,7 +322,7 @@ public partial class MainViewModel
             _dialogs.Notify("Select an existing fleet artifact first.", error: true);
             return;
         }
-        Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+        OpenInShell(target);
     }
 
     [RelayCommand]

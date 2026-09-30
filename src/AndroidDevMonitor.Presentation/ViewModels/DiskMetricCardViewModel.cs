@@ -1,7 +1,7 @@
 using AndroidDevMonitor.Core.Formatting;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class DiskMetricCardViewModel : ObservableObject
 {

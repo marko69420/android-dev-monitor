@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using AndroidDevMonitor.Core.Configuration;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public sealed record ChartPoint(DateTimeOffset TimestampUtc, double? Value);
 public sealed record ChartAnnotation(DateTimeOffset TimestampUtc, string Label, bool IsAlert);

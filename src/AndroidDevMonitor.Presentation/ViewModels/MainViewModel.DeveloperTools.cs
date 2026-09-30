@@ -9,11 +9,11 @@ using AndroidDevMonitor.Adb.Execution;
 using AndroidDevMonitor.Adb.Parsers;
 using AndroidDevMonitor.Core.Analysis;
 using AndroidDevMonitor.Core.Models;
+using AndroidDevMonitor.Presentation.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public sealed record WirelessServiceRow(string Name, string Type, string Address, string Purpose);
 
@@ -270,21 +270,21 @@ public partial class MainViewModel
     private void OpenDeveloperLabDirectory()
     {
         Directory.CreateDirectory(DeveloperLabDirectory);
-        Process.Start(new ProcessStartInfo(DeveloperLabDirectory) { UseShellExecute = true });
+        OpenInShell(DeveloperLabDirectory);
     }
 
     [RelayCommand]
-    private void SelectComparisonApk()
+    private async Task SelectComparisonApkAsync()
     {
-        OpenFileDialog picker = new() { Title = "Select baseline APK", Filter = "Android package (*.apk)|*.apk", CheckFileExists = true };
-        if (picker.ShowDialog() == true) ComparisonApkPath = picker.FileName;
+        if (await _files.OpenFileAsync("Select baseline APK", [new FileTypeFilter("Android package", "*.apk")]) is { } fileName)
+            ComparisonApkPath = fileName;
     }
 
     [RelayCommand]
-    private void SelectBugReport()
+    private async Task SelectBugReportAsync()
     {
-        OpenFileDialog picker = new() { Title = "Select Android bug report", Filter = "Android bug report (*.zip;*.txt)|*.zip;*.txt|All files (*.*)|*.*", CheckFileExists = true };
-        if (picker.ShowDialog() == true) BugReportPath = picker.FileName;
+        if (await _files.OpenFileAsync("Select Android bug report", [new FileTypeFilter("Android bug report", "*.zip", "*.txt"), FileTypeFilter.AllFiles]) is { } fileName)
+            BugReportPath = fileName;
     }
 
     private async Task<string> CapturePerfettoAsync(AndroidDevice target)

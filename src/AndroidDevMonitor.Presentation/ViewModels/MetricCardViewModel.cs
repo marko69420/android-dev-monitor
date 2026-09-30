@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using AndroidDevMonitor.Core.Configuration;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MetricCardViewModel(string title, string unit, double chartMinimum = double.NaN, double chartMaximum = double.NaN) : ObservableObject
 {

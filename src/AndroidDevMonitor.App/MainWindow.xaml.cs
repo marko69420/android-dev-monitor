@@ -2,9 +2,8 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
-using AndroidDevMonitor.App.ViewModels;
+using AndroidDevMonitor.Presentation.ViewModels;
 using Serilog;
 
 namespace AndroidDevMonitor.App;
@@ -31,21 +30,12 @@ public partial class MainWindow : Window
     private async void OnMirrorFrameClick(object sender, MouseButtonEventArgs e)
     {
         if (sender is not Image image || DataContext is not MainViewModel viewModel) return;
-        if (viewModel.MirrorFrame is not BitmapSource bitmap || bitmap.PixelWidth <= 0 || bitmap.PixelHeight <= 0) return;
-        if (image.ActualWidth <= 0 || image.ActualHeight <= 0) return;
-
-        double scale = Math.Min(image.ActualWidth / bitmap.PixelWidth, image.ActualHeight / bitmap.PixelHeight);
-        if (scale <= 0) return;
-        double offsetX = (image.ActualWidth - bitmap.PixelWidth * scale) / 2;
-        double offsetY = (image.ActualHeight - bitmap.PixelHeight * scale) / 2;
         Point point = e.GetPosition(image);
-        double deviceX = (point.X - offsetX) / scale;
-        double deviceY = (point.Y - offsetY) / scale;
-        if (deviceX < 0 || deviceY < 0 || deviceX > bitmap.PixelWidth || deviceY > bitmap.PixelHeight) return;
+        if (MirrorGeometry.ToDevice(image.ActualWidth, image.ActualHeight, viewModel.MirrorFrameWidth, viewModel.MirrorFrameHeight, point.X, point.Y) is not { } device) return;
 
         ShowMirrorTapMarker(point);
         e.Handled = true;
-        await viewModel.TapMirrorAsync((int)Math.Round(deviceX), (int)Math.Round(deviceY));
+        await viewModel.TapMirrorAsync(device.X, device.Y);
     }
 
     /// <summary>Draws a fading ring where the user tapped so the device-side touch is easy to follow.</summary>
@@ -92,9 +82,13 @@ public partial class MainWindow : Window
     {
         if (_shutdownComplete) { base.OnClosing(e); return; }
         e.Cancel = true;
-        if (_shutdownStarted || DataContext is not MainViewModel viewModel || !viewModel.CanClose()) { base.OnClosing(e); return; }
-        _shutdownStarted = true;
         base.OnClosing(e);
+        if (_shutdownStarted || DataContext is not MainViewModel viewModel) return;
+        _shutdownStarted = true;
+        bool canClose;
+        try { canClose = await viewModel.CanCloseAsync(); }
+        catch (Exception ex) { Log.Error(ex, "Close confirmation failed"); canClose = true; }
+        if (!canClose) { _shutdownStarted = false; return; }
         IsEnabled = false;
         try { await viewModel.DisposeAsync(); }
         catch (Exception ex) { Log.Error(ex, "Shutdown cleanup failed"); }

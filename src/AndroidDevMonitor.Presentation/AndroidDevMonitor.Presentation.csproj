@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AndroidDevMonitor.Core\AndroidDevMonitor.Core.csproj" />
+    <ProjectReference Include="..\AndroidDevMonitor.Adb\AndroidDevMonitor.Adb.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AndroidDevMonitor.Presentation.Tests" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Description>UI-toolkit-independent view models shared by the Windows (WPF) and Linux (Avalonia) apps</Description>
+  </PropertyGroup>
+
+</Project>

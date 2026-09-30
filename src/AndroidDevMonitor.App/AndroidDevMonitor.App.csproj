@@ -5,6 +5,7 @@
     <ProjectReference Include="..\AndroidDevMonitor.Adb\AndroidDevMonitor.Adb.csproj" />
     <ProjectReference Include="..\AndroidDevMonitor.Collectors\AndroidDevMonitor.Collectors.csproj" />
     <ProjectReference Include="..\AndroidDevMonitor.Infrastructure\AndroidDevMonitor.Infrastructure.csproj" />
+    <ProjectReference Include="..\AndroidDevMonitor.Presentation\AndroidDevMonitor.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>

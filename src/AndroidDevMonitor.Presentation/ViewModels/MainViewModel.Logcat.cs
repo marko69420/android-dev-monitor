@@ -5,7 +5,7 @@ using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public sealed record SavedLogFilter(string Name, string SearchText, bool Regex, string Priority, string Source, bool CrashOnly, bool BookmarksOnly);
 

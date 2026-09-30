@@ -2,14 +2,11 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MainViewModel
 {
@@ -18,7 +15,10 @@ public partial class MainViewModel
     private bool _isMirrorRunning;
 
     [ObservableProperty] private string _mirrorStatus = "Mirror is idle. Select a device, then press Start mirror.";
-    [ObservableProperty] private ImageSource? _mirrorFrame;
+    /// <summary>The latest frame as a toolkit image (WPF ImageSource or Avalonia Bitmap).</summary>
+    [ObservableProperty] private object? _mirrorFrame;
+    [ObservableProperty] private int _mirrorFrameWidth;
+    [ObservableProperty] private int _mirrorFrameHeight;
     [ObservableProperty] private int _mirrorFps = 2;
 
     private CancellationTokenSource? _mirrorCts;
@@ -69,7 +69,8 @@ public partial class MainViewModel
                 if (png is { Length: > 0 })
                 {
                     _lastMirrorFrame = png;
-                    MirrorFrame = CreateImage(png);
+                    (MirrorFrameWidth, MirrorFrameHeight) = ReadPngSize(png);
+                    MirrorFrame = _images.Decode(png);
                     MirrorStatus = $"{device.FriendlyName} · {png.Length / 1024:N0} KB per frame · {MirrorFps} fps · stop with Stop mirror";
                 }
                 else
@@ -142,7 +143,7 @@ public partial class MainViewModel
     }
 
     /// <summary>
-    /// Pushes the Windows clipboard into the device text field that currently has focus.
+    /// Pushes the computer's clipboard into the device text field that currently has focus.
     /// This is the practical clipboard path for ADB-only setups; the scrcpy window adds full sync.
     /// </summary>
     [RelayCommand]
@@ -151,7 +152,7 @@ public partial class MainViewModel
         string text;
         try
         {
-            text = Clipboard.GetText();
+            text = await _clipboard.GetTextAsync() ?? string.Empty;
         }
         catch
         {
@@ -160,7 +161,7 @@ public partial class MainViewModel
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            MirrorStatus = "The Windows clipboard has no text to send.";
+            MirrorStatus = "The clipboard has no text to send.";
             return;
         }
 
@@ -221,23 +222,12 @@ public partial class MainViewModel
     private static bool IsPng(byte[] bytes) =>
         bytes.Length > 8 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47;
 
-    private static ImageSource? CreateImage(byte[] png)
+    /// <summary>Reads the pixel size from the PNG header (IHDR), so tap mapping does not depend on the UI toolkit.</summary>
+    internal static (int Width, int Height) ReadPngSize(byte[] png)
     {
-        try
-        {
-            using MemoryStream stream = new(png, writable: false);
-            BitmapImage image = new();
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
-            image.StreamSource = stream;
-            image.EndInit();
-            image.Freeze();
-            return image;
-        }
-        catch
-        {
-            return null;
-        }
+        if (png.Length < 24 || !IsPng(png)) return (0, 0);
+        int width = (png[16] << 24) | (png[17] << 16) | (png[18] << 8) | png[19];
+        int height = (png[20] << 24) | (png[21] << 16) | (png[22] << 8) | png[23];
+        return width > 0 && height > 0 ? (width, height) : (0, 0);
     }
 }

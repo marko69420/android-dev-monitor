@@ -10,7 +10,7 @@ using AndroidDevMonitor.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public sealed record InstrumentationRow(string Component, string TargetPackage, string SourcePath)
 {
@@ -68,7 +68,7 @@ public partial class MainViewModel
     private async Task ChangePermissionAsync(bool grant)
     {
         if (!TryGetDeviceAndPackage(out AndroidDevice device, out string package) || !TryPermission(out string permission)) return;
-        if (!grant && !_dialogs.Confirm("Revoke runtime permission", $"Revoke {permission} from {package}? The application may stop.")) return;
+        if (!grant && !await _dialogs.ConfirmAsync("Revoke runtime permission", $"Revoke {permission} from {package}? The application may stop.")) return;
         string action = grant ? "grant" : "revoke";
         AdbCommandResult result = await _adb.ExecuteAsync(device.Serial, ["shell", "pm", action, package, permission], TimeSpan.FromSeconds(15), CancellationToken.None);
         DeviceLabStatus = result.Success ? $"Permission {action} completed for {package}." : $"Permission {action} failed: {CleanError(result)}";
@@ -84,7 +84,7 @@ public partial class MainViewModel
     {
         if (!_permissionRollbackStack.TryPeek(out PermissionChangeRow? change)) { DeviceLabStatus = "No applied permission change is available to roll back."; return; }
         string inverse = change.Action == "grant" ? "revoke" : "grant";
-        if (!_dialogs.Confirm("Roll back permission change", $"{inverse} {change.Permission} for {change.Package} on {change.DeviceSerial}?")) return;
+        if (!await _dialogs.ConfirmAsync("Roll back permission change", $"{inverse} {change.Permission} for {change.Package} on {change.DeviceSerial}?")) return;
         AdbCommandResult result = await _adb.ExecuteAsync(change.DeviceSerial, ["shell", "pm", inverse, change.Package, change.Permission], TimeSpan.FromSeconds(15), CancellationToken.None);
         PermissionChangeRow rollback = new(DateTimeOffset.Now, change.DeviceSerial, change.Package, change.Permission, inverse, result.Success ? "Rollback applied" : "Rollback failed");
         AddPermissionChange(rollback);
@@ -103,14 +103,14 @@ public partial class MainViewModel
             return;
         }
 
-        Process.Start(new ProcessStartInfo(PermissionAuditPath) { UseShellExecute = true });
+        OpenInShell(PermissionAuditPath);
     }
 
     [RelayCommand]
     private async Task ResetAppOpsAsync()
     {
         if (!TryGetDeviceAndPackage(out AndroidDevice device, out string package)) return;
-        if (!_dialogs.Confirm("Reset AppOps", $"Reset every AppOps override for {package} to Android defaults?")) return;
+        if (!await _dialogs.ConfirmAsync("Reset AppOps", $"Reset every AppOps override for {package} to Android defaults?")) return;
         AdbCommandResult result = await _adb.ExecuteAsync(device.Serial, ["shell", "cmd", "appops", "reset", package], TimeSpan.FromSeconds(15), CancellationToken.None);
         DeviceLabStatus = result.Success ? $"AppOps reset for {package}." : "AppOps reset failed: " + CleanError(result);
         await RefreshPermissionStateAsync();
@@ -291,11 +291,11 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    private void WipeAndStartAvd()
+    private async Task WipeAndStartAvdAsync()
     {
         string? emulator = ToolLocator.Default.FindSdkTool("emulator", "emulator");
         if (emulator is null || string.IsNullOrWhiteSpace(SelectedAvd)) { DeviceLabStatus = "Refresh and select a local AVD first."; return; }
-        if (!_dialogs.Confirm("Wipe emulator data", $"Delete all user data from AVD {SelectedAvd} and start it? This cannot be undone.")) return;
+        if (!await _dialogs.ConfirmAsync("Wipe emulator data", $"Delete all user data from AVD {SelectedAvd} and start it? This cannot be undone.")) return;
         ProcessStartInfo start = new(emulator) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(emulator)! };
         start.ArgumentList.Add("-avd"); start.ArgumentList.Add(SelectedAvd); start.ArgumentList.Add("-wipe-data"); start.ArgumentList.Add("-no-snapshot-load");
         Process.Start(start);

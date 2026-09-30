@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using AndroidDevMonitor.App.ViewModels;
+using AndroidDevMonitor.Presentation.ViewModels;
 using AndroidDevMonitor.Core.Formatting;
 
 namespace AndroidDevMonitor.App.Converters;

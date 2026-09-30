@@ -4,20 +4,17 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Data;
-using System.Windows.Threading;
 using AndroidDevMonitor.Adb.Parsers;
-using AndroidDevMonitor.App.Services;
 using AndroidDevMonitor.Core.Collections;
 using AndroidDevMonitor.Core.Configuration;
 using AndroidDevMonitor.Core.Models;
 using AndroidDevMonitor.Core.Services;
+using AndroidDevMonitor.Presentation.Collections;
+using AndroidDevMonitor.Presentation.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MainViewModel : ObservableObject, IAsyncDisposable
 {
@@ -29,6 +26,12 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly ISessionExporter _exporter;
     private readonly IAdbExecutor _adb;
     private readonly IDialogService _dialogs;
+    private readonly IUiDispatcher _ui;
+    private readonly IFilePickerService _files;
+    private readonly IClipboardService _clipboard;
+    private readonly IImageService _images;
+    private readonly IAppLifecycle _lifecycle;
+    private readonly IDesktopShell _shell;
 
     private readonly TimeSeriesBuffer<MetricSample> _liveSamples = new TimeSeriesBuffer<MetricSample>(MonitoringConstants.LiveChartWindow, x => x.TimestampUtc);
 
@@ -153,7 +156,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     public ObservableCollection<LogEntry> Logs { get; } = new ObservableCollection<LogEntry>();
 
-    public ICollectionView LogView { get; }
+    public FilteredCollection<LogEntry> LogView { get; }
 
     public IReadOnlyList<string> LogPriorities { get; } = ["All", "Error", "Warning", "Info", "Debug"];
 
@@ -161,7 +164,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     public ObservableCollection<MediaItem> MediaItems { get; } = new ObservableCollection<MediaItem>();
 
-    public ICollectionView MediaView { get; }
+    public FilteredCollection<MediaItem> MediaView { get; }
 
     public IReadOnlyList<string> MediaKinds { get; } = ["All", "Screenshots", "Recordings"];
 
@@ -189,9 +192,9 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     public ObservableCollection<FileEntry> RemoteFiles { get; } = new ObservableCollection<FileEntry>();
 
-    public ICollectionView LocalFileView { get; }
+    public FilteredCollection<FileEntry> LocalFileView { get; }
 
-    public ICollectionView RemoteFileView { get; }
+    public FilteredCollection<FileEntry> RemoteFileView { get; }
 
     public IReadOnlyList<string> RemoteQuickLocations { get; } = ["/sdcard", "/sdcard/Download", "/sdcard/DCIM", "/sdcard/Pictures", "/sdcard/Movies", "/sdcard/Documents", "/sdcard/Android/data", "/data/local/tmp"];
 
@@ -262,7 +265,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             ? Path.GetFileName(SelectedApkPath) + " · " + FormatBytes(new FileInfo(SelectedApkPath).Length)
             : "No APK selected";
 
-    public MainViewModel(IDeviceDiscoveryService devicesService, IMonitoringSource monitoring, ISessionStore sessions, IMediaService media, ISessionExporter exporter, IAdbExecutor adb, IDialogService dialogs, bool isDemo)
+    public MainViewModel(IDeviceDiscoveryService devicesService, IMonitoringSource monitoring, ISessionStore sessions, IMediaService media, ISessionExporter exporter, IAdbExecutor adb, PlatformServices platform, bool isDemo)
     {
         _devicesService = devicesService;
         _monitoring = monitoring;
@@ -270,20 +273,22 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         _media = media;
         _exporter = exporter;
         _adb = adb;
-        _dialogs = dialogs;
+        _dialogs = platform.Dialogs;
+        _ui = platform.Dispatcher;
+        _files = platform.Files;
+        _clipboard = platform.Clipboard;
+        _images = platform.Images;
+        _lifecycle = platform.Lifecycle;
+        _shell = platform.Shell;
         IsDemo = isDemo;
         NavigationItems = ["Overview", "Instances", "Wireless", "Developer Tools", "Media", "Performance", "Logs", "File Explorer", "Network", "ADB Shell", "Automation", "Alerts", "Settings", "Help"];
         if (isDemo) { TrackedPackages.Add("com.company.mygame"); SelectedPackage = TrackedPackages[0]; }
         PerformanceCharts = [CpuChart, DeviceMemoryChart, AppMemoryChart, FpsChart, FrameTimeChart, JankChart, DiskChart, NetworkChart, AppNetworkChart, ThermalChart, GpuChart];
         StoredSessionCharts = [StoredCpuChart, StoredMemoryChart, StoredFpsFrameChart, StoredDiskChart, StoredNetworkChart, StoredThermalChart];
-        LogView = CollectionViewSource.GetDefaultView(Logs);
-        LogView.Filter = FilterLog;
-        MediaView = CollectionViewSource.GetDefaultView(MediaItems);
-        MediaView.Filter = FilterMedia;
-        LocalFileView = CollectionViewSource.GetDefaultView(LocalFiles);
-        LocalFileView.Filter = FilterLocalFile;
-        RemoteFileView = CollectionViewSource.GetDefaultView(RemoteFiles);
-        RemoteFileView.Filter = FilterRemoteFile;
+        LogView = new FilteredCollection<LogEntry>(Logs, FilterLog);
+        MediaView = new FilteredCollection<MediaItem>(MediaItems, FilterMedia);
+        LocalFileView = new FilteredCollection<FileEntry>(LocalFiles, FilterLocalFile);
+        RemoteFileView = new FilteredCollection<FileEntry>(RemoteFiles, FilterRemoteFile);
         SelectedDeveloperTool = DeveloperTools.FirstOrDefault();
         InitializeAlertsAndSettings();
     }
@@ -374,11 +379,11 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     [RelayCommand]
-    private void CopySelectedLog()
+    private async Task CopySelectedLogAsync()
     {
         if (SelectedLogEntry is not null)
         {
-            Clipboard.SetText($"{SelectedLogEntry.TimestampUtc:O} [{SelectedLogEntry.Priority}] {SelectedLogEntry.Source}: {SelectedLogEntry.Message}");
+            await _clipboard.SetTextAsync($"{SelectedLogEntry.TimestampUtc:O} [{SelectedLogEntry.Priority}] {SelectedLogEntry.Source}: {SelectedLogEntry.Message}");
         }
     }
 
@@ -430,13 +435,13 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     [RelayCommand]
-    private void MarkEvent()
+    private async Task MarkEventAsync()
     {
         if (_session == null || SelectedDevice is null)
         {
             return;
         }
-        if (_dialogs.PromptMarker() is not { } prompt)
+        if (await _dialogs.PromptMarkerAsync() is not { } prompt)
         {
             return;
         }
@@ -451,8 +456,15 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         {
             performanceChart.AddAnnotation(utcNow, sessionMarker.Name, isAlert: false);
         }
-        _sessions.SaveMarkerAsync(sessionMarker, CancellationToken.None);
-        StatusMessage = "Marker added: " + sessionMarker.Name;
+        try
+        {
+            await _sessions.SaveMarkerAsync(sessionMarker, CancellationToken.None);
+            StatusMessage = "Marker added: " + sessionMarker.Name;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Marker added but could not be saved: " + ex.Message;
+        }
     }
 
     [RelayCommand]
@@ -516,10 +528,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     {
         string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Android Dev Monitor", "Exports");
         Directory.CreateDirectory(directory);
-        Process.Start(new ProcessStartInfo(directory)
-        {
-            UseShellExecute = true
-        });
+        OpenInShell(directory);
     }
 
     [RelayCommand]
@@ -532,7 +541,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 _dialogs.Notify("The active session cannot be deleted. Switch target or close it first.", error: true);
             }
-            else if (_dialogs.Confirm("Delete stored session", $"Session: {selectedStoredSession.Id}\nDevice: {selectedStoredSession.Device.FriendlyName}\nSerial: {selectedStoredSession.Device.Serial}\nStarted: {selectedStoredSession.StartedUtc.ToLocalTime():g}\n\nThis permanently deletes its local metrics, markers, alerts and events."))
+            else if (await _dialogs.ConfirmAsync("Delete stored session", $"Session: {selectedStoredSession.Id}\nDevice: {selectedStoredSession.Device.FriendlyName}\nSerial: {selectedStoredSession.Device.Serial}\nStarted: {selectedStoredSession.StartedUtc.ToLocalTime():g}\n\nThis permanently deletes its local metrics, markers, alerts and events."))
             {
                 await _sessions.DeleteSessionAsync(selectedStoredSession.Id, CancellationToken.None);
                 await ReloadStoredSessionsAsync();
@@ -544,26 +553,21 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     [RelayCommand]
     private async Task ImportAppiumLogAsync()
     {
-        OpenFileDialog picker = new OpenFileDialog
-        {
-            Title = "Import external Appium log",
-            Filter = "Log files (*.log;*.txt)|*.log;*.txt|All files (*.*)|*.*",
-            CheckFileExists = true
-        };
-        if (picker.ShowDialog() != true)
+        string? fileName = await _files.OpenFileAsync("Import external Appium log", [new FileTypeFilter("Log files", "*.log", "*.txt"), FileTypeFilter.AllFiles]);
+        if (fileName is null)
         {
             return;
         }
         try
         {
-            string[] lines = await File.ReadAllLinesAsync(picker.FileName);
+            string[] lines = await File.ReadAllLinesAsync(fileName);
             foreach (string line in lines.TakeLast(500))
             {
                 Logs.Add(new LogEntry(DateTimeOffset.UtcNow, "Appium (external)", InferLogPriority(line), line, SelectedDevice?.Serial ?? "N/A", null, SelectedPackage));
             }
             TrimLogs();
             SelectedLogSource = "Appium (external)";
-            LogFilterStatus = $"Imported {Math.Min(lines.Length, 500)} lines from {Path.GetFileName(picker.FileName)}";
+            LogFilterStatus = $"Imported {Math.Min(lines.Length, 500)} lines from {Path.GetFileName(fileName)}";
         }
         catch (Exception ex)
         {
@@ -574,21 +578,42 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     [RelayCommand]
     private async Task SaveLogsAsync()
     {
-        SaveFileDialog saveFileDialog = new SaveFileDialog
+        string? fileName = await _files.SaveFileAsync("Save visible logs", $"android-dev-monitor-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.log", [new FileTypeFilter("Log file", "*.log"), new FileTypeFilter("Text file", "*.txt")]);
+        if (fileName is not null)
         {
-            Title = "Save visible logs",
-            Filter = "Log file (*.log)|*.log|Text file (*.txt)|*.txt",
-            FileName = $"android-dev-monitor-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.log"
-        };
-        if (saveFileDialog.ShowDialog() == true)
-        {
-            string[] lines = LogView.Cast<LogEntry>().Select(entry => $"{entry.TimestampUtc:O} [{entry.Priority}] [{entry.Source}] {entry.Message}").ToArray();
-            await File.WriteAllLinesAsync(saveFileDialog.FileName, lines);
+            string[] lines = LogView.Select(entry => $"{entry.TimestampUtc:O} [{entry.Priority}] [{entry.Source}] {entry.Message}").ToArray();
+            await File.WriteAllLinesAsync(fileName, lines);
             LogFilterStatus = $"Saved {lines.Length} visible lines";
         }
     }
 
     private bool HasSelectedMedia() => SelectedMediaItem is not null;
+
+    /// <summary>Opens a file or folder with the system's default application.</summary>
+    private void OpenInShell(string path)
+    {
+        try
+        {
+            _shell.Open(path);
+        }
+        catch (Exception ex)
+        {
+            _dialogs.Notify($"Could not open {path}:\n{ex.Message}", error: true);
+        }
+    }
+
+    /// <summary>Shows a file in the system file manager.</summary>
+    private void RevealInShell(string path)
+    {
+        try
+        {
+            _shell.Reveal(path);
+        }
+        catch (Exception ex)
+        {
+            _dialogs.Notify($"Could not open the file manager for {path}:\n{ex.Message}", error: true);
+        }
+    }
 
     [RelayCommand(CanExecute = nameof(HasSelectedMedia))]
     private void OpenSelectedMedia()
@@ -602,10 +627,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             _dialogs.Notify("The selected media file no longer exists.", error: true);
             return;
         }
-        Process.Start(new ProcessStartInfo(SelectedMediaItem.LocalPath)
-        {
-            UseShellExecute = true
-        });
+        OpenInShell(SelectedMediaItem.LocalPath);
     }
 
     [RelayCommand]
@@ -614,26 +636,20 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         string? path = SelectedMediaItem?.LocalPath;
         if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
         {
-            Process.Start(new ProcessStartInfo("explorer.exe", "/select,\"" + path + "\"")
-            {
-                UseShellExecute = true
-            });
+            RevealInShell(path);
         }
         else if (Directory.Exists(_media.MediaDirectory))
         {
-            Process.Start(new ProcessStartInfo(_media.MediaDirectory)
-            {
-                UseShellExecute = true
-            });
+            OpenInShell(_media.MediaDirectory);
         }
     }
 
     [RelayCommand(CanExecute = nameof(HasSelectedMedia))]
-    private void CopyMediaPath()
+    private async Task CopyMediaPathAsync()
     {
         if (SelectedMediaItem is not null)
         {
-            Clipboard.SetText(SelectedMediaItem.LocalPath);
+            await _clipboard.SetTextAsync(SelectedMediaItem.LocalPath);
         }
     }
 
@@ -690,7 +706,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
         MediaItem item = SelectedMediaItem;
-        if (!_dialogs.Confirm("Delete local media", $"File: {item.FileName}\nDevice: {item.FriendlyDeviceName}\nSerial: {item.DeviceSerial}\nPath: {item.LocalPath}\n\nThis permanently deletes the local media file."))
+        if (!await _dialogs.ConfirmAsync("Delete local media", $"File: {item.FileName}\nDevice: {item.FriendlyDeviceName}\nSerial: {item.DeviceSerial}\nPath: {item.LocalPath}\n\nThis permanently deletes the local media file."))
         {
             return;
         }
@@ -857,31 +873,20 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     [RelayCommand]
     private async Task SaveShellOutputAsync()
     {
-        SaveFileDialog picker = new SaveFileDialog
+        string? fileName = await _files.SaveFileAsync("Save ADB Shell output", $"adb-shell-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.txt", [new FileTypeFilter("Text file", "*.txt"), new FileTypeFilter("Log file", "*.log")]);
+        if (fileName is not null)
         {
-            Title = "Save ADB Shell output",
-            Filter = "Text file (*.txt)|*.txt|Log file (*.log)|*.log",
-            FileName = $"adb-shell-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.txt"
-        };
-        if (picker.ShowDialog() == true)
-        {
-            await File.WriteAllTextAsync(picker.FileName, ShellOutput);
-            ShellStatus = "Saved " + Path.GetFileName(picker.FileName);
+            await File.WriteAllTextAsync(fileName, ShellOutput);
+            ShellStatus = "Saved " + Path.GetFileName(fileName);
         }
     }
 
     [RelayCommand]
-    private void SelectApk()
+    private async Task SelectApkAsync()
     {
-        OpenFileDialog openFileDialog = new OpenFileDialog
+        if (await _files.OpenFileAsync("Select APK for Automation", [new FileTypeFilter("Android packages", "*.apk")]) is { } fileName)
         {
-            Title = "Select APK for Automation",
-            Filter = "Android packages (*.apk)|*.apk",
-            CheckFileExists = true
-        };
-        if (openFileDialog.ShowDialog() == true)
-        {
-            SelectedApkPath = openFileDialog.FileName;
+            SelectedApkPath = fileName;
         }
     }
 
@@ -912,7 +917,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     {
         string serial = target.Serial;
         bool destructive = action is "Clear Data" or "Uninstall";
-        if (destructive && !confirmationHandled && !_dialogs.Confirm(action, $"Device: {target.FriendlyName}\nSerial: {serial}\nPackage: {package}\n\nExact effect: {action} for this package on this device."))
+        if (destructive && !confirmationHandled && !await _dialogs.ConfirmAsync(action, $"Device: {target.FriendlyName}\nSerial: {serial}\nPackage: {package}\n\nExact effect: {action} for this package on this device."))
         {
             return false;
         }
@@ -1037,16 +1042,11 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     [RelayCommand]
-    private void BrowseLocal()
+    private async Task BrowseLocalAsync()
     {
-        OpenFolderDialog openFolderDialog = new OpenFolderDialog
+        if (await _files.PickFolderAsync("Select local transfer folder", Directory.Exists(LocalPath) ? LocalPath : null) is { } folder)
         {
-            Title = "Select local transfer folder",
-            InitialDirectory = (Directory.Exists(LocalPath) ? LocalPath : null)
-        };
-        if (openFolderDialog.ShowDialog() == true)
-        {
-            NavigateLocalPath(openFolderDialog.FolderName, recordHistory: true);
+            NavigateLocalPath(folder, recordHistory: true);
         }
     }
 
@@ -1093,11 +1093,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
     {
         if (Directory.Exists(LocalPath))
         {
-            Process.Start(new ProcessStartInfo("explorer.exe")
-            {
-                UseShellExecute = true,
-                ArgumentList = { LocalPath }
-            });
+            OpenInShell(LocalPath);
         }
     }
 
@@ -1186,7 +1182,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             return;
         }
         FileEntry entry = SelectedRemoteFile;
-        if (_dialogs.Confirm("Delete device item", $"Device: {SelectedDevice.FriendlyName}\nSerial: {SelectedDevice.Serial}\nPath: {entry.FullPath}\n\nThis permanently deletes the selected {(entry.IsDirectory ? "folder and its contents" : "file")}."))
+        if (await _dialogs.ConfirmAsync("Delete device item", $"Device: {SelectedDevice.FriendlyName}\nSerial: {SelectedDevice.Serial}\nPath: {entry.FullPath}\n\nThis permanently deletes the selected {(entry.IsDirectory ? "folder and its contents" : "file")}."))
         {
             string removeFlags = entry.IsDirectory ? "-rf" : "-f";
             AdbCommandResult result = await _adb.ExecuteAsync(SelectedDevice.Serial, ["shell", $"rm {removeFlags} -- {AndroidParsers.ShellQuote(entry.FullPath)}"], TimeSpan.FromMinutes(1), CancellationToken.None);
@@ -1392,7 +1388,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         int repeatCount = Math.Clamp(AutomationRepeatCount, 1, 100);
         string[] destructiveSteps = steps.Where(step => step.IsDestructive).Select(step => step.Name).ToArray();
         TimeSpan estimate = TimeSpan.FromMilliseconds(steps.Sum(step => step.Duration?.TotalMilliseconds ?? 500.0) * repeatCount);
-        if (!_dialogs.Confirm("Run automation sequence", $"Device: {target.FriendlyName}\nSerial: {target.Serial}\nPackage: {package}\nSteps: {steps.Length}\nRepeat: {repeatCount}\nEstimated: {estimate:g}\nDestructive: {(destructiveSteps.Length == 0 ? "None" : string.Join(", ", destructiveSteps))}"))
+        if (!await _dialogs.ConfirmAsync("Run automation sequence", $"Device: {target.FriendlyName}\nSerial: {target.Serial}\nPackage: {package}\nSteps: {steps.Length}\nRepeat: {repeatCount}\nEstimated: {estimate:g}\nDestructive: {(destructiveSteps.Length == 0 ? "None" : string.Join(", ", destructiveSteps))}"))
         {
             return;
         }
@@ -1658,7 +1654,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             AndroidDevice? previousDevice = null;
             AndroidDevice? selectedAfterRefresh = null;
             bool contextChanged = false;
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await _ui.InvokeAsync(() =>
             {
                 AndroidDevice? selectedDevice = SelectedDevice;
                 previousDevice = selectedDevice;
@@ -1838,7 +1834,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
                 _liveSamples.Add(sample);
                 batch.Add(sample);
                 _lastSampleUtc = sample.TimestampUtc;
-                await Application.Current.Dispatcher.InvokeAsync(() => ApplySample(sample));
+                await _ui.InvokeAsync(() => ApplySample(sample));
                 if (batch.Count >= 10)
                 {
                     await _sessions.AppendSamplesAsync(batch.ToArray(), token);
@@ -1851,7 +1847,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() => StatusMessage = "Collector error: " + ex.Message);
+            await _ui.InvokeAsync(() => StatusMessage = "Collector error: " + ex.Message);
         }
         finally
         {
@@ -1915,7 +1911,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
                     .Select(p => p[..p.IndexOf('/')]).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
             }
         }
-        await Application.Current.Dispatcher.InvokeAsync(() =>
+        await _ui.InvokeAsync(() =>
         {
             if (token.IsCancellationRequested || device.Serial != SelectedDevice?.Serial) return;
             if (installed is not null)
@@ -1952,7 +1948,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
                 _packageAutoSelectedForSerial = device.Serial;
                 SelectedPackage = foreground;
             }
-        }, DispatcherPriority.Background);
+        }, background: true);
     }
 
     private async Task TimerLoopAsync(MonitoringSession session, CancellationToken token)
@@ -1962,7 +1958,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         {
             while (await timer.WaitForNextTickAsync(token))
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await _ui.InvokeAsync(() =>
                 {
                     SessionTime = (DateTimeOffset.UtcNow - session.StartedUtc).ToString(@"hh\:mm\:ss");
                     bool waitingForFirstSample = _lastSampleUtc == default;
@@ -2637,7 +2633,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
                     await ReadApplicationDiagnosticsAsync(device.Serial, token);
                 bool crashDetected = newLines.Any(line => line.Contains("FATAL EXCEPTION", StringComparison.OrdinalIgnoreCase) || line.Contains("AndroidRuntime", StringComparison.OrdinalIgnoreCase));
                 bool anrDetected = newLines.Any(line => line.Contains("ANR in", StringComparison.OrdinalIgnoreCase));
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await _ui.InvokeAsync(() =>
                 {
                     if (logcatResult is not null)
                         TrackAdbCommand(logcatResult);
@@ -2663,7 +2659,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
                         RaiseAlert("ANR", "Critical", "Application-not-responding event detected in logcat.");
                     }
                     TrimLogs();
-                }, DispatcherPriority.Background);
+                }, background: true);
             }
             while (await timer.WaitForNextTickAsync(token));
         }
@@ -2672,7 +2668,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await _ui.InvokeAsync(() =>
                 EvaluateAlertCondition("LogcatStopped", true, "logcat collection stopped: " + ex.Message));
         }
     }
@@ -2719,7 +2715,7 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             }
         }
         LogView.Refresh();
-        LogFilterStatus = $"{LogView.Cast<object>().Count()} visible · {Logs.Count} buffered";
+        LogFilterStatus = $"{LogView.Count} visible · {Logs.Count} buffered";
     }
 
     private void TrimLogs()
@@ -3052,16 +3048,14 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
 
     private void RefreshMediaView()
     {
-        MediaView.SortDescriptions.Clear();
-        MediaView.SortDescriptions.Add(SelectedMediaSort switch
+        MediaView.Sort = SelectedMediaSort switch
         {
-            "Oldest" => new SortDescription("CapturedUtc", ListSortDirection.Ascending),
-            "Largest" => new SortDescription("FileSize", ListSortDirection.Descending),
-            "Smallest" => new SortDescription("FileSize", ListSortDirection.Ascending),
-            _ => new SortDescription("CapturedUtc", ListSortDirection.Descending)
-        });
-        MediaView.Refresh();
-        MediaFilterStatus = $"{MediaView.Cast<object>().Count()} shown · {MediaItems.Count} total";
+            "Oldest" => Comparer<MediaItem>.Create((a, b) => a.CapturedUtc.CompareTo(b.CapturedUtc)),
+            "Largest" => Comparer<MediaItem>.Create((a, b) => b.FileSize.CompareTo(a.FileSize)),
+            "Smallest" => Comparer<MediaItem>.Create((a, b) => a.FileSize.CompareTo(b.FileSize)),
+            _ => Comparer<MediaItem>.Create((a, b) => b.CapturedUtc.CompareTo(a.CapturedUtc))
+        }; // Setting the sort re-applies the filter too.
+        MediaFilterStatus = $"{MediaView.Count} shown · {MediaItems.Count} total";
     }
 
     private void RefreshMediaFilterOptions()

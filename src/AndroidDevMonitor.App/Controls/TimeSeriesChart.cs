@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using AndroidDevMonitor.App.ViewModels;
+using AndroidDevMonitor.Presentation.ViewModels;
 
 namespace AndroidDevMonitor.App.Controls;
 

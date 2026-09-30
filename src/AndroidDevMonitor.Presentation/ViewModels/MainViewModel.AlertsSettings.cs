@@ -3,16 +3,15 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Media;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using AndroidDevMonitor.Core.Models;
+using AndroidDevMonitor.Presentation.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
 
-namespace AndroidDevMonitor.App.ViewModels;
+namespace AndroidDevMonitor.Presentation.ViewModels;
 
 public partial class MainViewModel
 {
@@ -82,7 +81,7 @@ public partial class MainViewModel
         GetDirectorySize(_media.MediaDirectory),
         5L * 1024 * 1024 * 1024);
     public string ApplicationVersion =>
-        Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+        (Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).GetName().Version?.ToString(3) ?? "1.0.0";
     public string DotNetVersion => Environment.Version.ToString();
     public string CollectorStatus =>
         IsDemo
@@ -336,14 +335,14 @@ public partial class MainViewModel
 
     private void ApplyStartupPreference()
     {
-        const string runKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        using RegistryKey? key = Registry.CurrentUser.OpenSubKey(runKey, writable: true) ??
-                                 Registry.CurrentUser.CreateSubKey(runKey, writable: true);
-        if (key is null) return;
-        if (LaunchAtStartup && !string.IsNullOrWhiteSpace(Environment.ProcessPath))
-            key.SetValue("AndroidDevMonitor", $"\"{Environment.ProcessPath}\"");
-        else
-            key.DeleteValue("AndroidDevMonitor", throwOnMissingValue: false);
+        try
+        {
+            _shell.SetStartWithSystem(LaunchAtStartup);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "Could not update the start-with-system setting: " + ex.Message;
+        }
     }
 
     [RelayCommand]
@@ -730,17 +729,13 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    private void SelectAdbExecutable()
+    private async Task SelectAdbExecutableAsync()
     {
-        OpenFileDialog dialog = new()
-        {
-            Title = "Select adb.exe",
-            Filter = "Android Debug Bridge (adb.exe)|adb.exe|Executable files (*.exe)|*.exe",
-            CheckFileExists = true,
-            Multiselect = false
-        };
-        if (dialog.ShowDialog() == true)
-            SelectedAdbPath = dialog.FileName;
+        FileTypeFilter[] filters = OperatingSystem.IsWindows()
+            ? [new FileTypeFilter("Android Debug Bridge (adb.exe)", "adb.exe"), new FileTypeFilter("Executable files", "*.exe")]
+            : [new FileTypeFilter("Android Debug Bridge (adb)", "adb"), FileTypeFilter.AllFiles];
+        if (await _files.OpenFileAsync(OperatingSystem.IsWindows() ? "Select adb.exe" : "Select adb", filters) is { } fileName)
+            SelectedAdbPath = fileName;
     }
 
     [RelayCommand]
@@ -821,7 +816,7 @@ public partial class MainViewModel
     private async Task RestartAdbServerAsync()
     {
         string serial = SelectedDevice?.Serial ?? "no selected device";
-        if (!_dialogs.Confirm(
+        if (!await _dialogs.ConfirmAsync(
                 "Restart ADB server",
                 $"Selected target: {serial}\n\n" +
                 "This restarts the global ADB server and temporarily disconnects every Android target. Continue?"))
@@ -860,7 +855,7 @@ public partial class MainViewModel
             StatusMessage = "No completed sessions to clear";
             return;
         }
-        if (!_dialogs.Confirm(
+        if (!await _dialogs.ConfirmAsync(
                 "Clear completed sessions",
                 $"Delete {completed.Length} completed local session(s)?\nDatabase: {DatabasePath}"))
             return;
@@ -931,7 +926,7 @@ public partial class MainViewModel
             _dialogs.Notify("Reset demo data is available only when the app starts with --demo.");
             return;
         }
-        if (!_dialogs.Confirm(
+        if (!await _dialogs.ConfirmAsync(
                 "Reset demo data",
                 "Delete demo media and completed demo sessions? Live Android data is not affected."))
             return;
@@ -954,53 +949,49 @@ public partial class MainViewModel
     }
 
     [RelayCommand]
-    private void RestartWithOtherDataMode()
+    private async Task RestartWithOtherDataModeAsync()
     {
-        if (!CanClose()) return;
+        if (!await CanCloseAsync()) return;
 
         string targetMode = IsDemo ? "live ADB mode" : "Demo mode";
-        if (!_dialogs.Confirm(
+        if (!await _dialogs.ConfirmAsync(
                 "Restart Android Dev Monitor",
                 $"Restart the application in {targetMode}?"))
             return;
 
-        string? executable = Environment.ProcessPath;
-        if (string.IsNullOrWhiteSpace(executable))
+        bool started;
+        try
+        {
+            started = _shell.StartNewInstance(IsDemo ? [] : ["--demo"]);
+        }
+        catch (Exception ex)
+        {
+            _dialogs.Notify("The application could not be restarted: " + ex.Message, true);
+            return;
+        }
+        if (!started)
         {
             _dialogs.Notify("The current executable path could not be resolved.", true);
             return;
         }
-
-        ProcessStartInfo start = new(executable)
-        {
-            UseShellExecute = true,
-            WorkingDirectory = AppContext.BaseDirectory
-        };
-        if (string.Equals(Path.GetFileNameWithoutExtension(executable), "dotnet", StringComparison.OrdinalIgnoreCase))
-        {
-            string? managedEntryPoint = Environment.GetCommandLineArgs().FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(managedEntryPoint) || !File.Exists(managedEntryPoint))
-            {
-                _dialogs.Notify("The managed application path could not be resolved.", true);
-                return;
-            }
-            start.ArgumentList.Add(managedEntryPoint);
-        }
-        if (!IsDemo)
-            start.ArgumentList.Add("--demo");
-        Process.Start(start);
-        System.Windows.Application.Current.Shutdown();
+        // The user already confirmed closing; the normal window-close path then saves the session.
+        _closeConfirmed = true;
+        _lifecycle.Shutdown();
     }
 
-    public bool CanClose()
+    private bool _closeConfirmed;
+
+    /// <summary>Asks before closing while a recording or an automation run is active.</summary>
+    public async Task<bool> CanCloseAsync()
     {
+        if (_closeConfirmed) return true;
         if (IsRecording && ConfirmRecordingClose &&
-            !_dialogs.Confirm(
+            !await _dialogs.ConfirmAsync(
                 "Recording is active",
                 $"Screen recording is active on {_recordingTarget?.Serial ?? SelectedDevice?.Serial ?? "the selected target"}. Close anyway?"))
             return false;
         if (IsAutomationRunning && ConfirmAutomationClose &&
-            !_dialogs.Confirm(
+            !await _dialogs.ConfirmAsync(
                 "Automation is running",
                 $"Automation is still bound to {SelectedDevice?.Serial ?? "its captured target"}. Close anyway?"))
             return false;
@@ -1231,7 +1222,7 @@ public partial class MainViewModel
     {
         ActiveAlerts.Insert(0, alert);
         if (AlertSoundsEnabled && !QuietMode)
-            SystemSounds.Exclamation.Play();
+            _lifecycle.PlayAlertSound();
         _ = RunAlertMediaActionsAsync(alert);
     }
 
@@ -1368,10 +1359,10 @@ public partial class MainViewModel
         }).ToArray();
     }
 
-    private static void OpenDirectory(string path)
+    private void OpenDirectory(string path)
     {
         Directory.CreateDirectory(path);
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        OpenInShell(path);
     }
 
     private static long GetFilesSize(IEnumerable<string> paths)
