@@ -102,3 +102,24 @@ public sealed class PackagingTests
         Assert.True(File.Exists(session.ViewModel.UserGuidePath), session.ViewModel.UserGuidePath);
     }
 }
+
+public sealed class ImageServiceTests
+{
+    [Fact]
+    public void Screenshots_load_as_unpremultiplied_bgra_like_on_windows()
+    {
+        // A 2x1 PNG: opaque red, then blue at half opacity. The screenshot diff expects WPF's Bgra32 layout.
+        string path = Path.Combine(Path.GetTempPath(), "adm-bgra-" + Guid.NewGuid().ToString("N") + ".png");
+        File.WriteAllBytes(path, Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAADklEQVR4nGP4z8AAQg0AD3oDfnfpf5cAAAAASUVORK5CYII="));
+        try
+        {
+            (byte[] pixels, int width, int height) = new AndroidDevMonitor.Desktop.Services.AvaloniaImageService().LoadBgra(path);
+            Assert.Equal((2, 1), (width, height));
+            Assert.Equal(new byte[] { 0, 0, 255, 255, 255, 0, 0, 128 }, pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+}

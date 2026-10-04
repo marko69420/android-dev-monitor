@@ -9,7 +9,8 @@ this same file, invoked through links in <root>/.bin. Device storage (/sdcard, /
 lives under FAKE_ANDROID_ROOT. A background process named com.example.fakegame plays the monitored app.
 
 Every adb call is appended to <root>/commands.log with its exit code, so tests can assert what the app ran.
-Set FAKE_ANDROID_CRASH=1 to add a FATAL EXCEPTION to logcat.
+Set FAKE_ANDROID_CRASH=1 to add a FATAL EXCEPTION to logcat, and FAKE_ANDROID_STATE=no-permissions to list the
+device the way adb does on Linux without udev rules.
 """
 import datetime
 import json
@@ -403,7 +404,12 @@ def adb(argv):
     if command in ("start-server", "kill-server"):
         return 0
     if command == "devices":
-        out("List of devices attached\n" + f"{SERIAL}               device usb:1-1 product:husky model:Pixel_8_Pro device:husky transport_id:1\n\n")
+        if os.environ.get("FAKE_ANDROID_STATE") == "no-permissions":
+            # What adb prints on Linux when udev gives the user no access to the phone.
+            out("List of devices attached\n" + f"{SERIAL}\tno permissions (missing udev rules? user is in the plugdev group); "
+                "see [http://developer.android.com/tools/device.html] usb:1-1 transport_id:1\n\n")
+        else:
+            out("List of devices attached\n" + f"{SERIAL}               device usb:1-1 product:husky model:Pixel_8_Pro device:husky transport_id:1\n\n")
         return 0
     if command == "mdns":
         out("mdns daemon version [Openscreen discovery 0.0.0]\n" if rest[:1] == ["check"] else "List of discovered mdns services\n")

@@ -24,7 +24,9 @@ cp -R "$here/." "$app/"
 chmod +x "$app/AndroidDevMonitor"
 ln -sf "$app/AndroidDevMonitor" "$bin/android-dev-monitor"
 cp "$here/android-dev-monitor.png" "$icon"
-sed "s|^Exec=.*|Exec=$app/AndroidDevMonitor|" "$here/android-dev-monitor.desktop" > "$desktop"
+# Quoted, so a home folder with spaces still starts; desktop entries need %% for a literal %.
+exec_path=$(printf '%s' "$app/AndroidDevMonitor" | sed -e 's/[\\"`$]/\\&/g' -e 's/%/%%/g' -e 's/[\\&|]/\\&/g')
+sed "s|^Exec=.*|Exec=\"$exec_path\"|" "$here/android-dev-monitor.desktop" > "$desktop"
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$data/applications" >/dev/null 2>&1 || true
 
 echo "Installed Android Dev Monitor to $app"

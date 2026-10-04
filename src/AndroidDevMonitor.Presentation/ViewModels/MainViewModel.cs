@@ -1765,16 +1765,21 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
         };
         AddSessionEvent("SessionStarted", "Monitoring started for " + device.FriendlyName, device.Serial, SelectedPackage);
         await _sessions.SaveSessionAsync(_session, token);
-        ConnectionText = device.State == DeviceState.Connected ? "ADB connected" : device.State.ToString();
+        ConnectionText = device.State switch
+        {
+            DeviceState.Connected => "ADB connected",
+            DeviceState.NoPermissions => "No USB permission",
+            _ => device.State.ToString()
+        };
         StatusMessage = "Monitoring " + device.FriendlyName;
         if (!device.IsConnected)
         {
             RaiseAlert(device.State switch
             {
                 DeviceState.Offline => "DeviceOffline",
-                DeviceState.Unauthorized => "DeviceUnauthorized",
+                DeviceState.Unauthorized or DeviceState.NoPermissions => "DeviceUnauthorized",
                 _ => "DeviceDisconnected",
-            }, "Critical", $"{device.FriendlyName} is {device.State}.");
+            }, "Critical", DescribeUnusableDevice(device));
             _ = TimerLoopAsync(_session, token);
         }
         else
@@ -1785,6 +1790,17 @@ public partial class MainViewModel : ObservableObject, IAsyncDisposable
             _ = LogLoopAsync(device, _session, token);
         }
     }
+
+    /// <summary>Why a listed device cannot be monitored, with the fix the user needs.</summary>
+    internal static string DescribeUnusableDevice(AndroidDevice device) => device.State switch
+    {
+        DeviceState.Unauthorized => $"{device.FriendlyName} is unauthorized. Unlock the phone and accept the \"Allow USB debugging\" prompt.",
+        // Linux reports this when udev gives the user no access to the USB device.
+        DeviceState.NoPermissions => $"{device.FriendlyName} has no USB permission. On Linux, install the Android udev rules " +
+                                     "(android-sdk-platform-tools-common or android-udev), replug the cable and accept the USB-debugging prompt.",
+        DeviceState.Offline => $"{device.FriendlyName} is offline. Reconnect the cable or restart ADB from Settings.",
+        _ => $"{device.FriendlyName} is {device.State}."
+    };
 
     private void RestartContextLoops()
     {

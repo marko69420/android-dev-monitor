@@ -91,6 +91,19 @@ public sealed class AndroidParserTests
     }
 
     [Fact]
+    public void Linux_no_permissions_device_line_is_recognised()
+    {
+        // What adb prints on Linux when udev does not give the user access to the phone.
+        var result = AndroidParsers.ParseDevices(
+            "List of devices attached\n" +
+            "35161FDJH001TX\tno permissions (missing udev rules? user is in the plugdev group); see [http://developer.android.com/tools/device.html] usb:1-1 transport_id:3\n\n");
+        AndroidDevice device = Assert.Single(result);
+        Assert.Equal("35161FDJH001TX", device.Serial);
+        Assert.Equal(DeviceState.NoPermissions, device.State);
+        Assert.False(device.IsConnected);
+    }
+
+    [Fact]
     public void Getprop_is_tolerant_of_empty_values()
     {
         var values = AndroidParsers.ParseGetProp("[ro.product.model]: [Pixel 6]\n[ro.empty]: []\nnoise");

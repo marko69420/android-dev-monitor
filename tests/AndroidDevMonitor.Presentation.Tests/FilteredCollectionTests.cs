@@ -72,6 +72,20 @@ public sealed class FilteredCollectionTests
     }
 
     [Fact]
+    public void Removing_one_of_two_equal_records_removes_that_instance()
+    {
+        // Records compare by value; logcat often repeats the same line, so removal must go by reference.
+        Item first = new Item("same", 1);
+        Item second = new Item("same", 1);
+        var (source, view, events) = Create(null, first, second);
+        source.RemoveAt(1);
+        Assert.Same(first, Assert.Single(view));
+        Assert.Equal(1, Assert.Single(events).OldStartingIndex);
+        Assert.Equal(0, view.IndexOf(first));
+        Assert.Equal(-1, view.IndexOf(second));
+    }
+
+    [Fact]
     public void Clear_and_refresh_raise_reset()
     {
         var (source, view, events) = Create(null, new Item("a", 1));

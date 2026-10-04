@@ -47,13 +47,25 @@ public sealed class DesktopShell : IDesktopShell
             return;
         }
         // Most Linux file managers (Nautilus, Dolphin, Nemo, Thunar, Caja) implement the freedesktop FileManager1
-        // interface, which opens the folder with the file selected. Fall back to opening the folder.
-        if (File.Exists(path) &&
-            TryRun("dbus-send", "--session", "--print-reply", "--dest=org.freedesktop.FileManager1", "--type=method_call",
-                "/org/freedesktop/FileManager1", "org.freedesktop.FileManager1.ShowItems",
-                "array:string:" + new Uri(Path.GetFullPath(path)).AbsoluteUri, "string:"))
+        // interface, which opens the folder with the file selected. Fall back to opening the folder. This runs off
+        // the UI thread because dbus-send can take a few seconds when no file manager answers.
+        string fullPath = Path.GetFullPath(path);
+        bool isFile = File.Exists(fullPath);
+        string folder = isFile ? Path.GetDirectoryName(fullPath) ?? fullPath : fullPath;
+        if (!isFile)
+        {
+            Launch("xdg-open", folder);
             return;
-        Launch("xdg-open", File.Exists(path) ? Path.GetDirectoryName(Path.GetFullPath(path)) ?? path : path);
+        }
+        _ = Task.Run(() =>
+        {
+            if (TryRun("dbus-send", "--session", "--print-reply", "--dest=org.freedesktop.FileManager1", "--type=method_call",
+                    "/org/freedesktop/FileManager1", "org.freedesktop.FileManager1.ShowItems",
+                    "array:string:" + new Uri(fullPath).AbsoluteUri, "string:"))
+                return;
+            try { Launch("xdg-open", folder); }
+            catch { }
+        });
     }
 
     public void SetStartWithSystem(bool enabled)
@@ -115,10 +127,14 @@ public sealed class DesktopShell : IDesktopShell
         return string.Join(' ', parts.Select(QuoteExecArgument));
     }
 
-    public static string QuoteExecArgument(string value) =>
-        value.Any(ch => char.IsWhiteSpace(ch) || "\"'\\`$;&|<>()*?#~".Contains(ch))
-            ? "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("`", "\\`").Replace("$", "\\$") + "\""
-            : value;
+    /// <summary>Quotes one Exec argument per the desktop entry specification; % is doubled because it starts field codes.</summary>
+    public static string QuoteExecArgument(string value)
+    {
+        string escaped = value.Replace("%", "%%");
+        return escaped.Any(ch => char.IsWhiteSpace(ch) || "\"'\\`$;&|<>()*?#~".Contains(ch))
+            ? "\"" + escaped.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("`", "\\`").Replace("$", "\\$") + "\""
+            : escaped;
+    }
 
     [SupportedOSPlatform("windows")]
     private static void SetWindowsRunKey(bool enabled)

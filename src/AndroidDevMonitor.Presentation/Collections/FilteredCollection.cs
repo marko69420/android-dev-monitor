@@ -81,7 +81,8 @@ public sealed class FilteredCollection<T> : IList<T>, IList, IReadOnlyList<T>, I
             case NotifyCollectionChangedAction.Remove when e.OldItems is not null:
                 foreach (T item in e.OldItems)
                 {
-                    int index = _items.IndexOf(item);
+                    // By reference: records such as LogEntry compare by value, and logcat repeats identical lines.
+                    int index = IndexOf(item);
                     if (index < 0) continue;
                     _items.RemoveAt(index);
                     RaiseChange(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index));
@@ -122,9 +123,9 @@ public sealed class FilteredCollection<T> : IList<T>, IList, IReadOnlyList<T>, I
 
     IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
 
-    public int IndexOf(T item) => _items.IndexOf(item);
+    public int IndexOf(T item) => _items.FindIndex(candidate => ReferenceEquals(candidate, item));
 
-    public bool Contains(T item) => _items.Contains(item);
+    public bool Contains(T item) => IndexOf(item) >= 0;
 
     public void CopyTo(T[] array, int arrayIndex) => _items.CopyTo(array, arrayIndex);
 

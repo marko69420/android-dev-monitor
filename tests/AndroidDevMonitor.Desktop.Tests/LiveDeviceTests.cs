@@ -191,6 +191,28 @@ public sealed class LiveDeviceTests
     }
 
     [AvaloniaFact]
+    public async Task Phone_without_usb_permission_tells_the_user_how_to_fix_it()
+    {
+        if (!FakeDeviceAvailable) return;
+        Environment.SetEnvironmentVariable("FAKE_ANDROID_STATE", "no-permissions");
+        try
+        {
+            await using AppSession session = await AppSession.StartAsync(demo: false);
+            await AppSession.WaitUntil(() => session.ViewModel.SelectedDevice?.Serial == Serial, "the device to be listed");
+            Assert.Equal(DeviceState.NoPermissions, session.ViewModel.SelectedDevice!.State);
+            await AppSession.WaitUntil(() => session.ViewModel.ActiveAlerts.Any(alert => alert.Message.Contains("udev")), "an alert that explains the fix");
+            Assert.Equal("No USB permission", session.ViewModel.ConnectionText);
+            Assert.DoesNotContain(session.AdbCommands(), line => line.Contains("shell"));
+            session.ShowPage("Alerts");
+            session.Screenshot("live-no-permissions");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FAKE_ANDROID_STATE", null);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Closing_the_window_saves_the_session()
     {
         if (!FakeDeviceAvailable) return;

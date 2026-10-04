@@ -29,6 +29,7 @@
       <conv:LogPriorityBrushConverter x:Key="LogPriorityBrush"/>
       <conv:ProcessGroupBrushConverter x:Key="ProcessGroupBrush"/>
       <conv:BoolToValueConverter x:Key="PausedDotBrush" TrueValue="#E5B260" FalseValue="#59D35F"/>
+      <conv:BoolToValueConverter x:Key="DeviceStateDot" TrueValue="#59D35F" FalseValue="#E5B260"/>
       <conv:BoolToValueConverter x:Key="FolderText" TrueValue="Folder" FalseValue="File"/>
       <conv:BoolToValueConverter x:Key="FolderBrush" TrueValue="#19C3D4" FalseValue="#93A2AD"/>
       <conv:BoolToValueConverter x:Key="BoldWhenTrue" TrueValue="SemiBold" FalseValue="Normal"/>
@@ -193,7 +194,7 @@
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="m:AndroidDevice">
                 <Grid Width="200" ColumnDefinitions="18,*">
-                  <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center"/>
+                  <Ellipse Width="8" Height="8" Fill="{Binding IsConnected, Converter={StaticResource DeviceStateDot}}" VerticalAlignment="Center"/>
                   <StackPanel Grid.Column="1">
                     <TextBlock FontWeight="SemiBold" Text="{Binding FriendlyName}" TextTrimming="CharacterEllipsis"/>
                     <TextBlock Classes="muted" FontSize="11" Text="{Binding VersionLine}" TextTrimming="CharacterEllipsis"/>

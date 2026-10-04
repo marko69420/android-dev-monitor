@@ -18,6 +18,7 @@ Both are self-contained; no .NET install is needed.
 
 - **Default-on settings start on.** Confirm before closing during recording or automation, alert sounds, compact density, and restoring the last page and device were read as off the first time the app started. Settings you already changed are kept.
 - **"Open media directory"** in Settings now opens the media folder (the button did nothing).
+- **Clear device problems.** A phone that is unauthorized, offline or (on Linux) has no USB permission now raises an alert that says how to fix it, and its dot in the device selector turns amber instead of staying green.
 
 ## Known limits on Linux
 

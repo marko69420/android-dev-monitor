@@ -1,3 +1,4 @@
+using AndroidDevMonitor.Core.Models;
 using AndroidDevMonitor.Presentation.Platform;
 using AndroidDevMonitor.Presentation.ViewModels;
 
@@ -18,6 +19,7 @@ public sealed class PlatformTests
     [InlineData("/usr/bin/app", "/usr/bin/app")]
     [InlineData("/home/dev/Android Dev Monitor/app", "\"/home/dev/Android Dev Monitor/app\"")]
     [InlineData("/tmp/a$b", "\"/tmp/a\\$b\"")]
+    [InlineData("/opt/100%/app", "/opt/100%%/app")]
     public void Exec_arguments_are_quoted_when_needed(string value, string expected) =>
         Assert.Equal(expected, DesktopShell.QuoteExecArgument(value));
 
@@ -48,6 +50,16 @@ public sealed class PlatformTests
         byte[] png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAYAAACddGYaAAAAEUlEQVR4nGP4z8DwH4YZkDkAm34L9XKwuTwAAAAASUVORK5CYII=");
         Assert.Equal((3, 2), MainViewModel.ReadPngSize(png));
         Assert.Equal((0, 0), MainViewModel.ReadPngSize([1, 2, 3]));
+    }
+
+    [Theory]
+    [InlineData(DeviceState.NoPermissions, "udev")]
+    [InlineData(DeviceState.Unauthorized, "Allow USB debugging")]
+    [InlineData(DeviceState.Offline, "Reconnect")]
+    public void Unusable_devices_explain_the_fix(DeviceState state, string hint)
+    {
+        AndroidDevice device = new("ABC123", "Pixel 8", state, DeviceKind.Physical);
+        Assert.Contains(hint, MainViewModel.DescribeUnusableDevice(device));
     }
 
     [Fact]
