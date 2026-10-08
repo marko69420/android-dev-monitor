@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AndroidDevMonitor.Core\AndroidDevMonitor.Core.csproj" />
+    <ProjectReference Include="..\AndroidDevMonitor.Adb\AndroidDevMonitor.Adb.csproj" />
+    <ProjectReference Include="..\AndroidDevMonitor.Collectors\AndroidDevMonitor.Collectors.csproj" />
+    <ProjectReference Include="..\AndroidDevMonitor.Infrastructure\AndroidDevMonitor.Infrastructure.csproj" />
+    <ProjectReference Include="..\AndroidDevMonitor.Presentation\AndroidDevMonitor.Presentation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.13" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+    <Content Include="..\..\docs\USER_GUIDE.html" Link="Assets\UserGuide.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AndroidDevMonitor.Desktop.Tests" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AssemblyName>AndroidDevMonitor</AssemblyName>
+    <RootNamespace>AndroidDevMonitor.Desktop</RootNamespace>
+    <ApplicationIcon Condition="Exists('Assets\app.ico')">Assets\app.ico</ApplicationIcon>
+    <Version>2.9.0</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AssemblyTitle>Android Dev Monitor</AssemblyTitle>
+    <Product>Android Dev Monitor</Product>
+    <Description>Android performance and ADB monitoring tool for Linux</Description>
+  </PropertyGroup>
+
+</Project>

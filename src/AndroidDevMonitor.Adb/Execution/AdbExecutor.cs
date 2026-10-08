@@ -24,7 +24,7 @@ public sealed class AdbExecutor : IAdbExecutor, IDisposable
         var started = DateTimeOffset.UtcNow;
         var adbPath = ResolvedAdbPath;
         if (adbPath is null)
-            return new(arguments, serial, started, DateTimeOffset.UtcNow, null, "", "ADB executable was not found. Select adb.exe in Settings or install Android Platform Tools.", false, false);
+            return new(arguments, serial, started, DateTimeOffset.UtcNow, null, "", "ADB executable was not found. Select it in Settings or install Android Platform Tools.", false, false);
 
         var command = serial is null ? arguments.ToArray() : new[] { "-s", serial }.Concat(arguments).ToArray();
         var gate = _deviceLocks.GetOrAdd(serial ?? "__server__", _ => new SemaphoreSlim(2, 2));
@@ -70,22 +70,7 @@ public sealed class AdbExecutor : IAdbExecutor, IDisposable
         finally { gate.Release(); }
     }
 
-    public static string? ResolvePath(string? configuredPath)
-    {
-        if (!string.IsNullOrWhiteSpace(configuredPath) && File.Exists(configuredPath)) return Path.GetFullPath(configuredPath);
-        foreach (var variable in new[] { "ANDROID_SDK_ROOT", "ANDROID_HOME" })
-        {
-            var root = Environment.GetEnvironmentVariable(variable);
-            if (!string.IsNullOrWhiteSpace(root))
-            {
-                var candidate = Path.Combine(root, "platform-tools", "adb.exe");
-                if (File.Exists(candidate)) return candidate;
-            }
-        }
-        var path = Environment.GetEnvironmentVariable("PATH") ?? "";
-        return path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(part => Path.Combine(part.Trim(), "adb.exe")).FirstOrDefault(File.Exists);
-    }
+    public static string? ResolvePath(string? configuredPath) => ToolLocator.Default.FindAdb(configuredPath);
 
     private static async Task<string> Safe(Task<string> task) { try { return await task; } catch { return ""; } }
     public void Dispose() { foreach (var gate in _deviceLocks.Values) gate.Dispose(); }

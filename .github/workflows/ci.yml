@@ -1,0 +1,55 @@
+name: CI
+
+# Builds and tests both apps on every push and pull request:
+# - Linux: the whole solution (the Windows project compiles with EnableWindowsTargeting), all unit tests, and the
+#   headless UI tests of the Linux app, including live-mode tests against the fake Android device in tests/fake-android.
+# - Windows: the WPF app and the tests that run there.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  AVALONIA_TELEMETRY_OPTOUT: 1
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build AndroidDevMonitor.slnx -c Release -p:EnableWindowsTargeting=true
+
+      - name: Test
+        run: dotnet test AndroidDevMonitor.slnx -c Release --no-build -p:EnableWindowsTargeting=true --logger "console;verbosity=normal"
+
+      - name: Upload UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-ui-screenshots
+          path: artifacts/linux-ui-screenshots
+          if-no-files-found: ignore
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build AndroidDevMonitor.slnx -c Release
+
+      - name: Test
+        run: dotnet test AndroidDevMonitor.slnx -c Release --no-build

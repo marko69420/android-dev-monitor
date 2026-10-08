@@ -4,8 +4,10 @@ using System.IO;
 using AndroidDevMonitor.Adb.Discovery;
 using AndroidDevMonitor.Adb.Execution;
 using AndroidDevMonitor.App.Services;
-using AndroidDevMonitor.App.ViewModels;
+using AndroidDevMonitor.Presentation.Platform;
+using AndroidDevMonitor.Presentation.ViewModels;
 using AndroidDevMonitor.Collectors.Sources;
+using AndroidDevMonitor.Core.Configuration;
 using AndroidDevMonitor.Core.Services;
 using AndroidDevMonitor.Infrastructure.Database;
 using AndroidDevMonitor.Infrastructure.Gpu;
@@ -23,7 +25,7 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e); var demo = e.Args.Any(x => x.Equals("--demo", StringComparison.OrdinalIgnoreCase));
-        var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AndroidDevMonitor"); Directory.CreateDirectory(data);
+        var data = AppPaths.DataDirectory; Directory.CreateDirectory(data);
         var logDirectory = Path.Combine(data, "Logs"); Directory.CreateDirectory(logDirectory);
         Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(
             Path.Combine(logDirectory, "android-dev-monitor-.log"),
@@ -34,13 +36,13 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
         AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
-        var services = new ServiceCollection(); services.AddLogging(b => b.AddSerilog(dispose: true)); services.AddSingleton<IDialogService, DialogService>();
+        var services = new ServiceCollection(); services.AddLogging(b => b.AddSerilog(dispose: true)); services.AddSingleton(WpfPlatformServices.Create(Dispatcher));
         services.AddSingleton<IAdbExecutor>(sp => new AdbExecutor(sp.GetRequiredService<ILogger<AdbExecutor>>()));
         services.AddSingleton<ISessionStore>(_ => new SqliteSessionStore(data)); services.AddSingleton<ISessionExporter, SessionExporter>();
         services.AddSingleton<IMediaService>(sp => demo ? new DemoMediaService(Path.Combine(data, "DemoMedia")) : new AdbMediaService(sp.GetRequiredService<IAdbExecutor>(), Path.Combine(data, "Media")));
         if (demo) { services.AddSingleton<IDeviceDiscoveryService, DemoDeviceDiscoveryService>(); services.AddSingleton<IMonitoringSource, DemoMonitoringSource>(); }
         else { services.AddSingleton<IDeviceDiscoveryService, DeviceDiscoveryService>(); services.AddSingleton<IGpuMetricProvider, EmulatorGpuMetricProvider>(); services.AddSingleton<IMonitoringSource, LiveMonitoringSource>(); }
-        services.AddSingleton(sp => new MainViewModel(sp.GetRequiredService<IDeviceDiscoveryService>(), sp.GetRequiredService<IMonitoringSource>(), sp.GetRequiredService<ISessionStore>(), sp.GetRequiredService<IMediaService>(), sp.GetRequiredService<ISessionExporter>(), sp.GetRequiredService<IAdbExecutor>(), sp.GetRequiredService<IDialogService>(), demo));
+        services.AddSingleton(sp => new MainViewModel(sp.GetRequiredService<IDeviceDiscoveryService>(), sp.GetRequiredService<IMonitoringSource>(), sp.GetRequiredService<ISessionStore>(), sp.GetRequiredService<IMediaService>(), sp.GetRequiredService<ISessionExporter>(), sp.GetRequiredService<IAdbExecutor>(), sp.GetRequiredService<PlatformServices>(), demo));
         services.AddSingleton<MainWindow>(); _provider = services.BuildServiceProvider(); var window = _provider.GetRequiredService<MainWindow>(); MainWindow = window; window.Show();
         MainViewModel viewModel = _provider.GetRequiredService<MainViewModel>();
         try { await viewModel.InitializeAsync(); viewModel.EnableExtendedLogFilters(); await viewModel.LoadSavedLogFiltersAsync(); } catch (Exception ex) { Log.Error(ex, "Startup failed"); MessageBox.Show(ex.Message, "Android Dev Monitor", MessageBoxButton.OK, MessageBoxImage.Error); }

@@ -395,7 +395,9 @@
                     <ColumnDefinition Width="18" />
                     <ColumnDefinition Width="*" />
                   </Grid.ColumnDefinitions>
-                  <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" VerticalAlignment="Center" />
+                  <Ellipse Width="8" Height="8" VerticalAlignment="Center">
+                    <Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Fill" Value="{StaticResource SuccessBrush}"/><Style.Triggers><DataTrigger Binding="{Binding IsConnected}" Value="False"><Setter Property="Fill" Value="#E5B260"/></DataTrigger></Style.Triggers></Style></Ellipse.Style>
+                  </Ellipse>
                   <StackPanel Grid.Column="1">
                     <TextBlock FontWeight="SemiBold" Text="{Binding FriendlyName}" />
                     <TextBlock Foreground="{StaticResource MutedBrush}" FontSize="11" Text="{Binding VersionLine}" />
