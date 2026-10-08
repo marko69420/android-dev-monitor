@@ -6,7 +6,9 @@ public sealed class ToolLocatorTests
 {
     private static ToolLocator Locator(bool windows, bool mac, IEnumerable<string> files, IReadOnlyDictionary<string, string>? variables = null, IEnumerable<string>? directories = null)
     {
-        HashSet<string> fileSet = new(files, StringComparer.Ordinal);
+        // Paths are written with '/', while ToolLocator joins with the host's separator ('\\' on Windows), so the fake
+        // file system compares them with the separators made the same.
+        HashSet<string> fileSet = new(files.Select(Normalize), StringComparer.Ordinal);
         List<string> directoryList = directories?.ToList() ?? [];
         return new ToolLocator(new ToolEnvironment(
             windows,
@@ -15,9 +17,11 @@ public sealed class ToolLocatorTests
             HomeDirectory: windows ? "C:/Users/dev" : mac ? "/Users/dev" : "/home/dev",
             LocalAppData: "C:/Users/dev/AppData/Local",
             ProgramFiles: "C:/Program Files",
-            fileSet.Contains,
-            parent => directoryList.Where(directory => Path.GetDirectoryName(directory) == parent)));
+            path => fileSet.Contains(Normalize(path)),
+            parent => directoryList.Where(directory => Normalize(Path.GetDirectoryName(directory)!) == Normalize(parent))));
     }
+
+    private static string Normalize(string path) => path.Replace('\\', '/');
 
     [Fact]
     public void Linux_finds_adb_in_the_android_studio_default_sdk() =>
@@ -36,7 +40,7 @@ public sealed class ToolLocatorTests
     [Fact]
     public void Linux_falls_back_to_adb_on_path() =>
         Assert.Equal(Path.Combine("/usr/bin", "adb"),
-            Locator(false, false, ["/usr/bin/adb"], new Dictionary<string, string> { ["PATH"] = "/usr/local/bin:/usr/bin" }).FindAdb());
+            Locator(false, false, ["/usr/bin/adb"], new Dictionary<string, string> { ["PATH"] = string.Join(Path.PathSeparator, "/usr/local/bin", "/usr/bin") }).FindAdb());
 
     [Fact]
     public void Linux_finds_the_debian_platform_tools_package() =>
