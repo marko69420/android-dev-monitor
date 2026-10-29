@@ -67,6 +67,7 @@ public partial class MainViewModel
         new("Emulator report", "Emulator", "ADB · emulator", "AVD identity, snapshots, display, battery, network and sensor state"),
         new("Connection benchmark", "Connectivity", "ADB", "Measure twenty shell round trips and report latency"),
         new("Security and build report", "Compatibility", "ADB", "Patch level, verified boot, SELinux, encryption and build identity"),
+        new("Metric availability report", "Compatibility", "ADB", "Which CPU, memory, GPU, disk, network, FPS and thermal metrics work on this device and selected app, why the others don't, and each provider's raw output"),
         new("Capability report", "Compatibility", "ADB", "Record API, features, profileability and available commands")
     ]);
 
@@ -211,6 +212,7 @@ public partial class MainViewModel
                 "Emulator report" => await RunEmulatorReportAsync(target!),
                 "Connection benchmark" => await RunConnectionBenchmarkAsync(target!),
                 "Security and build report" => await RunShellReportAsync(target!, "security", ["getprop ro.build.fingerprint; getprop ro.build.version.security_patch; getprop ro.boot.verifiedbootstate; getprop ro.boot.vbmeta.device_state; getprop ro.crypto.state; getprop ro.crypto.type; echo __SELINUX__; getenforce; echo __LOCK_SETTINGS__; dumpsys lock_settings 2>/dev/null"]),
+                "Metric availability report" => await RunMetricAvailabilityReportAsync(target!),
                 "Capability report" => await RunShellReportAsync(target!, "capabilities", ["getprop; echo __FEATURES__; pm list features; echo __ADB_FEATURES__; echo $(getprop ro.build.version.sdk); echo __COMMANDS__; command -v perfetto simpleperf bugreport procrank showmap"]),
                 _ => "Unsupported tool"
             };
@@ -322,6 +324,12 @@ public partial class MainViewModel
         if (totals.Count == 0) return details.ToString();
         details.Insert(0, $"Cold start · {package}\nMedian {Percentile(totals, .5):0} ms · P90 {Percentile(totals, .9):0} ms · {totals.Count}/10 valid\n\n");
         return await SaveTextAsync(target, "startup", details.ToString());
+    }
+
+    private async Task<string> RunMetricAvailabilityReportAsync(AndroidDevice target)
+    {
+        MetricAvailabilityReport report = await _monitoring.CheckMetricAvailabilityAsync(target, SelectedPackage, LabToken);
+        return await SaveTextAsync(target, "metric-availability", report.ToReport());
     }
 
     private async Task<string> RunShellReportAsync(AndroidDevice target, string name, IReadOnlyList<string> scripts) =>

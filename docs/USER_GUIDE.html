@@ -256,7 +256,7 @@
     <table class="table">
       <tr><th>Simptom</th><th>Šta uradi</th></tr>
       <tr><td>Uređaj se ne pojavljuje</td><td>Otvori <strong>Settings → ADB</strong>, klikni <strong>Auto-detect</strong>, pa <strong>Test connection</strong>. Provjeri da li je USB debugging prihvaćen na telefonu.</td></tr>
-      <tr><td>Vrijednost je N/A</td><td>To znači da Android nije izložio taj brojač. Nije greška u aplikaciji i vrijednost se ne smišlja.</td></tr>
+      <tr><td>Vrijednost je N/A</td><td>To znači da Android nije izložio taj brojač. Nije greška u aplikaciji i vrijednost se ne smišlja. Zašto, vidiš u <strong>Developer Tools → Metric availability report</strong>: za svaku metriku piše da li radi na ovom uređaju, odakle se čita i zašto nije dostupna.</td></tr>
       <tr><td>Live podaci kasne</td><td>Provjeri kabel, Wi-Fi kvalitet i trenutno opterećenje emulatora. ADB odgovori mogu biti sporiji od intervala prikaza.</td></tr>
       <tr><td>scrcpy se ne otvara</td><td>Windows: instaliraj <code>scrcpy.exe</code> ili dodaj njegovu lokaciju u <code>PATH</code>. Linux: <code>sudo apt install scrcpy</code> (ili <code>dnf</code>/<code>pacman</code>/<code>snap</code>).</td></tr>
       <tr><td>Linux: uređaj je „no permissions” ili „unauthorized”</td><td>Instaliraj Android udev pravila (<code>sudo apt install android-sdk-platform-tools-common</code>, na Archu <code>android-udev</code>), ponovo uključi kabel i prihvati upit za USB debugging na telefonu.</td></tr>

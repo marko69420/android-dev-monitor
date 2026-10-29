@@ -200,26 +200,8 @@ public sealed class LiveMonitoringSource(IAdbExecutor adb, IGpuMetricProvider gp
         finally { _processCpuGate.Release(); }
     }
 
-    public async Task<CapabilitySet> DetectCapabilitiesAsync(AndroidDevice device, CancellationToken cancellationToken)
-    {
-        async Task<bool> Can(params string[] command) => (await adb.ExecuteAsync(device.Serial, ["shell", .. command], MonitoringConstants.DefaultAdbTimeout, cancellationToken)).Success;
-        var proc = await Can("cat", "/proc/stat"); var mem = await Can("cat", "/proc/meminfo"); var network = await Can("cat", "/proc/net/dev");
-        var processIo = await Can("test", "-r", "/proc/1/io");
-        var appNetwork = await Can("test", "-d", "/proc/uid_stat");
-        var battery = await Can("dumpsys", "battery"); var thermal = await Can("dumpsys", "thermalservice"); var gpuSupported = await gpu.IsSupportedAsync(device, cancellationToken);
-        return new(proc, mem, processIo, network, appNetwork, true, gpuSupported, thermal, battery,
-            new Dictionary<string, string>
-            {
-                ["CPU"] = "/proc/stat",
-                ["Memory"] = "/proc/meminfo",
-                ["Process I/O"] = "/proc/<pid>/io",
-                ["Network"] = "/proc/net/dev",
-                ["Selected-app network"] = "/proc/uid_stat/<uid>",
-                ["FPS"] = "dumpsys gfxinfo",
-                ["GPU"] = gpu.Name,
-                ["Thermal"] = "dumpsys thermalservice"
-            });
-    }
+    public Task<MetricAvailabilityReport> CheckMetricAvailabilityAsync(AndroidDevice device, string? packageName, CancellationToken cancellationToken) =>
+        new MetricAvailabilityChecker(adb, gpu).CheckAsync(device, packageName, cancellationToken);
 
     private async Task<int?> ResolvePid(string serial, string? package, CancellationToken token)
     {

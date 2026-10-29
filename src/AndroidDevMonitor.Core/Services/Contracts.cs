@@ -19,7 +19,8 @@ public interface IMonitoringSource
 {
     IAsyncEnumerable<MetricSample> StreamMetricsAsync(AndroidDevice device, string? packageName, Guid sessionId, CancellationToken cancellationToken);
     Task<IReadOnlyList<AndroidProcess>> GetProcessesAsync(AndroidDevice device, CancellationToken cancellationToken);
-    Task<CapabilitySet> DetectCapabilitiesAsync(AndroidDevice device, CancellationToken cancellationToken);
+    /// <summary>Runs each metric provider once and reports which metrics the monitor can show for the device and app, and why not.</summary>
+    Task<MetricAvailabilityReport> CheckMetricAvailabilityAsync(AndroidDevice device, string? packageName, CancellationToken cancellationToken);
 }
 
 public interface ISessionStore

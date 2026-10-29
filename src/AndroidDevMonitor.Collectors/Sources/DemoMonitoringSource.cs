@@ -58,5 +58,7 @@ public sealed class DemoMonitoringSource : IMonitoringSource
             new(0, null, "kernel", "Kernel / unattributed CPU", "Kernel, interrupts, and unassigned sampling time", null, "System", ProcessGroup.System, CpuPercent: Cpu(.09))
         ]);
     }
-    public Task<CapabilitySet> DetectCapabilitiesAsync(AndroidDevice device, CancellationToken cancellationToken) => Task.FromResult(new CapabilitySet(true, true, true, true, true, true, true, true, true, new Dictionary<string, string> { ["All"] = "Deterministic demo provider" }));
+    public Task<MetricAvailabilityReport> CheckMetricAvailabilityAsync(AndroidDevice device, string? packageName, CancellationToken cancellationToken) =>
+        Task.FromResult(new MetricAvailabilityReport(device, packageName, packageName is null ? null : 13432, DateTimeOffset.UtcNow,
+            MetricAvailabilityChecker.Metrics.Select(metric => new MetricCapability(metric, Availability.Available, "Deterministic demo provider")).ToArray()));
 }

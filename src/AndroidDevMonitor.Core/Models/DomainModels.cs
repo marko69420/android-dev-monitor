@@ -248,18 +248,6 @@ public sealed record AppSettings
     public bool CompactDensity { get; init; } = true;
 }
 
-public sealed record CapabilitySet(
-    bool ProcessCpu,
-    bool ProcessMemory,
-    bool ProcessIo,
-    bool DeviceNetwork,
-    bool AppNetwork,
-    bool Fps,
-    bool Gpu,
-    bool Thermal,
-    bool Battery,
-    IReadOnlyDictionary<string, string> Sources);
-
 public sealed record AdbCommandResult(
     IReadOnlyList<string> Command,
     string? DeviceSerial,
