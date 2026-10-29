@@ -6,4 +6,6 @@ The application never requires or attempts root. On non-rooted production builds
 
 CPU and device memory are broadly available. PSS is heavier and package-scoped. Logical process I/O is not physical flash wear. Device network totals are broadly available, while selected-app traffic requires supported UID counters. Network state, gateway, and DNS use `ip` first and `dumpsys connectivity` fallbacks because some Android builds deny link/default-route queries. FPS needs valid `gfxinfo` data for the tracked rendered package. GPU percentages are highly vendor-dependent and remain `N/A` without a genuine provider. Battery and thermal services may be missing or synthetic.
 
+**Developer Tools → Metric availability report** runs each provider once on the selected device and app, with the same commands and parsers as the live monitor, and lists every metric as available, waiting, unsupported, permission denied or error, with the reason and each provider's raw output.
+
 ADB states are distinct: offline, unauthorized, no permissions, disconnected and unavailable. Commands can time out or targets can disappear at any point; structured results retain serial, arguments, times, exit state and error text. Missing ADB never prevents application or demo-mode startup.

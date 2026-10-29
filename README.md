@@ -150,7 +150,7 @@ The **Name** column uses descriptions such as *Disk journal* and *App installer*
 
 The downloadable builds are self-contained and do not require .NET. Building from source requires any [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (10.0.100 or newer; see `global.json`).
 
-The app still opens without ADB; use `--demo` to explore it with sample data. Unauthorized devices require accepting the Android USB-debugging prompt. Unavailable measurements appear as `—` in the process table or `N/A` in other views.
+The app still opens without ADB; use `--demo` to explore it with sample data. Unauthorized devices require accepting the Android USB-debugging prompt. Unavailable measurements appear as `—` in the process table or `N/A` in other views. To see which metrics the selected device and app support, and why the others are missing, run **Developer Tools → Metric availability report**.
 
 ## Build and run
 

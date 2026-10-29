@@ -12,4 +12,4 @@
 | Thermal | Severity/sensor °C | Device | `dumpsys thermalservice`, 5s | Vendor output differs. Unknown sensors/denied services are explicit. |
 | Storage capacity/app size | Bytes/percent | Device/package | `df` and supported dumpsys providers, 5s | Capacity, package data/cache/code, and I/O remain distinct. Unmeasurable categories are omitted. |
 
-All samples record UTC time, device serial, session ID, package, and provider source. `Waiting`, `Unsupported`, `PermissionDenied`, `Stale`, and `Error` are separate availability states.
+All samples record UTC time, device serial, session ID, package, and provider source. `Waiting`, `Unsupported`, `PermissionDenied`, `Stale`, and `Error` are separate availability states. **Developer Tools → Metric availability report** shows the state of every metric above for the selected device and app, why it is not available, and the raw output of each provider.

@@ -179,6 +179,34 @@ public sealed class LiveDeviceTests
     }
 
     [AvaloniaFact]
+    public async Task Metric_availability_report_explains_what_the_device_can_measure()
+    {
+        if (!FakeDeviceAvailable) return;
+        await using AppSession session = await StartLiveAsync();
+        await AppSession.WaitUntil(() => session.ViewModel.SelectedPackage == Package, "selected app");
+        session.ShowPage("Developer Tools");
+        session.ViewModel.SelectedDeveloperTool = session.ViewModel.DeveloperTools.Single(tool => tool.Name == "Metric availability report");
+        await session.ClickAsync("Run selected tool");
+
+        string report = session.ViewModel.DeveloperLabOutput;
+        Assert.Equal("Metric availability report completed.", session.ViewModel.DeveloperLabStatus);
+        Assert.Contains("Device: Pixel 8 Pro (FAKE0001) · Android 14 · API 34 · Physical", report);
+        Assert.Matches(@"App: com\.example\.fakegame · PID \d+", report);
+        Assert.Matches(@"(?m)^CPU · app\s+Available\s+/proc/\d+/stat$", report);
+        Assert.Matches(@"(?m)^Frame rate · app\s+Available\s+dumpsys gfxinfo com\.example\.fakegame framestats$", report);
+        Assert.Matches(@"(?m)^Battery\s+Available\s+dumpsys battery$", report);
+        // The fake device runs on a Linux kernel, which has no Android uid_stat, and its storaged has no records.
+        Assert.Matches(@"(?m)^Network · app\s+Unsupported\s+/proc/uid_stat/\d+$", report);
+        Assert.Matches(@"(?m)^Disk I/O · device\s+Unsupported\s+dumpsys storaged$", report);
+        Assert.Matches(@"(?m)^GPU\s+Unsupported\s+", report);
+        Assert.Contains("RAW PROVIDER OUTPUT", report);
+        string saved = report.Split(Environment.NewLine)[0];
+        Assert.StartsWith(Path.Combine(session.ViewModel.DeveloperLabDirectory, "metric-availability-FAKE0001-"), saved);
+        Assert.Contains("Thermal Status: 1", File.ReadAllText(saved));
+        session.Screenshot("live-metric-availability");
+    }
+
+    [AvaloniaFact]
     public async Task Crash_in_logcat_raises_an_alert_with_sound()
     {
         if (!FakeDeviceAvailable) return;
